@@ -1,0 +1,2068 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JSystems | Claude Code - od zera do zespołu agentów AI | Dzień 1</title>
+<style>
+:root{
+  /* Slajdy tytulowe (granat/biel/zloto) - identyczne w obu motywach */
+  --dark-bg:#0f172a;--dark-bg2:#1e293b;--dark-text:#f1f5f9;
+  /* Motyw domyslny: dark (Tokyo Night) */
+  --bg:#1a1b26;--bg2:#24283b;--bg3:#2f3549;
+  --text:#c0caf5;--heading:#e6ecff;
+  --accent:#e0af68;--accent2:#7aa2f7;--accent3:#9ece6a;
+  --muted:#7d84a8;--danger:#f7768e;
+  --code-bg:#16161e;--code-text:#a9b1d6;
+  --note-bg:rgba(224,175,104,.09);--note-bd:rgba(224,175,104,.35);--note-text:#e6c187;
+  --trener-bg:#1a1408;--trener-bd:#e0af68;
+}
+body.light{
+  --bg:#ffffff;--bg2:#f1f5f9;--bg3:#e2e8f0;
+  --text:#1e293b;--heading:#0f172a;
+  --accent:#d97706;--accent2:#2563eb;--accent3:#059669;
+  --muted:#64748b;--danger:#dc2626;
+  --code-bg:#1e293b;--code-text:#e2e8f0;
+  --note-bg:#fef9c3;--note-bd:#facc15;--note-text:#92400e;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:clamp(13px,1.4vw,19px)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#000;overflow:hidden}
+#deck{position:relative;width:100vw;height:100vh}
+.slide{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:var(--bg);color:var(--text);
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+  overflow-y:auto;overflow-x:hidden;
+}
+.slide.on{opacity:1;pointer-events:auto}
+.slide.dark{background:var(--dark-bg);color:var(--dark-text)}
+.slide a{color:var(--accent2);text-decoration:underline;text-underline-offset:3px}
+.slide.dark a{color:var(--accent)}
+.slide h1,.slide h2,.slide h3{color:var(--heading)}
+.slide.dark h1,.slide.dark h2,.slide.dark h3{color:var(--dark-text)}
+.slide-body{
+  max-width:min(1680px,95vw);margin:0 auto;
+  padding:clamp(2rem,4vh,3rem) clamp(1.6rem,3vw,3.5rem) clamp(1.6rem,3.5vh,2.6rem);
+  min-height:100%;display:flex;flex-direction:column;justify-content:center;
+}
+.title-body{align-items:center;text-align:center}
+.kicker{
+  font-size:.8rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.15em;color:var(--accent);margin-bottom:.5rem;
+}
+h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1.15;margin-bottom:1rem}
+h2{font-size:clamp(1.4rem,3vw,2.1rem);font-weight:700;line-height:1.2;margin-bottom:.9rem}
+h3{font-size:clamp(1.1rem,2.2vw,1.6rem);font-weight:600;margin-bottom:.8rem}
+h4{font-size:1rem;font-weight:600;margin-bottom:.4rem}
+p{font-size:clamp(.95rem,1.6vw,1.15rem);line-height:1.6;margin-bottom:.6rem}
+.subtitle{font-size:clamp(1rem,1.9vw,1.3rem);opacity:.8;margin-bottom:1rem}
+.accent{color:var(--accent)}
+.accent2{color:var(--accent2)}
+.accent3{color:var(--accent3)}
+.danger{color:var(--danger)}
+.title-meta{
+  display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;
+  font-size:1.1rem;opacity:.85;margin-bottom:1.5rem;
+}
+.title-meta div{padding:.3rem .8rem;background:rgba(255,255,255,.08);border-radius:8px}
+.break-badge{
+  background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);
+  border-radius:12px;padding:1rem 1.5rem;margin-top:1rem;display:inline-block;
+}
+.break-badge .bb-label{
+  font-size:.75rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--accent);margin-bottom:.5rem;
+}
+.break-badge .bb-items{display:flex;gap:1.2rem;flex-wrap:wrap;justify-content:center;font-size:.9rem}
+.break-badge .bb-items span::before{content:"\25CF";color:var(--accent);margin-right:.4rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-top:.5rem}
+/* Symetryczne siatki: 4 kafle = 2x2, 5-6 kafli = 3 kolumny (zamiast 3+1 / 4+1) */
+.cards:has(> :nth-child(4):last-child){grid-template-columns:repeat(2,1fr)}
+.cards:has(> :nth-child(5):last-child),.cards:has(> :nth-child(6):last-child){grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cards:has(> :nth-child(5):last-child),.cards:has(> :nth-child(6):last-child){grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.cards{grid-template-columns:1fr !important}}
+.card{
+  background:var(--bg2);border-radius:10px;padding:1rem 1.2rem;
+  border-left:4px solid var(--accent2);
+}
+.card.warn{border-left-color:var(--danger)}
+.card.ok{border-left-color:var(--accent3)}
+.card.amber{border-left-color:var(--accent)}
+.card-title{font-weight:700;color:var(--accent);margin-bottom:.4rem;font-size:1rem}
+.slide.dark .card{background:var(--dark-bg2)}
+.slide.dark .card-title{color:var(--accent)}
+.feature-list{list-style:none;padding:0}
+.feature-list li{padding:.32rem 0 .32rem 1.6rem;position:relative;font-size:clamp(.9rem,1.5vw,1.05rem);line-height:1.5}
+.feature-list li::before{content:"\25B8";position:absolute;left:.3rem;color:var(--accent);font-weight:700}
+.feature-list.check li::before{content:"\2713";color:var(--accent3)}
+.feature-list.cross li::before{content:"\2717";color:var(--danger)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:.5rem}
+@media(max-width:768px){.two-col{grid-template-columns:1fr}}
+.code-block{
+  background:var(--code-bg);color:var(--code-text);padding:.8rem 1.2rem;border-radius:8px;
+  font-family:Consolas,Monaco,"Courier New",monospace;font-size:.85rem;
+  overflow-x:auto;line-height:1.5;margin:.5rem 0;white-space:pre-wrap;
+  position:relative;border:1px solid rgba(125,132,168,.25);
+}
+.copy-btn{
+  position:absolute;top:.4rem;right:.4rem;
+  background:var(--bg3);color:var(--text);border:1px solid var(--muted);
+  border-radius:6px;font-size:.65rem;padding:.2rem .55rem;cursor:pointer;
+  opacity:.65;transition:opacity .15s;font-family:inherit;
+}
+.copy-btn:hover{opacity:1}
+.copy-btn.ok{background:var(--accent3);color:#0f172a;border-color:var(--accent3);opacity:1}
+.code-inline{
+  background:var(--bg2);padding:.1rem .4rem;border-radius:4px;
+  font-family:Consolas,Monaco,monospace;font-size:.9em;color:var(--accent2);
+}
+.slide.dark .code-inline{background:rgba(255,255,255,.1)}
+.badge{
+  display:inline-block;padding:.2rem .7rem;border-radius:999px;
+  font-size:.75rem;font-weight:700;background:var(--accent);color:#fff;
+}
+.badge.blue{background:var(--accent2)}
+.badge.green{background:var(--accent3)}
+.badge.red{background:var(--danger)}
+.badge.lab{background:var(--accent);color:#1a1b26;font-size:.85rem;padding:.3rem 1rem}
+.note-box{
+  background:var(--note-bg);border:1px solid var(--note-bd);border-radius:8px;
+  padding:.8rem 1.2rem;margin:.5rem 0;font-size:.9rem;color:var(--note-text);
+}
+.slide.dark .note-box{background:rgba(250,204,21,.1);border-color:rgba(250,204,21,.3);color:#fef3c7}
+/* Process map */
+.proc-map{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1rem}
+.proc-step{
+  background:var(--bg2);border-radius:10px;padding:1rem;
+  position:relative;text-align:center;border:2px solid transparent;
+}
+.proc-step .ps-num{
+  width:32px;height:32px;border-radius:50%;background:var(--accent2);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;
+  margin:0 auto .5rem;font-size:.9rem;
+}
+.proc-step.active{border-color:var(--accent);background:rgba(224,175,104,.1)}
+.proc-step.active .ps-num{background:var(--accent)}
+.proc-step.optional{opacity:.6}
+.proc-step.optional .ps-num{background:var(--muted)}
+.proc-step .ps-title{font-weight:600;font-size:.85rem;margin-bottom:.2rem}
+.proc-step .ps-desc{font-size:.75rem;color:var(--muted)}
+.slide.dark .proc-step{background:var(--dark-bg2)}
+.slide.dark .proc-step .ps-desc{color:#94a3b8}
+@media(max-width:900px){.proc-map{grid-template-columns:repeat(2,1fr)}}
+/* Footer */
+.slide-footer{
+  position:fixed;bottom:.4rem;right:1.5rem;font-size:.85rem;
+  color:var(--muted);opacity:.7;z-index:50;pointer-events:none;
+}
+.slide.dark .slide-footer{color:rgba(255,255,255,.3)}
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;height:4px;background:rgba(0,0,0,.1);z-index:200}
+#bar{height:100%;width:1%;background:var(--accent);transition:width .3s ease;border-radius:0 3px 3px 0}
+#num{
+  position:fixed;top:.5rem;left:1rem;font-size:.95rem;color:var(--muted);
+  z-index:200;font-variant-numeric:tabular-nums;font-weight:600;
+}
+#clock{
+  position:fixed;top:.5rem;right:3.9rem;font-size:.95rem;color:var(--muted);
+  z-index:200;font-variant-numeric:tabular-nums;
+}
+#theme-btn{
+  position:fixed;top:.3rem;right:1rem;width:34px;height:34px;z-index:210;
+  background:transparent;border:1px solid var(--muted);border-radius:50%;
+  color:var(--muted);cursor:pointer;font-size:1rem;line-height:1;
+  display:flex;align-items:center;justify-content:center;opacity:.7;
+}
+#theme-btn:hover{opacity:1;color:var(--accent)}
+#trainer-credit{
+  position:fixed;bottom:.4rem;left:1.5rem;font-size:.85rem;
+  color:var(--muted);opacity:.7;z-index:50;pointer-events:none;
+}
+.slide.dark #trainer-credit{color:rgba(255,255,255,.3)}
+#shortcut-hint{
+  position:fixed;top:.5rem;left:50%;transform:translateX(-50%);
+  z-index:200;color:var(--muted);pointer-events:none;font-size:.8rem;
+}
+@media(max-width:900px){#shortcut-hint{display:none}}
+#theme-btn .icon-sun,#theme-btn .icon-moon{width:18px;height:18px;display:block}
+#theme-btn .icon-moon{display:none}
+body.light #theme-btn .icon-sun{display:none}
+body.light #theme-btn .icon-moon{display:block}
+/* Nav arrows */
+.nav-arrow{
+  position:fixed;top:50%;transform:translateY(-50%);
+  background:rgba(0,0,0,.25);color:#fff;border:none;width:44px;height:44px;
+  border-radius:50%;font-size:1.3rem;cursor:pointer;z-index:200;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.nav-arrow:hover{background:rgba(0,0,0,.5);transform:translateY(-50%) scale(1.1)}
+.nav-left{left:12px}
+.nav-right{right:12px}
+/* Break banner */
+#breakbar{
+  position:fixed;top:20px;left:50%;
+  transform:translateX(-50%) translateY(-200%);
+  background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;
+  padding:1.2rem 2rem;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.35);
+  z-index:10000;transition:transform .4s ease;min-width:340px;text-align:center;
+}
+#breakbar.show{transform:translateX(-50%) translateY(0)}
+.bb-icon{font-size:1.5rem;margin-bottom:.3rem}
+.bb-title{font-size:1.3rem;font-weight:700}
+.bb-sub{font-size:1rem;opacity:.9;margin-top:.2rem}
+#bb-x{
+  position:absolute;top:.5rem;right:.8rem;background:rgba(255,255,255,.2);
+  border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;
+  font-size:1rem;line-height:1;
+}
+#bb-x:hover{background:rgba(255,255,255,.35)}
+/* Trener notes */
+.trener-notes{display:none}
+body.trener-on .slide.on .trener-notes{
+  display:flex;gap:1.2rem;position:fixed;bottom:0;left:0;right:0;
+  max-height:38vh;background:linear-gradient(135deg,#1a1408,#2a1e0a);
+  border-top:3px solid var(--trener-bd);padding:1.4rem 2rem 1rem;
+  z-index:9999;overflow-y:auto;color:#fef3c7;font-size:.82rem;line-height:1.5;
+}
+body.trener-on .slide.on .trener-notes::before{
+  content:"TRENER";position:absolute;top:-1px;left:2rem;
+  background:var(--trener-bd);color:#1a1408;padding:2px 14px;font-weight:700;
+  font-size:.7rem;letter-spacing:.12em;border-radius:0 0 6px 6px;
+}
+.tn-section{flex:1;min-width:200px}
+.tn-section h4{color:var(--accent);margin-bottom:.4rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em}
+.tn-section ul{list-style:none;padding:0;margin:0}
+.tn-section li{padding:.15rem 0 .15rem 1rem;position:relative}
+.tn-section li::before{content:"-";position:absolute;left:0;color:var(--accent)}
+body.trener-on .slide.on .slide-body{padding-bottom:42vh}
+/* Nawigacja klikiem obslugiwana na .slide (linki i przyciski maja priorytet) */
+/* Misc */
+.big-num{font-size:3rem;font-weight:800;color:var(--accent);line-height:1}
+.timeline{display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
+.timeline-item{display:flex;gap:1rem;align-items:flex-start;padding:.6rem 1rem;background:var(--bg2);border-radius:8px;border-left:4px solid var(--accent2)}
+.timeline-item.break{border-left-color:var(--accent)}
+.timeline-time{font-weight:700;color:var(--accent);min-width:80px;font-size:.9rem}
+.slide.dark .timeline-item{background:var(--dark-bg2)}
+hr.sep{border:none;border-top:1px solid var(--muted);opacity:.2;margin:1rem 0}
+.slide.dark hr.sep{border-top-color:var(--dark-text);opacity:.15}
+.strike{text-decoration:line-through;opacity:.5}
+.demo-flow{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem}
+.demo-flow .df-step{display:flex;gap:1rem;align-items:center}
+.df-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0}
+.df-text{font-size:clamp(.85rem,1.4vw,1rem)}
+</style>
+</head>
+<body>
+
+<div id="hud"><div id="bar"></div></div>
+<div id="num">1/46</div>
+<div id="clock">--:--</div>
+<div id="shortcut-hint">&larr; &rarr; nawigacja &nbsp;&middot;&nbsp; F pe&#322;ny ekran &nbsp;&middot;&nbsp; D motyw</div>
+<div id="trainer-credit">Trener: &#321;ukasz Matuszewski</div>
+<button id="theme-btn" title="Motyw jasny/ciemny (D)"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+<button id="prev" class="nav-arrow nav-left">&lsaquo;</button>
+<button id="next" class="nav-arrow nav-right">&rsaquo;</button>
+
+<div id="breakbar">
+  <div class="bb-icon">&#9201;</div>
+  <div id="bb-t" class="bb-title"></div>
+  <div id="bb-s" class="bb-sub"></div>
+  <button id="bb-x">&times;</button>
+</div>
+
+<div id="deck">
+
+<!-- ============ SLIDE 1: TITLE ============ -->
+<section class="slide dark on">
+  <div class="slide-body title-body">
+    <div class="kicker">JSystems | Szkolenie otwarte</div>
+    <h1>Claude Code<br><span class="accent">od zera do zespołu agentów AI</span></h1>
+    <div class="subtitle">Dzień 1 z 3: Wprowadzenie, konfiguracja i context engineering</div>
+    <div class="title-meta">
+      <div>13 lipca 2026</div>
+      <div>Trener: &#321;ukasz Matuszewski</div>
+      <div>Tryb: zdalny</div>
+    </div>
+    <div class="break-badge">
+      <div class="bb-label" data-schedule-label>Harmonogram dnia (godziny orientacyjne)</div>
+      <div class="bb-items" data-schedule-items>
+        <span>10:30 Przerwa 15 min</span><span>13:00 Obiad 30 min</span><span>14:45 Przerwa 10 min (opcjonalna)</span><span>16:00 Koniec</span>
+      </div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Powitaj grupę, przedstaw się krótko</li>
+      <li>Opisz format: 3 dni, dzisiaj fundamenty</li>
+      <li>Podkreśl: dzisiaj pracujemy hands-on od pierwszej minuty</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Włącz fullscreen (klawisz F)</li>
+      <li>Sprawdź czy banner przerwy działa (zbliża się 10:30)</li>
+      <li>Otwórz dashboard z ankietą na osobnym monitorze</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Lista obecności, czy wszyscy mają dostęp do VM</li>
+      <li>Czy każdy widzi i słyszy prezentację</li>
+      <li>Czy uczestnicy mają otwarty terminal na VM</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 2: AGENDA ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Dzień 1</div>
+    <h2>Agenda dnia</h2>
+    <div class="timeline">
+      <div class="timeline-item"><div class="timeline-time" data-mod-time="0">09:00</div><div><strong>Moduł 1.1</strong> Wprowadzenie i konfiguracja - doświadczenia, trendy, narzędzia i harnessy, weryfikacja środowiska, pierwsze uruchomienie</div></div>
+      <div class="timeline-item break"><div class="timeline-time" data-break-time="0">10:30</div><div data-break-label="0"><strong>Przerwa</strong> 15 minut</div></div>
+      <div class="timeline-item"><div class="timeline-time" data-mod-time="1">10:45</div><div><strong>Moduł 1.2</strong> Tryby pracy i kluczowe funkcje - CLI, Desktop, Web, komendy, modele, kontekst, uprawnienia</div></div>
+      <div class="timeline-item break"><div class="timeline-time" data-break-time="1">13:00</div><div data-break-label="1"><strong>Obiad</strong> 30 minut</div></div>
+      <div class="timeline-item"><div class="timeline-time" data-mod-time="2">13:30</div><div><strong>Moduł 1.3</strong> Context Engineering i konfiguracja agenta - CLAUDE.md, AGENTS.md, struktura kontekstu</div></div>
+      <div class="timeline-item break"><div class="timeline-time" data-break-time="2">14:45</div><div data-break-label="2"><strong>Przerwa</strong> 10 minut (opcjonalna - jeśli grupa potrzebuje)</div></div>
+      <div class="timeline-item"><div class="timeline-time" data-mod-time="3">~14:55</div><div><strong>Moduł 1.4</strong> Projekt AI Chat z Vercel AI SDK - PRD, architektura, ADR, inicjalizacja template</div></div>
+      <div class="timeline-item"><div class="timeline-time" data-end-time>16:00</div><div><strong>Koniec dnia 1</strong></div></div>
+    </div>
+    <div class="note-box" style="margin-top:1rem"><strong>Cel dnia:</strong> gotowe środowisko, skonfigurowany agent, PRD aplikacji AI Chat. Plan minimum: dojść do ADR - dokończymy go rano w dniu 2. Godziny są orientacyjne - pracujemy w tempie grupy.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 3: KONTRAKT ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Dzień 1</div>
+    <h2>Kontrakt dnia</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Jak pracujemy</h3>
+        <ul class="feature-list">
+          <li>Pytania w każdej chwili - nie czekaj na koniec modułu</li>
+          <li>Pracujemy razem: rób u siebie to, co pokazuję - wchodź tam, gdzie ja wchodzę</li>
+          <li>Możesz robić po swojemu i na własnym pomyśle aplikacji - byle te same elementy</li>
+          <li>Podaję przykłady i podsyłam swoje prompty - ale zachęcam do eksperymentowania</li>
+          <li>Repozytorium kursowe dostępne od początku i bez limitu czasu (nie usuwam go po kursie)</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent">Skróty klawiszowe prezentacji</h3>
+        <ul class="feature-list">
+          <li><span class="code-inline">strzałka w prawo</span> / <span class="code-inline">spacja</span> - następny slajd</li>
+          <li><span class="code-inline">strzałka w lewo</span> - poprzedni slajd</li>
+          <li><span class="code-inline">&darr;</span> / <span class="code-inline">&uarr;</span> - przewijanie zbyt wysokiego slajdu</li>
+          <li><span class="code-inline">F</span> - tryb pełnoekranowy (fullscreen)</li>
+          <li><span class="code-inline">D</span> - jasny / ciemny motyw</li>
+          <li><span class="code-inline">T</span> - notatki trenera (toggle)</li>
+          <li><span class="code-inline">Home</span> / <span class="code-inline">End</span> - pierwszy / ostatni slajd</li>
+        </ul>
+        <div class="note-box" style="margin-top:1rem">Kliknięcie w lewą połowę ekranu: wstecz. Kliknięcie w prawą: dalej.</div>
+      </div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Ustalenia: pytania w trakcie, nie na koniec</li>
+      <li>Uczestnicy robią u siebie to samo co ty - przypominaj o tym</li>
+      <li>Przerwy: banner + dźwięk; 14:45 tylko na prośbę grupy</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Pokaż klawisz F i T na żywo</li>
+      <li>Pokaż, że klikanie po ekranie też działa</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Czy grupa rozumie format pracy</li>
+      <li>Czy nie ma pytań organizacyjnych</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 4: MAPA PROCESU ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Kanon całego kursu</div>
+    <h2>Jak pracujemy przez 3 dni</h2>
+    <p class="subtitle">Mapa procesu budowy aplikacji - odświeżana każdego ranka</p>
+    <div class="proc-map">
+      <div class="proc-step active"><div class="ps-num">0</div><div class="ps-title">Narzędzia i harnessy</div><div class="ps-desc">Claude Code, Codex, OpenCode, Antigravity; AGENTS/CLAUDE.md, MCP, skills, sub-agenci, uprawnienia</div></div>
+      <div class="proc-step active"><div class="ps-num">1</div><div class="ps-title">Ideacja + PRD</div><div class="ps-desc">Specyfikacja, funkcjonalności, dyskusja grupowa</div></div>
+      <div class="proc-step optional"><div class="ps-num">2</div><div class="ps-title">Wireframes</div><div class="ps-desc">Opcjonalne, model generujący obrazy</div></div>
+      <div class="proc-step"><div class="ps-num">3</div><div class="ps-title">Design Guidelines</div><div class="ps-desc">Research strony, design tokens, assety</div></div>
+      <div class="proc-step"><div class="ps-num">4</div><div class="ps-title">ADR</div><div class="ps-desc">Decyzje techniczne: stack, struktury danych, flow</div></div>
+      <div class="proc-step"><div class="ps-num">5</div><div class="ps-title">Plan</div><div class="ps-desc">Macierz zależności, agenci równolegli</div></div>
+      <div class="proc-step"><div class="ps-num">6</div><div class="ps-title">Implementacja z TDD</div><div class="ps-desc">Testy PRZED kodem, testy manualne agenta, LLM testowany na żywo</div></div>
+      <div class="proc-step"><div class="ps-num">7</div><div class="ps-title">Debugging</div><div class="ps-desc">Diagnoza, naprawa, weryfikacja</div></div>
+      <div class="proc-step"><div class="ps-num">8</div><div class="ps-title">Live demo + nowe funkcje</div><div class="ps-desc">Prezentacja, rozszerzenia</div></div>
+    </div>
+    <div class="note-box" style="margin-top:1rem">
+      <strong>Rytm kursu:</strong> zwykle 2 dni przygotowujemy wszystko, a trzeciego dnia agenci realizują cały plan.
+      <strong>Dzień 1</strong> = kroki <span class="badge">0</span> <span class="badge">1</span> <span class="badge">2 (opcjonalnie)</span>; plan minimum: dojść do ADR <span class="badge blue">4</span>. ADR i inicjalizację zwykle kończymy rano w dniu 2.
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 5: MODUŁ 1.1 OPENER ============ -->
+<section class="slide dark">
+  <div class="slide-body title-body">
+    <div class="kicker">Moduł 1.1</div>
+    <h1>Wprowadzenie<br>i konfiguracja</h1>
+    <div class="subtitle" data-mod-range="0">09:00 - 10:30</div>
+    <div class="title-meta">
+      <div>Cel: gotowe środowisko</div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Zaczynamy od poznania grupy i kontekstu</li>
+      <li>Potem: co to AI w programowaniu w 2026</li>
+      <li>Na koniec modułu: każdy ma działające środowisko</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Otwórz dashboard ankiety: course-materials/survey/dashboard/index.html (link na slajdzie ankiety)</li>
+      <li>Mieć gotowe repo kursowe do sklonowania</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Czy wszyscy mają dostęp do VM Windows Server 2022</li>
+      <li>Czy terminal jest otwarty i gotowy</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 6: DOŚWIADCZENIA ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1</div>
+    <h2>Doświadczenia uczestników</h2>
+    <p class="subtitle">Krótka runda zapoznawcza - 2 minuty na osobę</p>
+    <div class="cards">
+      <div class="card"><div class="card-title">Twój tech stack</div><p>Z jakimi technologiami pracujesz na co dzień? (język, framework, baza danych)</p></div>
+      <div class="card amber"><div class="card-title">Doświadczenie z AI</div><p>Czy używasz już narzędzi AI w programowaniu? Jakich? (Copilot, ChatGPT, Claude, inne)</p></div>
+      <div class="card ok"><div class="card-title">Oczekiwania</div><p>Czego oczekujesz od tego kursu? Jaki problem chcesz rozwiązać?</p></div>
+      <div class="card warn"><div class="card-title">Obawy</div><p>Czy masz jakieś obawy? Co Cię niepokoi w pracy z agentami AI?</p></div>
+    </div>
+    <div class="note-box" style="margin-top:1rem"><strong>Trener:</strong> zapisuj odpowiedzi na flipcharcie lub w notatniku - wrócimy do nich w module 1.4 przy planowaniu projektu.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 7: AI W PROGRAMOWANIU 2026 ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1</div>
+    <h2>AI w programowaniu 2026: agenci, nie asystenci</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="muted">Ewolucja narzędzi</h3>
+        <div class="timeline">
+          <div class="timeline-item"><div class="timeline-time">2018</div><div>Autocomplete (IntelliSense, TabNine)</div></div>
+          <div class="timeline-item"><div class="timeline-time">2021</div><div>Copilot - sugestie w edytorze</div></div>
+          <div class="timeline-item"><div class="timeline-time">2023</div><div>Chat z kodem (ChatGPT, Claude)</div></div>
+          <div class="timeline-item"><div class="timeline-time">2024-25</div><div>Agenty kodujące (Claude Code, Cursor)</div></div>
+          <div class="timeline-item"><div class="timeline-time">2026</div><div><strong>Zespoły agentów AI</strong></div></div>
+          <div class="timeline-item"><div class="timeline-time">Kierunek</div><div><strong>dark factory</strong> - trend w stronę autonomicznego procesu wytwarzania oprogramowania, w którym agenci pracują ciągle, a człowiek nadzoruje wyniki</div></div>
+        </div>
+      </div>
+      <div>
+        <h3 class="accent">Agent vs asystent</h3>
+        <div class="cards" style="grid-template-columns:1fr">
+          <div class="card"><div class="card-title">Asystent</div>
+            <ul class="feature-list">
+              <li>Sugeruje fragmenty kodu</li>
+              <li>Odpowiada na pytania</li>
+              <li>Człowiek integruje wynik z projektem</li>
+            </ul>
+          </div>
+          <div class="card ok"><div class="card-title">Agent</div>
+            <ul class="feature-list check">
+              <li>Planuje i wykonuje zadania; czyta, pisze, testuje i debuguje kod</li>
+              <li>Weryfikuje swoje działanie, pracuje w pętli</li>
+              <li>Może działać autonomicznie - lokalnie lub na serwerze</li>
+              <li>Wyzwalany zdarzeniami, cronem lub heartbeatem (np. co 30-60 min)</li>
+              <li>Może modyfikować własne ustawienia i pliki konfiguracyjne</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 8: TRENDY I CASE STUDIES ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1</div>
+    <h2>Trendy i case studies</h2>
+    <div class="cards">
+      <div class="card amber"><div class="card-title">Rola człowieka się zmienia</div>
+        <p>Mniej kodowania, więcej <strong>architektury i weryfikacji</strong>. Trzy nowe role:</p>
+        <ul class="feature-list">
+          <li><strong>Orkiestrator</strong> - dzieli i opisuje zadania, steruje flotą agentów (nowy tech lead)</li>
+          <li><strong>Budowniczy infrastruktury</strong> - CI/CD, MCP, VM, sandboxy, kontrola kosztów</li>
+          <li><strong>Ekspert dziedzinowy</strong> - opisuje funkcjonalność, dostaje działający software</li>
+        </ul>
+        <p style="margin-top:.4rem"><strong>Atut managerów:</strong> delegowanie, dzielenie zadań, feedback to teraz cenne umiejętności!</p>
+      </div>
+      <div class="card"><div class="card-title">Modele lokalne i open-weight</div>
+        <ul class="feature-list">
+          <li>Najlepsze modele open-weight 2026 (GLM-5.2, Kimi K2.6, DeepSeek V4, Minimax M3) są już blisko czołówki - część niemal jak Opus.</li>
+          <li>ALE <strong>open != local</strong>: najlepsze open-weight są ogromne (setki miliardów parametrów, wymagają serwerowych GPU), nie odpalisz ich na laptopie.</li>
+          <li>Realnie lokalnie (Ollama, vLLM, LM Studio): mniejsze modele jak Gemma 4, Qwen 3.6 - dobre do prywatności / pracy offline (air-gapped), słabsze od modeli chmurowych.</li>
+        </ul>
+      </div>
+      <div class="card warn"><div class="card-title">Krajobraz 2026</div>
+        <ul class="feature-list">
+          <li><strong>OpenAI</strong> - GPT-5.6 Sol/Terra/Luna, ChatGPT Work, Codex</li>
+          <li><strong>Anthropic</strong> - Claude Fable 5 (redeploy 01.07)</li>
+          <li><strong>xAI</strong> - Grok 4.5 (premiera 08.07); w UE początkowo tylko przez Cursor i OpenRouter, pełny rollout w połowie lipca</li>
+          <li><strong>Z.ai</strong> - GLM-5.2 + ZCode (1M kontekst, MIT)</li>
+          <li><strong>Google</strong> - Antigravity 2.0: desktop app + CLI (zastąpiło Gemini CLI)</li>
+          <li><a href="https://arena.ai/leaderboard/code/webdev">LMArena</a> - ranking modeli wg głosów ludzi</li>
+        </ul>
+      </div>
+      <div class="card"><div class="card-title">Od 1 do wielu</div>
+        <p>Pojedynczy agent dobrze wykonuje jedno zadanie. <strong>Zespół agentów</strong> rozdziela role: orchestrator planuje, specjaliści wykonują, krytyk weryfikuje.</p>
+      </div>
+      <div class="card ok"><div class="card-title">TDD z agentem</div>
+        <p>Agent pisze testy PRZED implementacją. Unit testy mockują zależności, integracyjne tylko zewnętrzny LLM, a E2E i testy manualne sprawdzają realny stos.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 8a: AGENTCI ASYNCHRONICZNI ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1 | Trendy 2026</div>
+    <h2>Agenci asynchroniczni: chmura i mobilność</h2>
+    <div class="cards">
+      <div class="card amber"><div class="card-title">Delegowanie w tle</div>
+        <p>Agenci stają się asynchroniczni: delegujesz zadanie w chmurze lub z telefonu i odbierasz gotowy PR później. Nie blokujesz terminala, nie czekasz na odpowiedź.</p>
+      </div>
+      <div class="card warn"><div class="card-title">Agent 24/7 w chmurze</div>
+        <p>Agent działający ciągle na VPS lub w kontenerze zwiększa autonomię, ale wymaga <strong>izolacji, limitów i przeglądu zmian przed produkcją</strong>. Bez nadzoru może wprowadzić poważne błędy.</p>
+      </div>
+      <div class="card ok"><div class="card-title">Z telefonu</div>
+        <p>Delegujesz zadanie z aplikacji mobilnej, agent pracuje w chmurze na Twoim repozytorium. Odbierasz gotowy pull request, gdy jesteś z powrotem przy komputerze.</p>
+      </div>
+      <div class="card"><div class="card-title">Implikacja dla zespołu</div>
+        <p>Asynchroniczność zmienia tryb pracy: z edytora w czasie rzeczywistym na <strong>kolejkę zadań</strong> i code review gotowych wyników. Nadzór staje się kluczowy.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 8b: MULTIMODALNOŚĆ - SCREENSHOTY I HTML ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1 | Trendy 2026</div>
+    <h2>Multimodalność: screenshoty i HTML jako warstwa prezentacji</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Screenshot jako kontekst</h3>
+        <div class="card ok"><p>Screenshot bywa wygodniejszy do przekazania modelowi <strong>układu, kolorów i stanu UI</strong>; koszt i jakość zależą od rozdzielczości oraz modelu.</p>
+        <ul class="feature-list" style="margin-top:.4rem">
+          <li>Jeden obraz zastępuje akapit opisu UI</li>
+          <li>Model widzi layout, a nie tylko tekst</li>
+          <li>Model nie zawsze poprawnie odczyta drobne szczegóły interfejsu</li>
+          <li>Przydatne przy debugowaniu UI i analizie błędów wizualnych</li>
+        </ul></div>
+      </div>
+      <div>
+        <h3 class="accent">HTML z Markdown</h3>
+        <div class="card amber"><p>Markdown zostaje <strong>formatem źródłowym</strong>, a agent może wygenerować z niego czytelny, interaktywny HTML.</p>
+        <ul class="feature-list" style="margin-top:.4rem">
+          <li>PRD, ADR, plan - czytelne w przeglądarce</li>
+          <li>Interaktywne diagramy zamiast statycznego tekstu</li>
+          <li>Źródło w git (Markdown), prezentacja w HTML</li>
+          <li>Dokumentacja żyje razem z kodem</li>
+        </ul></div>
+      </div>
+    </div>
+    <div class="note-box" style="margin-top:1rem"><strong>Na tym kursie:</strong> PRD i ADR piszemy w Markdown, a ta prezentacja jest generowanym HTML-em. Zobaczysz ten wzorzec wielokrotnie.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 8c: CASE STUDIES ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1</div>
+    <h2>Case studies: solo-dev i wielki enterprise</h2>
+    <p class="subtitle">Dwie skrajności, ten sam kierunek - obie w pełni stawiają na agentów.</p>
+    <div class="cards">
+      <div class="card ok"><div class="card-title">Solo-dev: OpenClaw / Peter Steinberger</div>
+        <ul class="feature-list">
+          <li>OpenClaw - najszybciej rosnący projekt w historii GitHuba (start koniec XI 2025): 220k+ gwiazdek, 790 kontrybutorów.</li>
+          <li><strong>50 równoległych agentów Codex</strong> do triażu PR: każdy zwraca raport JSON, wszystkie 50 analizowanych w jednej sesji (dedup, auto-merge, auto-close) - bez wektorowej bazy, przez <a href="https://developers.openai.com/codex/subagents#process-csv-batches-with-subagents-experimental">Codex CSV loop</a>.</li>
+          <li><strong>Tysiące commitów dziennie</strong> - w topowych dniach <strong>2,6-2,9 tys.</strong> z wielu agentów równolegle na 2 komputerach.</li>
+          <li>Twórca (<a href="https://x.com/steipete">@steipete</a>) dołączył do OpenAI (II 2026).</li>
+          <li>Jego workflow: <a href="https://steipete.me/posts/2025/optimal-ai-development-workflow">Optimal AI Dev Workflow</a> &middot; <a href="https://steipete.me/posts/2025/shipping-at-inference-speed">Shipping at Inference Speed</a></li>
+          <li>Link: <a href="https://github.com/steipete">github.com/steipete</a> - i relacja Łukasza: <a href="https://edukey.ai/pl/blog/10-dni-z-openclaw-i-claude-opus-46-ai-rozwija-sie-szybciej-niz-twoj-zespol">10 dni z OpenClaw (edukey.ai)</a></li>
+        </ul>
+      </div>
+      <div class="card amber"><div class="card-title">Enterprise: Microsoft przepisuje C/C++ na Rust</div>
+        <ul class="feature-list">
+          <li>Cel (Galen Hunt, Principal SW Engineer, CoreAI): <strong>wyeliminować cały kod C i C++ z Microsoftu do 2030 r.</strong>, przepisując go na Rust.</li>
+          <li>Strategia: <strong>AI + algorytmy</strong> - graf nad kodem źródłowym w wielkiej skali + agenci AI robiący modyfikacje kodu masowo.</li>
+          <li>North Star: <strong>"1 inżynier, 1 miesiąc, 1 milion linii kodu"</strong>.</li>
+          <li>Link: <a href="https://www.linkedin.com/posts/galenh_principal-software-engineer-coreai-microsoft-activity-7407863239289729024-WTzf">post Galena Hunta na LinkedIn</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 9: KORZYŚCI VS RYZYKA ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1</div>
+    <h2>Korzyści vs ryzyka</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent3">Korzyści</h3>
+        <ul class="feature-list check">
+          <li><strong>Szybkość dostarczania</strong> - scaffolding, boilerplate, refaktoryzacja w minuty</li>
+          <li><strong>Mniej powtarzalnej pracy</strong> - agent przejmuje CRUD, testy, dokumentację</li>
+          <li><strong>Nauka nowych wzorców</strong> - agent pokazuje rozwiązania, które sam byś przegapił</li>
+          <li><strong>Eksploracja</strong> - szybkie prototypowanie pomysłów</li>
+          <li><strong>Dokumentacja na bieżąco</strong> - CLAUDE.md, ADR, komentarze generowane w locie</li>
+          <li><strong>Projekty, na które nie było czasu</strong> - dziś realne do zrobienia</li>
+          <li><strong>Startupy, MVP i PoC</strong> - nigdy nie było prościej ich zbudować</li>
+          <li><strong>Kompensacja kompetencji</strong> - BE/SQL dev generuje ładny UI, FE dev tworzy sobie backend</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="danger">Ryzyka</h3>
+        <ul class="feature-list cross">
+          <li><strong>Więcej bugów i rework</strong> - kod powstaje szybciej, ale badania notują więcej defektów i poprawek na produkcji (dane z 2025; dziś modele są lepsze)</li>
+          <li><strong>Więcej kodu &ne; więcej wartości</strong> - rośnie dług techniczny, legacy i koszt utrzymania</li>
+          <li><strong>Halucynacje</strong> - agent zmyśla API, funkcje, biblioteki, które nie istnieją</li>
+          <li><strong>Context rot</strong> - w długich sesjach agent traci kontekst, gubi wymagania</li>
+          <li><strong>Koszty</strong> - tokeny, wywołania API, mogą rosnąć niekontrolowanie</li>
+          <li><strong>Fałszywe poczucie bezpieczeństwa</strong> - Agent: „testy ok" -&gt; błędy na prod</li>
+          <li><strong>Zależność</strong> - bez agenta trudniej pracować (atrofia umiejętności)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note-box"><strong>Mitygacja:</strong> weryfikacja, testy, code review, świadome zarządzanie kontekstem. O tym cały kurs.</div>
+    <div class="note-box" style="margin-top:.5rem"><strong>Co mówią badania:</strong>
+      <ul class="feature-list" style="margin-top:.3rem;font-size:.85rem">
+        <li><strong>Krzywa J</strong> - produktywność spada na 1-2 miesiące przy nauce nowego workflow</li>
+        <li><strong>Zanik pamięci mięśniowej</strong> do ręcznego kodu jest realny - ale czy kiedyś będziemy znów pisać kod ręcznie?</li>
+        <li><strong>Mierz własne ROI:</strong> velocity, issues/tickety, liczba bugów, poprawki i uwagi na code review</li>
+        <li><strong>Źródła:</strong> <a href="https://www.youtube.com/watch?v=JvosMkuNxF8">Stanford (100k+ dev)</a> &middot; <a href="https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/">METR 2025</a> &middot; <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5842302">SSRN: ukryte koszty GenAI</a> &middot; <a href="https://arxiv.org/abs/2509.19708">arXiv 2025 (Indie)</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 10: ŚRODOWISKO - DOSTĘP DO VM ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1 | Weryfikacja środowiska</div>
+    <h2>Twoja VM - dostęp i zasady pracy</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Logowanie (dane od trenera)</h3>
+        <ul class="feature-list">
+          <li>Każdy dostaje: <strong>adres IP + login + hasło</strong> (na czacie Zoom)</li>
+          <li>Połączenie: <strong>Remote Desktop</strong> (Win: <span class="code-inline">mstsc</span>, mac: aplikacja Windows App)</li>
+          <li>Windows Server 2022, wszystkie narzędzia preinstalowane</li>
+          <li>Na VM wszystko działa <strong>dokładnie tak, jak na pokazach trenera</strong></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent">VM czy własny komputer?</h3>
+        <div class="card ok"><ul class="feature-list">
+          <li><strong>Zalecane: VM</strong> - identyczne środowisko, zero niespodzianek, trener pomoże od ręki</li>
+        </ul></div>
+        <div class="note-box" style="margin-top:.6rem"><strong>Praca lokalna = na własne ryzyko.</strong> Możesz sklonować repo także u siebie, ale lokalne środowisko może się różnić - debugowanie różnic tylko, jeśli starczy czasu (najlepiej po kursie). Dobry układ: na kursie VM, po kursie powtórka lokalnie.</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 11: ŚRODOWISKO - NARZĘDZIA ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1 | Weryfikacja środowiska</div>
+    <h2>Narzędzia na Twojej VM</h2>
+    <p class="subtitle">Windows Server 2022 - wszystko preinstalowane</p>
+    <div class="cards">
+      <div class="card ok"><div class="card-title">Główne narzędzia</div>
+        <ul class="feature-list">
+          <li><strong>Claude Desktop</strong> - graficzny klient, chat z kodem</li>
+          <li><strong>Claude Code CLI</strong> - terminal, główne narzędzie kursu</li>
+          <li><strong>Node.js + npm</strong> - runtime i menedżer pakietów</li>
+          <li><strong>Git</strong> - kontrola wersji</li>
+        </ul>
+      </div>
+      <div class="card amber"><div class="card-title">Alternatywne agenty</div>
+        <ul class="feature-list">
+          <li><strong>Codex</strong> - agent OpenAI (desktop + CLI)</li>
+          <li><strong>OpenCode</strong> - open source, wielu dostawców</li>
+          <li><strong>Antigravity 2.0</strong> - platforma agentowa Google: desktop app + CLI (zastąpiła Gemini CLI 18.06)</li>
+        </ul>
+      </div>
+      <div class="card"><div class="card-title">ACP i tryb offline</div>
+        <ul class="feature-list">
+          <li><strong>ACP</strong> - pozwala uruchomić Claude Code, Codex lub OpenCode wewnątrz IDE jako ten sam agent CLI</li>
+          <li><strong>Air-gapped</strong> - Zed i OpenCode mogą pracować z lokalnym modelem bez chmury</li>
+        </ul>
+      </div>
+      <div class="card"><div class="card-title">Edytory</div>
+        <ul class="feature-list">
+          <li><strong>micro</strong> - ustawiony jako <span class="code-inline">$EDITOR</span>, terminalowy</li>
+          <li><strong>Lite XL</strong> - lekki edytor GUI</li>
+          <li><strong>IntelliJ</strong> - uwaga: na VM działa wolno, na co dzień lepszy micro / Lite XL</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note-box" style="margin-top:.8rem"><strong>Harness</strong> (uprząż) = pętla agenta + narzędzia + zarządzanie kontekstem wokół modelu. Claude Code, Codex, OpenCode i Antigravity to harnessy - model jest tylko silnikiem i w różnych harnessach działa różnie.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 11b: FORK + CLONE + BRANCH ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1 | Weryfikacja środowiska</div>
+    <h2>Fork, clone i branch - start pracy z repo</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Kroki startowe (RAZEM)</h3>
+        <ol class="feature-list">
+          <li><strong>Fork</strong> repo kursowego na swoje konto GitHub</li>
+          <li><strong>Clone</strong> swojego forka na VM</li>
+          <li>Dodaj <strong>upstream</strong> (repo trenera) - stąd pobierzesz aktualizacje</li>
+          <li>Utwórz <strong>branch roboczy</strong> - aplikację budujemy zawsze na branchu, <span class="code-inline">main</span> zostaje na materiały</li>
+          <li>Uruchom <span class="code-inline">claude</span> w katalogu projektu</li>
+        </ol>
+        <div class="note-box" style="margin-top:.6rem"><strong>Aktualizacje od trenera</strong> (w trakcie i po kursie - nowe przykłady, historia czatu, podsumowania): <span class="code-inline">git checkout main &amp;&amp; git pull upstream main</span></div>
+      </div>
+      <div>
+        <h3 class="accent">Kluczowe komendy</h3>
+        <div class="code-block">cd C:\Users\Participant\DEV
+git clone https://github.com/TWOJ-LOGIN/claude-code-course-jsystems-2026-07.git
+cd claude-code-course-jsystems-2026-07</div>
+        <p style="margin-top:.6rem;font-size:.95rem"><strong class="accent">Tożsamość i autoryzacja GitHub</strong> <span style="font-size:.85rem;opacity:.7">— jednorazowo, na starcie</span></p>
+        <div class="code-block" style="margin-top:.2rem">git config --global user.name "Imię Nazwisko"
+git config --global user.email "twoj@email.com"
+git config --global init.defaultBranch main</div>
+        <div class="code-block" style="margin-top:.4rem">gh auth login
+# &gt; GitHub.com | HTTPS | Authenticate Git: Yes
+# &gt; Paste an authentication token -&gt; github.com/settings/tokens
+#   scopes: repo, read:org, workflow
+gh auth setup-git      # tylko jeśli wybrałeś "No" wyżej</div>
+        <div class="note-box" style="margin-top:.4rem">Alternatywa ręczna: klucz SSH (<span class="code-inline">ssh-keygen</span> + dodanie w GitHub Settings), wtedy remote jako <span class="code-inline">git@github.com:...</span></div>
+        <div class="code-block" style="margin-top:.4rem">git remote add upstream https://github.com/LucasMatuszewski/claude-code-course-jsystems-2026-07.git
+git checkout -b moja-praca</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 12: PIERWSZE URUCHOMIENIE ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1</div>
+    <h2>Pierwsze uruchomienie Claude Code</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Co się dzieje przy starcie</h3>
+        <ul class="feature-list">
+          <li>Agent wczytuje <span class="code-inline">CLAUDE.md</span> z katalogu (jeśli istnieje)</li>
+          <li>Przeskanuje strukturę projektu</li>
+          <li>Sprawdzi uprawnienia i konfigurację</li>
+          <li>Pokaże prompt interaktywny</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent">Pierwsza interakcja</h3>
+        <div class="code-block">ile wolnego miejsca zostało na dysku C:? Jaki mamy procesor i ile wolnego RAM?</div>
+        <div class="code-block" style="margin-top:.4rem">policz tokeny pliku README.md wg różnych
+tokenizerów. Wyjaśnij czym jest token
+i tokenizer oraz dlaczego polski tekst
+zajmuje więcej kontekstu niż angielski</div>
+        <div class="code-block" style="margin-top:.4rem">/model</div>
+        <div class="code-block" style="margin-top:.4rem">/context</div>
+        <p style="margin-top:.8rem">Agent sam uruchamia komendy systemowe i czyta pliki projektu - to różni go od zwykłego chatu. Więcej komend <span class="code-inline">/</span> poznamy w module 1.2.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 13: WYNIKI ANKIETY ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1</div>
+    <h2>Wyniki ankiety przed szkoleniem</h2>
+    <p class="subtitle">Kim jesteśmy jako grupa - <a href="../survey/dashboard/index.html">dashboard ankiety</a></p>
+    <div class="cards">
+      <div class="card amber"><div class="card-title">Poziom doświadczenia</div><p>Rozkład doświadczenia w grupie: kto pracował z AI w programowaniu, kto zaczyna od zera.</p></div>
+      <div class="card"><div class="card-title">Tech stack</div><p>Technologie, na których pracujecie na co dzień - pod nie dobierzemy przykłady i ścieżki projektu.</p></div>
+      <div class="card ok"><div class="card-title">Oczekiwania</div><p>Czego oczekujecie od kursu - do tych punktów będziemy wracać przez 3 dni.</p></div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Omów rozkład doświadczenia i technologie grupy</li>
+      <li>Zwróć uwagę na uczestników Java i osoby mniej techniczne</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Otwórz dashboard ankiety w OSOBNEJ karcie (link w podtytule)</li>
+      <li>Dostosuj tempo i przykłady do wyników</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Czy pojawiły się nowe odpowiedzi ankiety od piątku</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 14: RAZEM 1.1 ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.1</div>
+    <h2><span class="badge lab">RAZEM</span> Pierwsze uruchomienie</h2>
+    <p class="subtitle">Robimy to teraz wszyscy - ja pokazuję, Ty powtarzasz u siebie</p>
+    <div class="two-col">
+      <div>
+        <h3 class="accent">Zrób u siebie</h3>
+        <ul class="feature-list">
+          <li>Sklonuj repozytorium kursowe</li>
+          <li>Uruchom <span class="code-inline">claude</span> w katalogu projektu</li>
+          <li>Zapytaj agenta o dysk, procesor, tokeny (poprzedni slajd)</li>
+          <li>Wypróbuj <span class="code-inline">/model</span> i <span class="code-inline">/context</span></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent3">Zanim ruszymy dalej, upewnij się, że</h3>
+        <ul class="feature-list check">
+          <li>Claude Code CLI działa bez błędów</li>
+          <li>Repo kursowe jest sklonowane i agent w nim pracuje</li>
+          <li>Dostałeś przynajmniej jedną odpowiedź opartą o Twoje pliki</li>
+        </ul>
+        <div class="note-box" style="margin-top:.8rem">Coś nie działa? Zgłoś od razu - naprawimy zanim pójdziemy dalej.</div>
+      </div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Hands-on - każdy uruchamia Claude Code po raz pierwszy</li>
+      <li>Pracujcie we własnym tempie, pytajcie jeśli coś nie działa</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Krąż po grupie, pomagaj z problemami środowiska</li>
+      <li>Sprawdź uwierzytelnienie Claude Code; klucz OPENROUTER_API_KEY zweryfikujemy osobno dla budowanej aplikacji</li>
+      <li>Uczestnicy Java: uruchom też Claude Code, nie IntelliJ</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Czy każdy ma CLI uruchomione</li>
+      <li>Czy /model i /context działają</li>
+      <li>Czy repo jest sklonowane</li>
+      <li>Zapisz kto ma problemy - pomóż przed przerwą</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 15: MODUŁ 1.2 OPENER ============ -->
+<section class="slide dark">
+  <div class="slide-body title-body">
+    <div class="kicker">Moduł 1.2</div>
+    <h1>Tryby pracy<br>i kluczowe funkcje</h1>
+    <div class="subtitle" data-mod-range="1">10:45 - 13:00</div>
+    <div class="title-meta">
+      <div>Cel: swobodna praca w każdym trybie</div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Przechodzimy do trybów pracy i komend</li>
+      <li>To moduł intensywny - dużo komend do zapamiętania</li>
+      <li>Pokazuj na żywo każdą komendę</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Pokaż na żywo różnicę CLI interaktywny vs -p</li>
+      <li>Pokaż lokalną sesję Desktop i tryb sandbox Claude Code; na Windows sandbox wymaga WSL2</li>
+      <li>Miej gotowe przykłady /compact, /permissions</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Czy grupa rozumie różnicę między trybami</li>
+      <li>Czy nie ma pytań po przerwie obiadowej</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 16: CLI INTERAKTYWNY VS -P ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2 | Tryby pracy</div>
+    <h2>CLI interaktywny vs tryb <span class="code-inline">-p</span></h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">CLI interaktywny</h3>
+        <div class="card"><ul class="feature-list check">
+          <li>Sesja dwukierunkowa, agent pamięta kontekst</li>
+          <li>Komendy <span class="code-inline">/</span> dostępne (<span class="code-inline">/model</span>, <span class="code-inline">/compact</span> itd.)</li>
+          <li>Można wglądać w pliki, edytować, iterować</li>
+          <li>Idealny do codziennej pracy i developmentu</li>
+        </ul></div>
+        <div class="code-block" style="margin-top:.8rem">claude</div>
+      </div>
+      <div>
+        <h3 class="accent">Tryb <span class="code-inline">-p</span> (print)</h3>
+        <div class="card"><ul class="feature-list check">
+          <li>Jednorazowe zapytanie, wynik do stdout</li>
+          <li>Brak sesji, brak kontekstu z poprzednich zapytań</li>
+          <li>Można pipe'ować (wejście/wyjście)</li>
+          <li>Idealny do skryptów, CI/CD, automatyzacji</li>
+        </ul></div>
+        <div class="code-block" style="margin-top:.8rem">claude -p "przetłumacz README.md na angielski"</div>
+        <div class="code-block" style="margin-top:.4rem">cat error.log | claude -p "wyjaśnij błąd"</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 17: DESKTOP APP ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2 | Tryby pracy</div>
+    <h2>Claude Desktop App</h2>
+    <div class="cards">
+      <div class="card ok"><div class="card-title">Chat z kodem</div>
+        <p>Graficzny interfejs do rozmowy z agentem. Wizualne zarządzanie plikami, podgląd diff, sesje w zakładkach.</p>
+      </div>
+      <div class="card amber"><div class="card-title">Sesje lokalne, chmurowe i SSH</div>
+        <p>Desktop może uruchamiać sesje lokalnie, w chmurze albo przez SSH. Tryb sandbox Claude Code izoluje wykonanie; na Windows wymaga WSL2.</p>
+      </div>
+      <div class="card"><div class="card-title">Integracja z IDE</div>
+        <p>Desktop App współpracuje z edytorami kodu. Możesz mieć agenta obok edytora, bez przełączania okien.</p>
+      </div>
+      <div class="card warn"><div class="card-title">Kiedy używać</div>
+        <p>Do wizualnej pracy, prezentacji i debugowania z podglądem diff. Sandbox przydatny przy testowaniu niezweryfikowanego kodu.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 18: CLAUDE WEB ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2 | Tryby pracy</div>
+    <h2>Claude Web i remote environments</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Praca w przeglądarce</h3>
+        <ul class="feature-list">
+          <li>Chmurowa sesja pracująca na repozytorium GitHub</li>
+          <li>Repo jest klonowane do izolowanej maszyny Anthropic</li>
+          <li>Zmiany trafiają na osobny branch i mogą zakończyć się pull requestem</li>
+          <li>Przydatne, gdy pracujesz na wielu maszynach</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent">Remote Control i SSH</h3>
+        <ul class="feature-list">
+          <li>Remote Control pozwala sterować działającą sesją z innego urządzenia</li>
+          <li>SSH uruchamia sesję na wskazanym serwerze lub VM</li>
+          <li>To osobne mechanizmy od Claude Code Web</li>
+          <li>Uprawnienia i dostęp wynikają ze środowiska, w którym działa sesja</li>
+        </ul>
+        <div class="note-box" style="margin-top:.8rem">Na tym kursie pracujemy głównie w <strong>CLI</strong> na lokalnej VM. Web i Desktop jako uzupełnienie.</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 19: KIEDY KTÓRY TRYB ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2</div>
+    <h2>Kiedy który tryb - podsumowanie</h2>
+    <div class="cards">
+      <div class="card ok"><div class="card-title">CLI interaktywny</div>
+        <p class="accent3"><strong>Codzienna praca - i główny tryb na kursie</strong></p>
+        <ul class="feature-list">
+          <li>Development, refaktoryzacja</li>
+          <li>Debugowanie z pełnym kontekstem</li>
+          <li>Praca z repozytorium</li>
+        </ul>
+      </div>
+      <div class="card amber"><div class="card-title">CLI <span class="code-inline">-p</span></div>
+        <p class="accent"><strong>Skrypty i automatyzacja</strong></p>
+        <ul class="feature-list">
+          <li>CI/CD pipelines</li>
+          <li>Przetwarzanie batchowe</li>
+          <li>Generowanie dokumentacji</li>
+        </ul>
+      </div>
+      <div class="card"><div class="card-title">Desktop App</div>
+        <p class="accent2"><strong>Wizualna praca</strong></p>
+        <ul class="feature-list">
+          <li>Prezentacje i dema</li>
+          <li>Praca z sandbox</li>
+          <li>Gdy wolisz GUI nad terminalem</li>
+        </ul>
+      </div>
+      <div class="card warn"><div class="card-title">Claude Web</div>
+        <p class="danger"><strong>Praca na repozytorium w chmurze</strong></p>
+        <ul class="feature-list">
+          <li>Izolowana maszyna z repozytorium GitHub</li>
+          <li>Osobny branch i praca asynchroniczna</li>
+          <li>Dostęp z przeglądarki</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 20: KOMENDY /resume /compact ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2 | Kluczowe komendy (1/2)</div>
+    <h2>Zarządzanie sesją i kontekstem</h2>
+    <div class="cards">
+      <div class="card"><div class="card-title"><span class="code-inline">/resume</span></div>
+        <p>Wznawia poprzednią sesję. Agent odtwarza kontekst, historię rozmowy i stan projektu.</p>
+        <p style="margin-top:.5rem">Przydatne, gdy przerwałeś pracę i chcesz wrócić lub gdy przypadkowo zamknąłeś CLI.</p>
+      </div>
+      <div class="card amber"><div class="card-title"><span class="code-inline">/compact</span></div>
+        <p>Kompresuje kontekst sesji. Agent streszcza dotychczasową rozmowę, zachowując kluczowe informacje, a pomijając detale.</p>
+        <p style="margin-top:.5rem">Stosuj, gdy sesja robi się długa i agent zaczyna gubić wątki (context rot).</p>
+      </div>
+      <div class="card ok"><div class="card-title"><span class="code-inline">/rewind</span></div>
+        <p>Cofa rozmowę (i opcjonalnie stan) do wybranego wcześniejszego punktu - użyj go, gdy Ty albo agent popełnił błąd i chcesz wrócić do momentu sprzed niego.</p>
+      </div>
+    </div>
+    <div class="note-box" style="margin-top:1rem"><strong>Wskazówka:</strong> <span class="code-inline">/compact</span> i <span class="code-inline">/rewind</span> zmieniają tylko historię sesji w kontekście agenta - nie ruszają plików ani kodu. Do wersjonowania i cofania zmian w KODZIE służy git, nie te komendy.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 21: KOMENDY /context /model /permissions ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2 | Kluczowe komendy (2/2)</div>
+    <h2>Diagnostyka, modele i uprawnienia</h2>
+    <div class="cards">
+      <div class="card ok"><div class="card-title"><span class="code-inline">/context</span></div>
+        <p>Pokazuje strukturę kontekstu agenta: co widzi (system prompt, CLAUDE.md, otwarte pliki, historia sesji).</p>
+        <p style="margin-top:.5rem"><strong>Używaj</strong>, gdy agent dziwnie odpowiada - sprawdź, co naprawdę wie.</p>
+      </div>
+      <div class="card amber"><div class="card-title"><span class="code-inline">/model</span></div>
+        <p>Przełącza model (Fable / Opus / Sonnet / Haiku). Mocniejszy model = lepsze wyniki, ale drożej i wolniej.</p>
+        <p style="margin-top:.5rem"><strong>Używaj</strong>, gdy potrzebujesz innej jakości lub innego kosztu do konkretnego zadania.</p>
+      </div>
+      <div class="card warn"><div class="card-title"><span class="code-inline">/permissions</span></div>
+        <p>Reguły uprawnień: <span class="code-inline">allow</span> (bez pytania), <span class="code-inline">ask</span> (zawsze pyta), <span class="code-inline">deny</span> (nigdy). Zapisywane w <span class="code-inline">settings.json</span>.</p>
+        <p style="margin-top:.5rem"><strong>Używaj</strong>, gdy chcesz kontrolować, co agent może robić z Twoim systemem.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 21b: WIĘCEJ KOMEND ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2 | Kluczowe komendy</div>
+    <h2>Więcej komend wartych poznania</h2>
+    <div class="two-col">
+      <div>
+        <ul class="feature-list">
+          <li><span class="code-inline">/init</span> - agent analizuje projekt i sam generuje CLAUDE.md</li>
+          <li><span class="code-inline">/memory</span> - podgląd i edycja pamięci agenta (CLAUDE.md + auto-memory)</li>
+          <li><span class="code-inline">/mcp</span> - zarządzanie serwerami MCP (dzień 2)</li>
+          <li><span class="code-inline">/hooks</span> - podgląd hooków, czyli akcji na zdarzenia agenta</li>
+          <li><span class="code-inline">/plan</span> - tryb planowania: agent bada i proponuje, zanim cokolwiek zmieni</li>
+          <li><span class="code-inline">/btw</span> - szybkie pytanie na boku, bez zaśmiecania historii sesji</li>
+        </ul>
+      </div>
+      <div>
+        <ul class="feature-list">
+          <li><span class="code-inline">/code-review</span> - przegląd zmian w kodzie pod kątem błędów</li>
+          <li><span class="code-inline">/run</span> - uruchamia aplikację i sprawdza, czy zmiana faktycznie działa</li>
+          <li><span class="code-inline">/doctor</span> - diagnostyka instalacji i konfiguracji</li>
+          <li><span class="code-inline">/loop</span> - zadanie powtarzane cyklicznie (automatyzacja, dzień 3)</li>
+          <li><span class="code-inline">/schedule</span> - zaplanowane zadania (routines) w chmurze (<a href="https://code.claude.com/docs/en/scheduled-tasks">docs</a>)</li>
+          <li><span class="code-inline">/help</span> - pełna lista komend</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note-box" style="margin-top:.8rem"><strong>Prefiks <span class="code-inline">!</span></strong> (to nie komenda <span class="code-inline">/</span>): <span class="code-inline">!ls -a</span> lub <span class="code-inline">!npm run lint</span> uruchamia polecenie shell, a jego wynik trafia do kontekstu agenta.</div>
+    <div class="note-box" style="margin-top:.5rem">Proste, powtarzalne prompty zapiszesz jako <strong>własne komendy</strong> (<span class="code-inline">.claude/commands/</span>, nazwa folderu = grupa, np. <a href="https://github.com/LucasMatuszewski/claude-code-course-jsystems-2026-07/tree/main/.claude/commands/git">/git:commit</a>); do złożonych workflow lepsze są <strong>skills</strong> (dzień 2). <a href="https://code.claude.com/docs/en/slash-commands">docs: slash commands</a></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 22: MODELE ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2</div>
+    <h2>Modele w 2026: Claude i alternatywy</h2>
+    <p class="subtitle">Ceny API za 1M tokenów (wejście / wyjście), stan na 07.2026</p>
+    <div class="cards">
+      <div class="card warn"><div class="card-title">Claude Fable 5</div>
+        <p>Flagowy model Anthropic. $10 / $50, kontekst 1M tokenów, thinking zawsze włączony.</p>
+              </div>
+      <div class="card ok"><div class="card-title">Claude Opus 4.8</div>
+        <p>Koń roboczy do pracy agentowej: długie, autonomiczne zadania. $5 / $25, kontekst 1M.</p>
+              </div>
+      <div class="card"><div class="card-title">Claude Sonnet 5 / Haiku 4.5</div>
+        <p>Sonnet 5: $3 / $15 (promocja $2/$10 do 31.08). Haiku: $1 / $5. Do prostszych zadań i sub-agentów - do trudnej pracy nie dorównują Fable, Opusowi ani GPT-5.6 Sol.</p>
+              </div>
+      <div class="card amber"><div class="card-title">GPT-5.6 (OpenAI)</div>
+        <p>Trzy poziomy: <strong>Sol</strong> (flagowy, $5 / $30), <strong>Terra</strong> (średni), <strong>Luna</strong> (szybki i tani). Napędza Codex.</p>
+              </div>
+      <div class="card"><div class="card-title">Grok 4.5 (xAI)</div>
+        <p>$2 / $6, premiera 08.07. Początkowo bez dostępu w aplikacjach/API xAI w UE, ale dostępny przez Cursor i OpenRouter; pełny rollout UE oczekiwany w połowie lipca.</p>
+              </div>
+      <div class="card ok"><div class="card-title">GLM-5.2 (Z.ai)</div>
+        <p>Open source (MIT), 1M kontekstu, ~1/5 ceny Opusa. Świetne UI, dobry copywriting i autentyczne poczucie humoru to <strong>subiektywna ocena trenera po kilkudziesięciu godzinach pracy</strong>. Harness: ZCode.</p>
+              </div>
+    </div>
+    <div class="note-box" style="margin-top:.8rem"><span class="code-inline">OPENROUTER_API_KEY</span> daje budowanej aplikacji dostęp do wielu modeli. Nie uwierzytelnia Claude Code, który wymaga własnego konta/subskrypcji Claude albo <span class="code-inline">ANTHROPIC_API_KEY</span>.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 22b: LMARENA ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2 | Modele</div>
+    <h2>LMArena: sprawdzamy modele na żywo</h2>
+    <p class="subtitle"><a href="https://lmarena.ai">lmarena.ai</a> (po rebrandingu: arena.ai) - ranking modeli oparty na głosach ludzi, nie na benchmarkach</p>
+    <div class="cards">
+      <div class="card ok"><div class="card-title">Leaderboard i Elo</div>
+        <p>Modele mają ranking <strong>Elo</strong> jak szachiści - z milionów anonimowych porównań par odpowiedzi. Osobne kategorie: text, coding, webdev, vision.</p>
+      </div>
+      <div class="card amber"><div class="card-title">Arena battle</div>
+        <p>Wpisujesz prompt, dostajesz odpowiedzi <strong>dwóch anonimowych modeli</strong> obok siebie. Głosujesz na lepszą - dopiero potem poznajesz nazwy.</p>
+      </div>
+      <div class="card"><div class="card-title">Testujemy razem</div>
+        <p>Wrzucamy mój ulubiony prompt i oceniamy na żywo, który model poradzi sobie lepiej. Potem sprawdzamy, kto to był.</p>
+      </div>
+    </div>
+    <div class="note-box" style="margin-top:1rem">Leaderboard zmienia się co tydzień - to najszybszy sposób, by sprawdzić czy nowy model faktycznie jest dobry, zanim mu zaufasz w projekcie.</div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Elo z głosów ludzi vs benchmarki (które można "wytrenować")</li>
+      <li>Omów czołówkę leaderboardu i ciekawe modele</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Otwórz lmarena.ai na żywo, pokaż leaderboard i kategorie</li>
+      <li>Battle z Twoim zabawnym promptem - grupa głosuje</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Czy strona działa na łączu VM (fallback: pokaż u siebie)</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 23: ZARZĄDZANIE KONTEKSTEM ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2</div>
+    <h2>Zarządzanie kontekstem</h2>
+    <div class="cards">
+      <div class="card"><div class="card-title">Okno kontekstu</div>
+        <p>Ile agent może pamiętać na raz w jednej sesji. Im większe okno, tym więcej plików i historii się mieści.</p>
+        <p style="margin-top:.3rem;font-size:.85rem">Claude Fable / Opus / Sonnet: <strong>1M tokenów</strong>; Haiku: 200K; GLM-5.2: 1M. Pełny 1M w cenie standardowej (bez dopłat za długi kontekst), ale duży kontekst szybciej zjada limity i sprzyja context rot - nie zapychaj go bez potrzeby. Uwaga: polski tekst zużywa więcej tokenów niż angielski.</p>
+      </div>
+      <div class="card amber"><div class="card-title">Kompresja (<span class="code-inline">/compact</span>)</div>
+        <p>Streszcza historię sesji. Zachowuje kluczowe decyzje i pliki, odrzuca detale rozmowy. Przedłuża żywotność sesji.</p>
+      </div>
+      <div class="card warn"><div class="card-title">Context rot</div>
+        <p>Zjawisko degradacji jakości w długich sesjach. Agent zaczyna gubić wątki, zapomina wcześniejsze decyzje, odpowiada coraz bardziej ogólnikowo, powtarza to samo.</p>
+      </div>
+      <div class="card ok"><div class="card-title">Strategie</div>
+        <ul class="feature-list" style="margin-top:.3rem">
+          <li>Dziel duże zadania na krótsze sesje</li>
+          <li>Dziel CLAUDE.md / AGENTS.md na małe fragmenty (&lt;200 linii)</li>
+          <li>Stosuj <span class="code-inline">/compact</span> regularnie</li>
+          <li>Zaczynaj nową sesję dla nowego zadania</li>
+          <li>Deleguj z dużego modelu (Fable / Opus) do mniejszych modeli i osobnych agentów CLI (Codex, OpenCode, Grok, Agy)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 24: UPRAWNIENIA I SANDBOX ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2</div>
+    <h2>Uprawnienia: tryby pracy agenta</h2>
+    <p class="subtitle"><span class="code-inline">Shift+Tab</span> domyślnie przełącza: default → acceptEdits → plan; aktualny tryb widać w pasku stanu</p>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Tryby uprawnień</h3>
+        <ul class="feature-list">
+          <li><span class="code-inline">default</span> - odczyt bez pytania; edycje, komendy i sieć według reguł uprawnień</li>
+          <li><span class="code-inline">accept edits</span> - automatycznie akceptuje edycje plików, o resztę pyta</li>
+          <li><span class="code-inline">plan</span> - agent tylko czyta i planuje; zmiany dopiero po Twoim zatwierdzeniu</li>
+          <li><span class="code-inline">auto</span> - dostępny po spełnieniu dodatkowych warunków; klasyfikator ocenia ryzyko akcji</li>
+          <li><span class="code-inline">bypass permissions</span> - pełne pominięcie pytań o zgodę; tylko w izolowanym środowisku i po świadomym włączeniu</li>
+        </ul>
+        <div class="code-block" style="margin-top:.6rem">claude --permission-mode plan
+claude --dangerously-skip-permissions</div>
+      </div>
+      <div>
+        <h3 class="accent">Reguły i sandbox</h3>
+        <div class="card ok"><div class="card-title">Reguły w settings.json</div>
+          <p><span class="code-inline">allow</span> / <span class="code-inline">ask</span> / <span class="code-inline">deny</span> per narzędzie lub komenda - np. deny na <span class="code-inline">rm</span> i deploy, allow na testy i lint. Edytuj przez <span class="code-inline">/permissions</span>.</p>
+        </div>
+        <div class="card amber" style="margin-top:.6rem"><div class="card-title">Sandbox</div>
+          <p>Izolowane środowisko wykonania Claude Code. Na Windows sandbox wymaga WSL2.</p>
+        </div>
+        <div class="note-box" style="margin-top:.6rem"><strong>Zasada:</strong> minimalne uprawnienia na start, rozszerzaj świadomie. W Codex analogiczne tryby: read-only / auto / full access.</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 25: RAZEM 1.2 ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.2</div>
+    <h2><span class="badge lab">RAZEM</span> Tryby i komendy</h2>
+    <p class="subtitle">Przechodzimy przez to wspólnie - każdą komendę pokazuję u siebie, Ty robisz u siebie</p>
+    <div class="two-col">
+      <div>
+        <h3 class="accent">Zrób u siebie</h3>
+        <ul class="feature-list">
+          <li>Porozmawiaj z agentem w CLI interaktywnym</li>
+          <li>Wykonaj zapytanie w trybie <span class="code-inline">-p</span></li>
+          <li>Użyj <span class="code-inline">/compact</span> na dłuższej sesji</li>
+          <li>Sprawdź <span class="code-inline">/context</span> - co agent widzi?</li>
+          <li>Przełącz model przez <span class="code-inline">/model</span></li>
+          <li>Przełącz tryb uprawnień (<span class="code-inline">Shift+Tab</span>) i dodaj regułę w <span class="code-inline">/permissions</span></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent3">Zanim ruszymy dalej, upewnij się, że</h3>
+        <ul class="feature-list check">
+          <li>Wiesz, kiedy użyć CLI interaktywnego, a kiedy <span class="code-inline">-p</span></li>
+          <li>Rozumiesz co pokazuje <span class="code-inline">/context</span> i co robi <span class="code-inline">/compact</span></li>
+          <li>Masz min. 1 własną regułę allow lub deny</li>
+        </ul>
+        <div class="note-box" style="margin-top:.8rem">Eksperymentuj po swojemu - komendy niczego nie zepsują, a repo masz w gicie.</div>
+      </div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Eksperymentujcie z komendami, nie bójcie się</li>
+      <li>/permissions może wymagać restartu CLI</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Krąż, pomagaj szczególnie z /permissions</li>
+      <li>Pokaż na własnym ekranie przykład denyTools</li>
+      <li>Zwróć uwagę na uczestników Java</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Czy każdy przetestował /compact</li>
+      <li>Czy /context działa i jest zrozumiały</li>
+      <li>Czy model został przełączony</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 26: MODUŁ 1.3 OPENER ============ -->
+<section class="slide dark">
+  <div class="slide-body title-body">
+    <div class="kicker">Moduł 1.3</div>
+    <h1>Context Engineering<br>i konfiguracja agenta</h1>
+    <div class="subtitle" data-mod-range="2">13:30 - 14:45</div>
+    <div class="title-meta">
+      <div>Cel: skonfigurowany agent</div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>To najważniejszy moduł dnia</li>
+      <li>Context engineering to fundament pracy z agentami</li>
+      <li>CLAUDE.md = trwała pamięć agenta</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Pokaż przykładowy CLAUDE.md z własnego projektu</li>
+      <li>Pokaż AGENTS.md z tego kursu</li>
+      <li>Przygotuj dobry i zły przykład</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Czy grupa rozumie różnicę prompt vs context engineering</li>
+      <li>Czy nie ma pytań po obiedzie (energia może być niska)</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 27: OD PROMPT DO CONTEXT ENGINEERING ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.3</div>
+    <h2>Od prompt engineering do context engineering</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="muted">Prompt engineering</h3>
+        <div class="card"><p>Jak sformułować pojedyncze zapytanie, żeby dostać dobrą odpowiedź.</p>
+        <ul class="feature-list" style="margin-top:.4rem">
+          <li>"Zrefaktoruj ten moduł na async/await; publiczne API bez zmian, testy mają przechodzić"</li>
+          <li>"POST /orders zwraca 500 przy pustym body - znajdź przyczynę, napraw i dodaj test regresyjny"</li>
+          <li>Cały potrzebny kontekst upychasz w jednym prompcie - za każdym razem od nowa</li>
+        </ul></div>
+      </div>
+      <div>
+        <h3 class="accent">Context engineering</h3>
+        <div class="card amber"><p>Jak zbudować całe środowisko agenta, żeby <strong>systematycznie</strong> dostawać dobre wyniki.</p>
+        <ul class="feature-list" style="margin-top:.4rem">
+          <li>CLAUDE.md i AGENTS.md jako instrukcje</li>
+          <li>Konwencje, zasady, stack</li>
+          <li>Struktura projektu opisana dla agenta</li>
+          <li>Trwała pamięć między sesjami</li>
+        </ul></div>
+      </div>
+    </div>
+    <div class="note-box" style="margin-top:1rem"><strong>Kluczowa różnica:</strong> prompt engineering = pojedyncze zapytanie. Context engineering = środowisko, w którym agent działa i pracuje.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 28: CLAUDE.md I AGENTS.md ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.3</div>
+    <h2>CLAUDE.md i AGENTS.md - pamięć agenta</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">CLAUDE.md</h3>
+        <div class="card ok"><p>Plik instrukcji dla <strong>Claude Code</strong>. Agent wczytuje go automatycznie przy starcie.</p>
+        <p style="margin-top:.5rem"><strong>Poziomy:</strong></p>
+        <ul class="feature-list">
+          <li><span class="code-inline">./CLAUDE.md</span> - poziom projektu</li>
+          <li><span class="code-inline">~/.claude/CLAUDE.md</span> - poziom globalny</li>
+        </ul></div>
+      </div>
+      <div>
+        <h3 class="accent">AGENTS.md</h3>
+        <div class="card amber"><p>Wspólny, otwarty standard dla <strong>wielu agentów</strong>: Codex, OpenCode, Antigravity, Cursor i inne.</p>
+        <p style="margin-top:.5rem">Claude Code nie czyta go automatycznie - ale wystarczy <strong>zaimportować go w CLAUDE.md</strong> (jak załącznik w mailu):</p>
+        <div class="code-block" style="margin-top:.5rem"># CLAUDE.md
+@AGENTS.md
+
+## Instrukcje tylko dla Claude Code
+- Używaj sub-agentów fe / be / qa</div>
+        <p style="margin-top:.5rem;font-size:.85rem">Jedno źródło prawdy w AGENTS.md, zero duplikacji - dokładnie tak jest skonfigurowane repo kursowe.</p></div>
+      </div>
+    </div>
+    <div class="note-box" style="margin-top:1rem"><strong>Co zawierają:</strong> konwencje kodu, opis stacku, zasady nazewnictwa, strukturę projektu, wytyczne testowe, rzeczy których agent ma unikać.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 29: STRUKTURA KONTEKSTU ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.3</div>
+    <h2>Struktura kontekstu agenta</h2>
+    <p class="subtitle">Co składa się na to, co agent "wie" w danej chwili</p>
+    <div class="cards">
+      <div class="card"><div class="card-title">1. System prompt</div><p>Wbudowane instrukcje od dostawcy. Definiują zachowanie bazowe agenta.</p></div>
+      <div class="card"><div class="card-title">2. Konfiguracja</div><p>Model, uprawnienia (<span class="code-inline">allowedTools</span> / <span class="code-inline">denyTools</span>), tryb bezpieczeństwa.</p></div>
+      <div class="card amber"><div class="card-title">3. CLAUDE.md / AGENTS.md</div><p>Trwała pamięć agenta. Konwencje, zasady, opis projektu.</p></div>
+      <div class="card"><div class="card-title">4. Historia sesji</div><p>Przebieg bieżącej rozmowy. Kompresowana przez <span class="code-inline">/compact</span>.</p></div>
+      <div class="card"><div class="card-title">5. Aktywne pliki</div><p>Pliki otwarte, wzmiankowane lub edytowane w bieżącej sesji.</p></div>
+      <div class="card warn"><div class="card-title">= Kontekst agenta</div><p>Suma wszystkich powyższych. Im lepszy kontekst, tym lepsze wyniki.</p></div>
+    </div>
+    <div class="note-box" style="margin-top:.8rem">Użyj <span class="code-inline">/context</span>, aby zobaczyć aktualny stan kontekstu swojego agenta.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 30: PATH-BASED RULES VS NESTED ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.3</div>
+    <h2>Path-based rules vs nested CLAUDE.md</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Nested CLAUDE.md</h3>
+        <div class="card"><p>Pliki <span class="code-inline">CLAUDE.md</span> w podkatalogach projektu.</p>
+        <p style="margin-top:.5rem">Gdy agent wchodzi do katalogu, czyta tamtejszy <span class="code-inline">CLAUDE.md</span>.</p>
+        <div class="code-block" style="margin-top:.5rem">projekt/
+  CLAUDE.md         # globalne reguły
+  frontend/
+    CLAUDE.md       # reguły dla FE
+  backend/
+    CLAUDE.md       # reguły dla BE</div></div>
+      </div>
+      <div>
+        <h3 class="accent">Path-based rules</h3>
+        <div class="card amber"><p>Reguły to pliki Markdown w <span class="code-inline">.claude/rules/</span> z polem <span class="code-inline">paths:</span> we frontmatter.</p>
+        <div class="code-block" style="margin-top:.5rem"># .claude/rules/frontend.md
+---
+paths:
+  - "frontend/**/*"
+---
+Używaj komponentów funkcyjnych React.</div></div>
+      </div>
+    </div>
+    <div class="note-box"><strong>Wybór:</strong> nested dla dużych projektów z wyraźnymi modułami. Path-based dla mniejszych projektów z specyficznymi regułami per katalog.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 31: BEST PRACTICES ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.3</div>
+    <h2>Best practices: jak pisać CLAUDE.md</h2>
+    <div class="cards">
+      <div class="card ok"><div class="card-title">Krótko i konkretnie</div>
+        <p>Celuj w około 200 linii jako zalecenie kursowe, nie limit techniczny. Pełny CLAUDE.md jest ładowany niezależnie od długości.</p>
+      </div>
+      <div class="card amber"><div class="card-title">Konkretne reguły</div>
+        <p>Źle: "Pisz czysty kod". Dobrze: "Używaj TypeScript strict mode, wszystkie funkcje muszą mieć typy zwracane."</p>
+      </div>
+      <div class="card"><div class="card-title">Iteruj</div>
+        <p>Dodaj regułę za każdym razem, gdy agent popełni błąd. CLAUDE.md to żywy dokument.</p>
+      </div>
+      <div class="card"><div class="card-title">Wersjonuj w git</div>
+        <p>CLAUDE.md w repozytorium = cała drużyna ma te same reguły. Historia zmian widoczna.</p>
+      </div>
+    </div>
+    <div class="code-block" style="margin-top:.8rem"># CLAUDE.md - przykład
+
+## Stack
+TypeScript, Next.js, Tailwind CSS, PostgreSQL
+
+## Konwencje
+- Używaj TypeScript strict mode
+- Komponenty funkcyjne, nie class components
+- Nazwy plików: kebab-case
+
+## Testy
+- Testy PRZED implementacją (TDD)
+- Unit: mocki zależności; integracja: mock tylko zewnętrznego LLM; E2E: realny stos</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 32: RAZEM 1.3 ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.3</div>
+    <h2><span class="badge lab">RAZEM</span> Piszemy CLAUDE.md / AGENTS.md dla naszego projektu</h2>
+    <p class="subtitle">Ja piszę dla projektu kursowego i tłumaczę dlaczego - Ty piszesz dla swojego (możesz pod własny pomysł aplikacji)</p>
+    <div class="two-col">
+      <div>
+        <h3 class="accent">Zrób u siebie</h3>
+        <ul class="feature-list">
+          <li>Utwórz <span class="code-inline">AGENTS.md</span> i importujący go <span class="code-inline">CLAUDE.md</span></li>
+          <li>Opisz swój stack technologiczny</li>
+          <li>Wypisz konwencje nazewnictwa i reguły dla testów</li>
+          <li>Wymień rzeczy, których agent ma unikać</li>
+          <li>Podeślę swój prompt startowy na czacie - możesz też użyć <span class="code-inline">/init</span></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent3">Dobry plik poznasz po tym, że</h3>
+        <ul class="feature-list check">
+          <li>Reguły są konkretne, nie ogólniki ("TypeScript strict mode", nie "czysty kod")</li>
+          <li>Jest krótki i konkretny; około 200 linii to zalecenie kursowe</li>
+          <li>Agent po restarcie faktycznie wczytał reguły (sprawdź <span class="code-inline">/context</span>)</li>
+        </ul>
+        <div class="note-box" style="margin-top:.8rem">To żywy dokument - będziemy go rozwijać przez cały kurs za każdym razem, gdy agent popełni błąd.</div>
+      </div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>To najważniejsza praktyka dnia</li>
+      <li>Reguły mają być konkretne, nie ogólnikowe</li>
+      <li>Iteracja: dodaj regułę, gdy agent się myli</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Krąż, sprawdzaj czy reguły są konkretne</li>
+      <li>Zadawaj pytanie: "czy agent zrozumie to bez kontekstu?"</li>
+      <li>Pokaż swój własny CLAUDE.md jako przykład</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Min. 5 reguł; około 200 linii to zalecenie kursowe, nie limit</li>
+      <li>Stack opisany</li>
+      <li>Czy agent wczytał reguły (/context)</li>
+      <li>Uczestnicy Java: niech też napiszą CLAUDE.md</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 33: MODUŁ 1.4 OPENER ============ -->
+<section class="slide dark">
+  <div class="slide-body title-body">
+    <div class="kicker">Moduł 1.4</div>
+    <h1>Projekt kursowy<br>AI Chat z Vercel AI SDK</h1>
+    <div class="subtitle" data-mod-range="3">14:55 - 16:00</div>
+    <div class="title-meta">
+      <div>Cel: plan aplikacji AI Chat</div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Ostatni moduł - planujemy projekt kursowy</li>
+      <li>Najpierw kończymy specyfikację; implementację zaczynamy po PRD i ADR</li>
+      <li>To fundament na dni 2 i 3</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Pokaż demo aplikacji zwrot/reklamacja jeśli gotowe</li>
+      <li>Opisz pełny proces przez 3 dni</li>
+      <li>Miej gotowy PRD i ADR jako przykłady</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Czy grupa rozumie co budujemy przez 3 dni</li>
+      <li>Czy uczestnicy Java wiedzą o wsparciu</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 34: OMÓWIENIE PROJEKTU ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.4</div>
+    <h2>Projekt kursowy: AI Chat z Vercel AI SDK</h2>
+    <p class="subtitle">Co budujemy przez 3 dni kursu</p>
+    <div class="cards">
+      <div class="card ok"><div class="card-title">Aplikacja fullstack</div>
+        <p>Backend i frontend w TypeScript. Kompletna aplikacja AI Chat od zera do działającego demo.</p>
+      </div>
+      <div class="card amber"><div class="card-title">Technologie</div>
+        <ul class="feature-list">
+          <li>TypeScript (type safety)</li>
+          <li>Vercel AI SDK (abstrakcja nad LLM API)</li>
+          <li>Streaming responses (czas rzeczywisty)</li>
+          <li>Multimodalność (tekst + obraz)</li>
+        </ul>
+      </div>
+      <div class="card"><div class="card-title">Podejście</div>
+        <ul class="feature-list">
+          <li>Agent inicjalizuje template Vercel AI</li>
+          <li>TDD: testy przed kodem</li>
+          <li>Unit: mocki zależności; integracja: mock zewnętrznego LLM; E2E: realny stos</li>
+          <li>3 dni: od planu do demo</li>
+        </ul>
+      </div>
+      <div class="card warn"><div class="card-title">Dzisiaj</div>
+        <p>Kończymy <strong>PRD i ADR</strong>. Implementację zaczynamy po specyfikacji; budowa trwa w dniach 2 i 3. Zaczynamy od pustej aplikacji, nie od gotowca.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 35: DEMO TEASER 1 ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.4 | Aplikacja demo</div>
+    <h2>Multimodalny chat obsługi klienta</h2>
+    <p class="subtitle">Scenariusz: zwrot lub reklamacja sprzętu elektronicznego</p>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Formularz początkowy</h3>
+        <div class="card"><ul class="feature-list">
+          <li>Wybór ścieżki: <strong>zwrot</strong> lub <strong>reklamacja</strong></li>
+          <li>Opis problemu (tekst)</li>
+          <li><strong>Zdjęcie sprzętu</strong> (multimodalność)</li>
+        </ul></div>
+      </div>
+      <div>
+        <h3 class="accent">Co się dzieje dalej</h3>
+        <div class="card amber"><ul class="feature-list">
+          <li>LLM multimodalny analizuje zdjęcie (stan sprzętu)</li>
+          <li>Drugi prompt podejmuje decyzję na podstawie zdjęcia + regulaminu (ToS)</li>
+          <li>Decyzja pojawia się w chacie jako komponent UI</li>
+          <li>Dalsza rozmowa z agentem customer support</li>
+        </ul></div>
+      </div>
+    </div>
+    <div class="note-box" style="margin-top:1rem"><strong>Lucas pokazuje cały proces na żywo</strong> w TypeScript + Vercel AI SDK. Uczestnicy podążają we <strong>własnym stacku</strong>.</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 36: DEMO TEASER 2 ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.4 | Aplikacja demo</div>
+    <h2>Jak to działa - szczegółowo</h2>
+    <div class="demo-flow">
+      <div class="df-step"><div class="df-num">1</div><div class="df-text"><strong>Formularz:</strong> użytkownik wybiera ścieżkę (zwrot / reklamacja), wpisuje opis, dodaje zdjęcie sprzętu.</div></div>
+      <div class="df-step"><div class="df-num">2</div><div class="df-text"><strong>LLM multimodalny:</strong> analizuje zdjęcie, opisuje stan sprzętu (uszkodzenia, zużycie, kompletność).</div></div>
+      <div class="df-step"><div class="df-num">3</div><div class="df-text"><strong>Drugi prompt / LLM:</strong> podejmuje decyzję na podstawie opisu zdjęcia + regulaminu (ToS) i opisu procesu. <strong>Dwa różne prompty</strong> w zależności od ścieżki (zwrot vs reklamacja).</div></div>
+      <div class="df-step"><div class="df-num">4</div><div class="df-text"><strong>Decyzja w UI:</strong> pojawia się jako pierwszy dymek w chacie + dedykowany komponent UI pokazujący szczegóły decyzji.</div></div>
+      <div class="df-step"><div class="df-num">5</div><div class="df-text"><strong>Rozmowa kontynuowana:</strong> użytkownik rozmawia dalej z agentem customer support. Agent ma pełny kontekst: formularz + decyzja.</div></div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 37: PRD ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.4 | Krok 1 z mapy procesu</div>
+    <h2>PRD - Product Requirements Document</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Co to jest PRD?</h3>
+        <ul class="feature-list">
+          <li>Dokument określający <strong>co</strong> budujemy i <strong>dla kogo</strong></li>
+          <li>Funkcjonalności, user stories, kryteria akceptacji</li>
+          <li>Podstawa dla agenta - agent pracuje wg PRD</li>
+          <li>Żywy dokument, ewoluuje z projektem</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent">PRD dla naszego projektu</h3>
+        <div class="card amber">
+          <p><strong>Aplikacja:</strong> AI Chat do obsługi zwrotów i reklamacji sprzętu elektronicznego.</p>
+          <p style="margin-top:.4rem"><strong>User stories:</strong></p>
+          <ul class="feature-list" style="margin-top:.2rem">
+            <li>Jako klient chcę zgłosić zwrot z opisem i zdjęciem</li>
+            <li>Jako klient chcę otrzymać natychmiastową decyzję</li>
+            <li>Jako klient chcę dopytać o szczegóły decyzji</li>
+          </ul>
+        </div>
+        <div class="note-box" style="margin-top:.5rem"><strong>Agent pomaga napisać PRD</strong> - za chwilę użyjesz Claude Code do stworzenia PRD własnego projektu.</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 38: ARCHITEKTURA ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.4</div>
+    <h2>Architektura: TypeScript + Vercel AI SDK + streaming</h2>
+    <div class="cards">
+      <div class="card ok"><div class="card-title">TypeScript</div>
+        <p>Type safety na froncie i backendie. Mniej błędów runtime, lepsze DX, agent ma jasny kontrakt typów.</p>
+      </div>
+      <div class="card amber"><div class="card-title">Vercel AI SDK</div>
+        <p>Abstrakcja nad LLM API. Ujednolica dostęp do różnych modeli. Wbudowane wsparcie dla streaming, tool calling, multimodalności.</p>
+      </div>
+      <div class="card"><div class="card-title">Streaming</div>
+        <p>Odpowiedzi w czasie rzeczywistym. Użytkownik widzi tekst pojawiający się słowo po słowie, zamiast czekać na pełną odpowiedź.</p>
+      </div>
+      <div class="card"><div class="card-title">Template Vercel AI</div>
+        <p>Agent inicjalizuje projekt z gotowego template. Scaffolding w minuty, nie godzinach. My skupiamy się na logice biznesowej.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 39: ADR ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.4 | Krok 4 z mapy procesu</div>
+    <h2>ADR - Architecture Decision Record</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Co to jest ADR?</h3>
+        <ul class="feature-list">
+          <li>Krótki dokument rejestrujący <strong>kluczową decyzję techniczną</strong></li>
+          <li>Kontekst, opcje, decyzja, konsekwencje</li>
+          <li>Zapisany w repozytorium (git)</li>
+          <li>Ślad po dyskusji, nie tylko wynik</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent">ADR dla naszego projektu</h3>
+        <div class="card amber">
+          <p><strong>Decyzje techniczne:</strong></p>
+          <ul class="feature-list" style="margin-top:.3rem">
+            <li>Stack: TypeScript, Vercel AI SDK</li>
+            <li>Struktury danych: formularz, decyzja, wiadomość</li>
+            <li>Flow: formularz -&gt; analiza -&gt; decyzja -&gt; chat</li>
+            <li>Dwa osobne prompty dla zwrotu i reklamacji</li>
+            <li>LLM przez OpenRouter (jeden klucz, wiele modeli)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 40: JAVA STACK ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.4 | Alternatywny stack</div>
+    <h2>Wsparcie dla uczestników Java</h2>
+    <p class="subtitle">Pracujesz w Javie? Ekosystem istnieje - pokażę gdzie szukać</p>
+    <div class="cards">
+      <div class="card amber"><div class="card-title">Backend (Java)</div>
+        <ul class="feature-list">
+          <li><strong>LangChain4j</strong> - framework LLM dla Javy</li>
+          <li><strong>OpenAI Java SDK</strong> - oficjalny SDK</li>
+        </ul>
+      </div>
+      <div class="card"><div class="card-title">Frontend</div>
+        <ul class="feature-list">
+          <li><strong>AssistantUI</strong> - komponenty UI dla chat</li>
+          <li><strong>AI SDK UI / Elements</strong> - biblioteki komponentów</li>
+        </ul>
+      </div>
+      <div class="card ok"><div class="card-title">Opcjonalnie</div>
+        <ul class="feature-list">
+          <li><strong>Angular + Material</strong></li>
+          <li>Możliwe połączenie z backendem Java</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note-box" style="margin-top:1rem"><strong>Uwaga:</strong> to tylko wskazanie, że wsparcie istnieje. Szczegóły i implementacja w dniach 2 i 3. Główny tor kursu to TypeScript + Vercel AI SDK (pokazuje Lucas).</div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 41: OPENROUTER ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.4</div>
+    <h2>Dostęp aplikacji do LLM: OPENROUTER_API_KEY</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="accent2">Co to jest?</h3>
+        <ul class="feature-list">
+          <li>Zmienna środowiskowa <span class="code-inline">OPENROUTER_API_KEY</span> już ustawiona na VM</li>
+          <li><strong>Jeden klucz, wiele modeli</strong> - nie potrzebujesz osobnych kont</li>
+          <li>Modele multimodalne dostępne (analiza zdjęć)</li>
+          <li>Preset kursowy dla aplikacji - gotowy do użycia od razu</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent">Jak sprawdzić</h3>
+        <div class="code-block">echo %OPENROUTER_API_KEY%</div>
+        <p style="margin-top:.6rem">Lub w PowerShell:</p>
+        <div class="code-block">$env:OPENROUTER_API_KEY</div>
+        <div class="note-box" style="margin-top:.6rem"><strong>To klucz aplikacji, nie Claude Code.</strong> Claude Code uwierzytelniasz własnym kontem/subskrypcją Claude albo przez <span class="code-inline">ANTHROPIC_API_KEY</span>.</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 42: RAZEM 1.4 ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Moduł 1.4</div>
+    <h2><span class="badge lab">RAZEM</span> Piszemy PRD naszego projektu</h2>
+    <p class="subtitle">Tworzę PRD aplikacji AI Chat na żywo i omawiam po drodze - Ty robisz to samo (możesz na własnym pomyśle)</p>
+    <div class="two-col">
+      <div>
+        <h3 class="accent">Zrób u siebie</h3>
+        <ul class="feature-list">
+          <li>Wybierz pomysł na aplikację (lub użyj scenariusza zwrot/reklamacja)</li>
+          <li>Napisz PRD z pomocą agenta - podeślę swój prompt na czacie</li>
+          <li>Przedyskutuj z agentem user stories i kryteria akceptacji</li>
+          <li>Zapisz dokument w repo (<span class="code-inline">docs/PRD.md</span>) i zrób commit</li>
+          <li>Jeśli zdążymy: zaczynamy ADR - kluczowe decyzje techniczne</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent3">Dobry PRD poznasz po tym, że</h3>
+        <ul class="feature-list check">
+          <li>Ma minimum 3 user stories z kryteriami akceptacji</li>
+          <li>Opisuje CO budujemy i DLA KOGO - bez decyzji technicznych (te idą do ADR)</li>
+          <li>Agent by go zrozumiał bez Ciebie obok</li>
+        </ul>
+        <div class="note-box" style="margin-top:.8rem">PRD i ADR to Twoje dokumenty projektowe na resztę kursu. Dzisiaj je kończymy; w pracy domowej inicjalizujesz aplikację.</div>
+      </div>
+    </div>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Pisanie PRD i ADR z pomocą agenta</li>
+      <li>To wasz dokument projektowy na resztę kursu</li>
+      <li>Możecie użyć scenariusza zwrot/reklamacja albo własnego pomysłu</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Krąż, pomagaj z PRD (user stories)</li>
+      <li>Pomagaj z ADR (decyzje techniczne)</li>
+      <li>Sprawdź czy dokumenty są w repo (git)</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Min. 3 user stories w PRD</li>
+      <li>Min. 3 decyzje w ADR</li>
+      <li>Zapisane w repo (git commit)</li>
+      <li>Czy uczestnicy Java też stworzyli PRD/ADR</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 43: PRACA DOMOWA ============ -->
+<section class="slide">
+  <div class="slide-body">
+    <div class="kicker">Dzień 1</div>
+    <h2>Praca domowa D1</h2>
+    <div class="cards">
+      <div class="card amber"><div class="card-title">1. Dokończ scaffolding</div>
+        <p>Uruchom template Vercel AI SDK. Upewnij się, że projekt kompiluje się i startuje bez błędów.</p>
+      </div>
+      <div class="card ok"><div class="card-title">2. Rozbuduj CLAUDE.md</div>
+        <p>Dodaj minimum 10 konkretnych reguł. Wymień wszystkie narzędzia, których agent ma używać i unikać.</p>
+      </div>
+      <div class="card"><div class="card-title">3. Eksperymenty z trybami</div>
+        <ul class="feature-list">
+          <li>Przetestuj CLI, Desktop i Web</li>
+          <li>Wypróbuj <span class="code-inline">/compact</span> na długiej sesji</li>
+          <li>Przełącz modele i porównaj jakość</li>
+        </ul>
+      </div>
+      <div class="card warn"><div class="card-title">4. Przygotuj pytania</div>
+        <p>Zapisz pytania i problemy, które napotkałeś. Omówimy je rano w dniu 2.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+<!-- ============ SLIDE 44: PODSUMOWANIE ============ -->
+<section class="slide dark">
+  <div class="slide-body title-body">
+    <div class="kicker">Dzień 1 - podsumowanie</div>
+    <h1>Dziękuję!<br><span class="accent">Do zobaczenia jutro</span></h1>
+    <div class="two-col" style="margin-top:1.5rem;text-align:left">
+      <div>
+        <h3 class="accent3">Co zrobiliśmy dziś</h3>
+        <ul class="feature-list check">
+          <li>Skonfigurowaliśmy środowisko (moduł 1.1)</li>
+          <li>Opanowaliśmy tryby pracy i komendy (moduł 1.2)</li>
+          <li>Stworzyliśmy CLAUDE.md / AGENTS.md (moduł 1.3)</li>
+          <li>Zaplanowaliśmy projekt: PRD + ADR (moduł 1.4)</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="accent">Co jutro (dzień 2)</h3>
+        <ul class="feature-list">
+          <li>Start od gotowego <strong>PRD, ADR i scaffoldingu</strong> aplikacji</li>
+          <li><strong>MCP</strong> - Model Context Protocol</li>
+          <li><strong>Skills</strong> - umiejętności agenta</li>
+          <li><strong>Sub-agenci</strong> - delegowanie zadań i budowa aplikacji</li>
+        </ul>
+      </div>
+    </div>
+    <div class="break-badge" style="margin-top:1.5rem">
+      <div class="bb-label">Praca domowa (dobrowolna, ale się opłaca)</div>
+      <div class="bb-items">
+        <span>Dokończ scaffolding</span>
+        <span>Rozbuduj CLAUDE.md</span>
+        <span>Eksperymentuj z trybami</span>
+      </div>
+    </div>
+    <p style="margin-top:1.6rem;opacity:.85">&#321;ukasz Matuszewski &nbsp;|&nbsp; <a href="https://devpowers.com">devpowers.com</a> &nbsp;|&nbsp; <a href="https://github.com/LucasMatuszewski/claude-code-course-jsystems-2026-07">repo kursowe</a></p>
+  </div>
+  <div class="trener-notes">
+    <div class="tn-section"><h4>Co mówić</h4><ul>
+      <li>Podsumuj dzień, zapytaj o wrażenia</li>
+      <li>Zapowiedz dzień 2: MCP, Skills, subagenci</li>
+      <li>Przypomnij o pracy domowej</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co robić</h4><ul>
+      <li>Upewnij się, że każdy zapisał pracę domową</li>
+      <li>Odpowiedz na ostatnie pytania</li>
+      <li>Pożegnaj grupę</li>
+    </ul></div>
+    <div class="tn-section"><h4>Co sprawdzić</h4><ul>
+      <li>Czy wszyscy mają działające środowisko i PRD</li>
+      <li>Czy CLAUDE.md jest zapisany w repo</li>
+      <li>Czy PRD/ADR jest zcommitowany</li>
+      <li>Zapisz pytania na dzień 2</li>
+    </ul></div>
+  </div>
+  <div class="slide-footer">JSystems | Claude Code - od zera do zespołu agentów AI</div>
+</section>
+
+</div><!-- /deck -->
+
+<script>
+// ============================================================
+// KONFIGURACJA HARMONOGRAMU - JEDYNE zrodlo prawdy dla godzin.
+// Zmien godziny TUTAJ - slajd tytulowy, agenda, podtytuly modulow
+// i alarmy przerw zaktualizuja sie same.
+// ============================================================
+const SCHEDULE={
+ start:"09:00",
+ end:"16:00",
+ breaks:[
+  {time:"10:30",dur:15,label:"Przerwa"},
+  {time:"13:00",dur:30,label:"Obiad"},
+  {time:"14:45",dur:10,label:"Przerwa",optional:true}
+ ]
+};
+
+function addMin(hm,m){const[h,mi]=hm.split(':').map(Number);const t=h*60+mi+m;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');}
+function modStart(k){return k===0?SCHEDULE.start:addMin(SCHEDULE.breaks[k-1].time,SCHEDULE.breaks[k-1].dur);}
+function modEnd(k){return k<SCHEDULE.breaks.length?SCHEDULE.breaks[k].time:SCHEDULE.end;}
+
+// Alarmy przerw (banner + dzwiek) - wyliczane z SCHEDULE
+const BREAKS=SCHEDULE.breaks.map(b=>[
+ b.time,
+ b.label+" "+b.dur+" minut"+(b.optional?" (opcjonalna)":""),
+ b.optional?"Tylko jesli grupa potrzebuje":"Wracamy o "+addMin(b.time,b.dur)
+]);
+
+// Wypelnia godziny na slajdach z SCHEDULE (elementy z atrybutami data-*)
+function fillSchedule(){
+ const lbl=document.querySelector('[data-schedule-label]');
+ if(lbl)lbl.textContent='Harmonogram dnia '+SCHEDULE.start+' - '+SCHEDULE.end+' (godziny orientacyjne)';
+ const items=document.querySelector('[data-schedule-items]');
+ if(items)items.innerHTML=SCHEDULE.breaks.map(b=>'<span>'+b.time+' '+b.label+' '+b.dur+' min'+(b.optional?' (opcjonalna)':'')+'</span>').join('')+'<span>'+SCHEDULE.end+' Koniec</span>';
+ document.querySelectorAll('[data-break-time]').forEach(el=>{el.textContent=SCHEDULE.breaks[+el.dataset.breakTime].time;});
+ document.querySelectorAll('[data-break-label]').forEach(el=>{const b=SCHEDULE.breaks[+el.dataset.breakLabel];el.innerHTML='<strong>'+b.label+'</strong> '+b.dur+' minut'+(b.optional?' (opcjonalna - jeśli grupa potrzebuje)':'');});
+ document.querySelectorAll('[data-mod-time]').forEach(el=>{const k=+el.dataset.modTime;el.textContent=(k>0&&SCHEDULE.breaks[k-1].optional?'~':'')+modStart(k);});
+ document.querySelectorAll('[data-mod-range]').forEach(el=>{const k=+el.dataset.modRange;el.textContent=(k>0&&SCHEDULE.breaks[k-1].optional?'~':'')+modStart(k)+' - '+modEnd(k);});
+ document.querySelectorAll('[data-end-time]').forEach(el=>{el.textContent=SCHEDULE.end;});
+}
+
+const S=document.querySelectorAll('.slide');
+let i=0;
+
+function show(n){
+ if(n<0)n=0;
+ if(n>S.length-1)n=S.length-1;
+ S[i].classList.remove('on');
+ i=n;
+ S[i].classList.add('on');
+ S[i].scrollTop=0;
+ document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+ document.getElementById('num').textContent=(i+1)+'/'+S.length;
+ try{history.replaceState(null,'','#'+(i+1));}catch(_){}
+ document.getElementById('prev').style.opacity=i===0?'0.25':'1';
+ document.getElementById('next').style.opacity=i===S.length-1?'0.25':'1';
+}
+
+document.addEventListener('keydown',e=>{
+ if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){show(i+1);e.preventDefault();}
+ else if(e.key==='ArrowLeft'||e.key==='PageUp'){show(i-1);}
+ else if(e.key==='ArrowDown'||e.key==='ArrowUp'){const sl=S[i];if(sl.scrollHeight>sl.clientHeight+4){sl.scrollBy({top:(e.key==='ArrowDown'?1:-1)*Math.round(sl.clientHeight*.45),behavior:'smooth'});e.preventDefault();}}
+ else if(e.key==='Home'){show(0);}
+ else if(e.key==='End'){show(S.length-1);}
+ else if(e.key.toLowerCase()==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();}
+ else if(e.key.toLowerCase()==='t'){document.body.classList.toggle('trener-on');}
+ else if(e.key.toLowerCase()==='d'){toggleTheme();}
+});
+
+document.getElementById('prev').onclick=()=>show(i-1);
+document.getElementById('next').onclick=()=>show(i+1);
+
+// Klik w slajd nawiguje, ALE linki, przyciski i bloki kodu dzialaja normalnie
+document.getElementById('deck').addEventListener('click',e=>{
+ if(e.target.closest('a,button,.code-block,input,textarea,select,.trener-notes'))return;
+ if(window.getSelection&&String(window.getSelection()))return;
+ if(e.clientX<window.innerWidth/2)show(i-1);else show(i+1);
+});
+// Linki zewnetrzne otwieraja sie w nowej karcie
+document.querySelectorAll('#deck a[href^="http"]').forEach(a=>{
+ a.target='_blank';a.rel='noopener';
+});
+
+// Motyw jasny/ciemny (przycisk lub klawisz D), zapamietany w localStorage
+function toggleTheme(){
+ document.body.classList.toggle('light');
+ try{localStorage.setItem('theme',document.body.classList.contains('light')?'light':'dark');}catch(_){}
+}
+document.getElementById('theme-btn').onclick=toggleTheme;
+try{if(localStorage.getItem('theme')==='light')document.body.classList.add('light');}catch(_){}
+
+// Przycisk kopiowania na kazdym bloku kodu
+document.querySelectorAll('.code-block').forEach(b=>{
+ const code=b.innerText;
+ const btn=document.createElement('button');
+ btn.className='copy-btn';btn.textContent='Kopiuj';
+ btn.onclick=ev=>{
+  ev.stopPropagation();
+  navigator.clipboard.writeText(code).then(()=>{
+   btn.textContent='Skopiowano!';btn.classList.add('ok');
+   setTimeout(()=>{btn.textContent='Kopiuj';btn.classList.remove('ok');},1600);
+  });
+ };
+ b.appendChild(btn);
+});
+
+const fired=new Set(JSON.parse(sessionStorage.getItem('fired')||'[]'));
+function beep(){
+ try{
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  [0,.35,.7].forEach((d,k)=>{
+   const o=ctx.createOscillator(),g=ctx.createGain();
+   o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.value=k===2?1175:880;
+   g.gain.setValueAtTime(.0001,ctx.currentTime+d);
+   g.gain.exponentialRampToValueAtTime(.4,ctx.currentTime+d+.03);
+   g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+d+.3);
+   o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+.32);
+  });
+ }catch(e){}
+}
+function showBreak(b){
+ document.getElementById('bb-t').textContent=b[1];
+ document.getElementById('bb-s').textContent=b[2];
+ document.getElementById('breakbar').classList.add('show');
+ beep();
+ setTimeout(beep,4000);
+}
+document.getElementById('bb-x').onclick=()=>document.getElementById('breakbar').classList.remove('show');
+
+function tick(){
+ const now=new Date();
+ const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+ document.getElementById('clock').textContent=hm;
+ const mins=now.getHours()*60+now.getMinutes();
+ BREAKS.forEach(b=>{
+  if(hm>=b[0]&&!fired.has(b[0])){
+   fired.add(b[0]);
+   sessionStorage.setItem('fired',JSON.stringify([...fired]));
+   const bm=+b[0].slice(0,2)*60+ +b[0].slice(3,5);
+   if(mins-bm<=10)showBreak(b);
+  }
+ });
+}
+
+fillSchedule();
+tick();
+setInterval(tick,15000);
+// Deep-link: #12 w URL otwiera slajd 12 (link mozna wyslac uczestnikom)
+function slideFromHash(){const n=parseInt((location.hash||'').slice(1),10);return isNaN(n)?0:Math.min(Math.max(n-1,0),S.length-1);}
+window.addEventListener('hashchange',()=>show(slideFromHash()));
+show(slideFromHash());
+</script>
+</body>
+</html>
