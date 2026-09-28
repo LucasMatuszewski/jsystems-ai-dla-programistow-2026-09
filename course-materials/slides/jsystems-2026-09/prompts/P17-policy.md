@@ -1,0 +1,5 @@
+Po warsztacie pomóż mi przygotować krótką listę pytań o używanie GitHub Copilot w firmowym repozytorium. Nie zakładaj, że mam dostęp do panelu administratora. Korzystaj tylko z ustawień, które mogę zobaczyć na swoim koncie, oraz z aktualnej dokumentacji GitHub. Nie otwieraj kodu ani danych klienta i niczego nie zmieniaj.
+
+Pracuję w [VS Code / JetBrains / Copilot CLI / aplikacji Copilot]. Ustal, co mogę sprawdzić samodzielnie: dostęp do agenta i jego narzędzi, widoczne limity AI Credits oraz zasady pracy z kodem firmowym. Oddziel moje obserwacje od ustawień organizacji, których nie mogę potwierdzić. Jeśli sprawdzasz wykluczanie treści, podaj ograniczenia dokładnie dla używanego narzędzia i trybu. Nie przedstawiaj wykluczania jako gwarancji ochrony danych.
+
+Przygotuj krótką tabelę z czterema kolumnami: kwestia, co udało się potwierdzić, źródło i data sprawdzenia, co trzeba jeszcze ustalić. Na końcu wypisz maksymalnie pięć konkretnych pytań do administratora lub osoby odpowiedzialnej za bezpieczeństwo.

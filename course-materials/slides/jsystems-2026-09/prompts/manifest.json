@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "prompts": [
+    {
+      "id": "P01-prd-serwis",
+      "version": "2",
+      "source": "P01-prd-serwis.md",
+      "targets": [
+        "prompty.html",
+        "Prezentacja_Dzien1.html"
+      ]
+    },
+    {
+      "id": "P02-adr-serwis",
+      "version": "2",
+      "source": "P02-adr-serwis.md",
+      "targets": [
+        "prompty.html",
+        "Prezentacja_Dzien1.html"
+      ]
+    },
+    {
+      "id": "P03-zasady-repo-jakosc",
+      "version": "2",
+      "source": "P03-zasady-repo-jakosc.md",
+      "targets": [
+        "prompty.html",
+        "Prezentacja_Dzien1.html"
+      ]
+    },
+    {
+      "id": "P04-plan-podzial-pracy",
+      "version": "3",
+      "source": "P04-plan-podzial-pracy.md",
+      "targets": [
+        "prompty.html",
+        "Prezentacja_Dzien2.html"
+      ]
+    },
+    {
+      "id": "P05-system-designu",
+      "version": "2",
+      "source": "P05-system-designu.md",
+      "targets": [
+        "prompty.html",
+        "Prezentacja_Dzien2.html"
+      ]
+    },
+    {
+      "id": "P06-dane-syntetyczne",
+      "version": "3",
+      "source": "P06-dane-syntetyczne.md",
+      "targets": [
+        "prompty.html",
+        "Prezentacja_Dzien2.html"
+      ]
+    },
+    {
+      "id": "P07-legacy-charakterystyka",
+      "version": "2",
+      "source": "P07-legacy-charakterystyka.md",
+      "targets": [
+        "prompty.html"
+      ]
+    },
+    {
+      "id": "P08-testy-przeglad-zmian",
+      "version": "2",
+      "source": "P08-testy-przeglad-zmian.md",
+      "targets": [
+        "prompty.html",
+        "Prezentacja_Dzien2.html"
+      ]
+    },
+    {
+      "id": "P09-sql-weryfikacja",
+      "version": "3",
+      "source": "P09-sql-weryfikacja.md",
+      "targets": [
+        "prompty.html",
+        "Prezentacja_Dzien2.html"
+      ]
+    },
+    {
+      "id": "P17-policy",
+      "version": "2",
+      "source": "P17-policy.md",
+      "targets": [
+        "prompty.html"
+      ]
+    },
+    {
+      "id": "P18-jftp-legacy",
+      "version": "1",
+      "source": "P18-jftp-legacy.md",
+      "targets": [
+        "prompty.html",
+        "Prezentacja_Dzien2.html"
+      ]
+    },
+    {
+      "id": "P19-plan-matryca",
+      "version": "4",
+      "source": "P19-plan-matryca.md",
+      "targets": [
+        "prompty.html",
+        "Prezentacja_Dzien2.html"
+      ]
+    }
+  ]
+}

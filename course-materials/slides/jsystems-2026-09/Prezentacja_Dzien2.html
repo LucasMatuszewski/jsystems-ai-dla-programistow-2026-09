@@ -1,0 +1,499 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dzień 2 | AI dla programistów - od pomysłu do MVP</title><link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png"><style>
+:root{
+  /* Slajdy tytulowe (granat/biel/zloto) - identyczne w obu motywach */
+  --dark-bg:#0f172a;--dark-bg2:#1e293b;--dark-text:#f1f5f9;
+  /* Motyw domyslny: dark (Tokyo Night) */
+  --bg:#1a1b26;--bg2:#24283b;--bg3:#2f3549;
+  --text:#c0caf5;--heading:#e6ecff;
+  --accent:#e0af68;--accent2:#7aa2f7;--accent3:#9ece6a;
+  --muted:#7d84a8;--danger:#f7768e;
+  --code-bg:#16161e;--code-text:#a9b1d6;
+  --note-bg:rgba(224,175,104,.09);--note-bd:rgba(224,175,104,.35);--note-text:#e6c187;
+
+}
+body.light{
+  --bg:#ffffff;--bg2:#f1f5f9;--bg3:#e2e8f0;
+  --text:#1e293b;--heading:#0f172a;
+  --accent:#d97706;--accent2:#2563eb;--accent3:#059669;
+  --muted:#64748b;--danger:#dc2626;
+  --code-bg:#1e293b;--code-text:#e2e8f0;
+  --note-bg:#fef9c3;--note-bd:#facc15;--note-text:#92400e;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:clamp(13px,1.4vw,19px)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#000;overflow:hidden}
+#deck{position:relative;width:100vw;height:100vh}
+.slide{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:var(--bg);color:var(--text);
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+  overflow-y:auto;overflow-x:hidden;
+}
+.slide.on{opacity:1;pointer-events:auto}
+.slide.dark{background:var(--dark-bg);color:var(--dark-text)}
+.slide a{color:var(--accent2);text-decoration:underline;text-underline-offset:3px}
+.slide.dark a{color:var(--accent)}
+.slide h1,.slide h2,.slide h3{color:var(--heading)}
+.slide.dark h1,.slide.dark h2,.slide.dark h3{color:var(--dark-text)}
+.slide-body{
+  max-width:min(1680px,95vw);margin:0 auto;
+  padding:clamp(2rem,4vh,3rem) clamp(1.6rem,3vw,3.5rem) clamp(1.6rem,3.5vh,2.6rem);
+  min-height:100%;display:flex;flex-direction:column;justify-content:center;
+}
+.title-body{align-items:center;text-align:center}
+.kicker{
+  font-size:.8rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.15em;color:var(--accent);margin-bottom:.5rem;
+}
+h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1.15;margin-bottom:1rem}
+h2{font-size:clamp(1.4rem,3vw,2.1rem);font-weight:700;line-height:1.2;margin-bottom:.9rem}
+h3{font-size:clamp(1.1rem,2.2vw,1.6rem);font-weight:600;margin-bottom:.8rem}
+h4{font-size:1rem;font-weight:600;margin-bottom:.4rem}
+p{font-size:clamp(.95rem,1.6vw,1.15rem);line-height:1.6;margin-bottom:.6rem}
+.subtitle{font-size:clamp(1rem,1.9vw,1.3rem);opacity:.8;margin-bottom:1rem}
+.accent{color:var(--accent)}
+.accent2{color:var(--accent2)}
+.accent3{color:var(--accent3)}
+.danger{color:var(--danger)}
+.title-meta{
+  display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;
+  font-size:1.1rem;opacity:.85;margin-bottom:1.5rem;
+}
+.title-meta div{padding:.3rem .8rem;background:rgba(255,255,255,.08);border-radius:8px}
+.break-badge{
+  background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);
+  border-radius:12px;padding:1rem 1.5rem;margin-top:1rem;display:inline-block;
+}
+.break-badge .bb-label{
+  font-size:.75rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--accent);margin-bottom:.5rem;
+}
+.break-badge .bb-items{display:flex;gap:1.2rem;flex-wrap:wrap;justify-content:center;font-size:.9rem}
+.break-badge .bb-items span::before{content:"\25CF";color:var(--accent);margin-right:.4rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-top:.5rem}
+/* Symetryczne siatki: 4 kafle = 2x2, 5-6 kafli = 3 kolumny (zamiast 3+1 / 4+1) */
+.cards:has(> :nth-child(4):last-child){grid-template-columns:repeat(2,1fr)}
+.cards:has(> :nth-child(5):last-child),.cards:has(> :nth-child(6):last-child){grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cards:has(> :nth-child(5):last-child),.cards:has(> :nth-child(6):last-child){grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.cards{grid-template-columns:1fr !important}}
+.card{
+  background:var(--bg2);border-radius:10px;padding:1rem 1.2rem;
+  border-left:4px solid var(--accent2);
+}
+.card.warn{border-left-color:var(--danger)}
+.card.ok{border-left-color:var(--accent3)}
+.card.amber{border-left-color:var(--accent)}
+.card-title{font-weight:700;color:var(--accent);margin-bottom:.4rem;font-size:1rem}
+.slide.dark .card{background:var(--dark-bg2)}
+.slide.dark .card-title{color:var(--accent)}
+.feature-list{list-style:none;padding:0}
+.feature-list li{padding:.32rem 0 .32rem 1.6rem;position:relative;font-size:clamp(.9rem,1.5vw,1.05rem);line-height:1.5}
+.feature-list li::before{content:"\25B8";position:absolute;left:.3rem;color:var(--accent);font-weight:700}
+.feature-list.check li::before{content:"\2713";color:var(--accent3)}
+.feature-list.cross li::before{content:"\2717";color:var(--danger)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:.5rem}
+@media(max-width:768px){.two-col{grid-template-columns:1fr}}
+.code-block{
+  background:var(--code-bg);color:var(--code-text);padding:.8rem 1.2rem;border-radius:8px;
+  font-family:Consolas,Monaco,"Courier New",monospace;font-size:.85rem;
+  overflow-x:auto;line-height:1.5;margin:.5rem 0;white-space:pre-wrap;
+  position:relative;border:1px solid rgba(125,132,168,.25);
+}
+.copy-btn{
+  position:absolute;top:.4rem;right:.4rem;
+  background:var(--bg3);color:var(--text);border:1px solid var(--muted);
+  border-radius:6px;font-size:.65rem;padding:.2rem .55rem;cursor:pointer;
+  opacity:.65;transition:opacity .15s;font-family:inherit;
+}
+.copy-btn:hover{opacity:1}
+.copy-btn.ok{background:var(--accent3);color:#0f172a;border-color:var(--accent3);opacity:1}
+.code-inline{
+  background:var(--bg2);padding:.1rem .4rem;border-radius:4px;
+  font-family:Consolas,Monaco,monospace;font-size:.9em;color:var(--accent2);
+}
+.slide.dark .code-inline{background:rgba(255,255,255,.1)}
+.badge{
+  display:inline-block;padding:.2rem .7rem;border-radius:999px;
+  font-size:.75rem;font-weight:700;background:var(--accent);color:#fff;
+}
+.badge.blue{background:var(--accent2)}
+.badge.green{background:var(--accent3)}
+.badge.red{background:var(--danger)}
+.badge.lab{background:var(--accent);font-size:.85rem;padding:.3rem 1rem}
+.note-box{
+  background:var(--note-bg);border:1px solid var(--note-bd);border-radius:8px;
+  padding:.8rem 1.2rem;margin:.5rem 0;font-size:.9rem;color:var(--note-text);
+}
+.slide.dark .note-box{background:rgba(250,204,21,.1);border-color:rgba(250,204,21,.3);color:#fef3c7}
+/* Process map */
+.proc-map{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-top:1rem}
+.proc-step{
+  background:var(--bg2);border-radius:10px;padding:1rem;
+  position:relative;text-align:center;border:2px solid transparent;
+}
+.proc-step .ps-num{
+  width:32px;height:32px;border-radius:50%;background:var(--accent2);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;
+  margin:0 auto .5rem;font-size:.9rem;
+}
+.proc-step.active{border-color:var(--accent);background:rgba(224,175,104,.1)}
+.proc-step.active .ps-num{background:var(--accent)}
+.proc-step.optional{opacity:.6}
+.proc-step.optional .ps-num{background:var(--muted)}
+.proc-step .ps-title{font-weight:600;font-size:.85rem;margin-bottom:.2rem}
+.proc-step .ps-desc{font-size:.75rem;color:var(--muted)}
+.slide.dark .proc-step{background:var(--dark-bg2)}
+.slide.dark .proc-step .ps-desc{color:#94a3b8}
+@media(max-width:900px){.proc-map{grid-template-columns:repeat(2,1fr)}}
+/* Footer */
+.slide-footer{
+  position:fixed;bottom:.4rem;right:1.5rem;font-size:.85rem;
+  color:var(--muted);opacity:.7;z-index:50;pointer-events:none;
+}
+.slide.dark .slide-footer{color:rgba(255,255,255,.3)}
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;height:4px;background:rgba(0,0,0,.1);z-index:200}
+#bar{height:100%;width:1%;background:var(--accent);transition:width .3s ease;border-radius:0 3px 3px 0}
+#num{
+  position:fixed;top:.5rem;left:1rem;font-size:.95rem;color:var(--muted);
+  z-index:200;font-variant-numeric:tabular-nums;font-weight:600;
+}
+#clock{
+  position:fixed;top:.5rem;right:3.9rem;font-size:.95rem;color:var(--muted);
+  z-index:200;font-variant-numeric:tabular-nums;
+}
+#theme-btn{
+  position:fixed;top:.3rem;right:1rem;width:34px;height:34px;z-index:210;
+  background:transparent;border:1px solid var(--muted);border-radius:50%;
+  color:var(--muted);cursor:pointer;font-size:1rem;line-height:1;
+  display:flex;align-items:center;justify-content:center;opacity:.7;
+}
+#theme-btn:hover{opacity:1;color:var(--accent)}
+#trainer-credit{
+  position:fixed;bottom:.4rem;left:1.5rem;font-size:.85rem;
+  color:var(--muted);opacity:.7;z-index:50;pointer-events:none;
+}
+.slide.dark #trainer-credit{color:rgba(255,255,255,.3)}
+#shortcut-hint{
+  position:fixed;top:.5rem;left:50%;transform:translateX(-50%);
+  z-index:200;color:var(--muted);pointer-events:none;font-size:.8rem;
+}
+@media(max-width:900px){#shortcut-hint{display:none}}
+#theme-btn .icon-sun,#theme-btn .icon-moon{width:18px;height:18px;display:block}
+#theme-btn .icon-moon{display:none}
+body.light #theme-btn .icon-sun{display:none}
+body.light #theme-btn .icon-moon{display:block}
+/* Nav arrows */
+.nav-arrow{
+  position:fixed;top:50%;transform:translateY(-50%);
+  background:rgba(0,0,0,.25);color:#fff;border:none;width:44px;height:44px;
+  border-radius:50%;font-size:1.3rem;cursor:pointer;z-index:200;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.nav-arrow:hover{background:rgba(0,0,0,.5);transform:translateY(-50%) scale(1.1)}
+.nav-left{left:12px}
+.nav-right{right:12px}
+/* Break banner */
+#breakbar{
+  position:fixed;top:20px;left:50%;
+  transform:translateX(-50%) translateY(-200%);
+  background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;
+  padding:1.2rem 2rem;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.35);
+  z-index:10000;transition:transform .4s ease;min-width:340px;text-align:center;
+}
+#breakbar.show{transform:translateX(-50%) translateY(0)}
+.bb-icon{font-size:1.5rem;margin-bottom:.3rem}
+.bb-title{font-size:1.3rem;font-weight:700}
+.bb-sub{font-size:1rem;opacity:.9;margin-top:.2rem}
+#bb-x{
+  position:absolute;top:.5rem;right:.8rem;background:rgba(255,255,255,.2);
+  border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;
+  font-size:1rem;line-height:1;
+}
+#bb-x:hover{background:rgba(255,255,255,.35)}
+/* Nawigacja klikiem obslugiwana na .slide (linki i przyciski maja priorytet) */
+/* Misc */
+.big-num{font-size:3rem;font-weight:800;color:var(--accent);line-height:1}
+.timeline{display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
+.timeline-item{display:flex;gap:1rem;align-items:flex-start;padding:.6rem 1rem;background:var(--bg2);border-radius:8px;border-left:4px solid var(--accent2)}
+.timeline-item.break{border-left-color:var(--accent)}
+.timeline-time{font-weight:700;color:var(--accent);min-width:80px;font-size:.9rem}
+.slide.dark .timeline-item{background:var(--dark-bg2)}
+hr.sep{border:none;border-top:1px solid var(--muted);opacity:.2;margin:1rem 0}
+.slide.dark hr.sep{border-top-color:var(--dark-text);opacity:.15}
+.strike{text-decoration:line-through;opacity:.5}
+.demo-flow{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem}
+.demo-flow .df-step{display:flex;gap:1rem;align-items:center}
+.df-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0}
+.df-text{font-size:clamp(.85rem,1.4vw,1rem)}
+</style><style>body{overflow:hidden}#deck{height:100vh}.slide{overflow:auto}.slide-body{padding-top:4.5rem;padding-bottom:5rem}.slide h2{max-width:100%}.prompt-full{width:100%;max-width:1000px;text-align:left}.prompt-full pre{max-height:45vh!important}.prompt-full h3{margin:.25rem 0}.prompt-full p{margin:.25rem 0 .5rem}.course-note{border-left:4px solid #e0af68;padding:1rem;background:rgba(224,175,104,.1);border-radius:6px}#page-count{position:fixed;bottom:18px;right:18px;color:#d7dff8;z-index:101;background:#182334;padding:4px 9px;border-radius:6px}#deck .slide:not(.on){display:none}@media print{html,body[data-page-type="slides"]{overflow:visible!important;height:auto!important;background:#fff!important}body[data-page-type="slides"] #deck{position:static!important;width:auto!important;height:auto!important;overflow:visible!important}body[data-page-type="slides"] #deck .slide,body[data-page-type="slides"] #deck .slide:not(.on){display:block!important;position:relative!important;inset:auto!important;width:auto!important;height:auto!important;min-height:0!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;overflow:visible!important;break-after:page;page-break-after:always}body[data-page-type="slides"] #deck .slide-body{min-height:0!important;max-width:none!important;padding:1.2rem!important;display:block!important}body[data-page-type="slides"] #deck pre[data-prompt-id]{max-height:none!important;overflow:visible!important;white-space:pre-wrap!important;word-break:break-word!important}body[data-page-type="slides"] .course-tools,body[data-page-type="slides"] #hud,body[data-page-type="slides"] #num,body[data-page-type="slides"] #clock,body[data-page-type="slides"] #shortcut-hint,body[data-page-type="slides"] .nav-arrow,body[data-page-type="slides"] #breakbar,body[data-page-type="slides"] .copy-prompt{display:none!important}body[data-page-type="slides"] #deck .slide,body[data-page-type="slides"] #deck .slide.dark{background:#fff!important;color:#111!important}body[data-page-type="slides"] #deck .slide h1,body[data-page-type="slides"] #deck .slide h2,body[data-page-type="slides"] #deck .slide h3{color:#111!important}body[data-page-type="slides"] #deck pre,body[data-page-type="slides"] #deck .code-block{background:#f4f4f4!important;color:#111!important;border:1px solid #aaa!important}}.slide-body ol,.slide-body ul{margin-top:.5rem}.slide-body li{margin:.25rem 0}.slide-body a{color:#9dc8ff}</style><style>.course-tools{position:fixed;z-index:1000;right:16px;top:12px;display:flex;gap:8px;align-items:center}.course-tools a,.course-tools button{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 12px;border:1px solid #7890ac;border-radius:9px;background:#182334;color:#fff;text-decoration:none;font:600 14px system-ui;cursor:pointer}.course-tools button svg{width:20px;height:20px}.course-tools .icon-sun{display:none}[data-theme-toggle] .icon-sun,[data-theme-toggle] .icon-moon{width:20px;height:20px}body[data-theme="dark"] [data-theme-toggle] .icon-sun{display:block}body[data-theme="dark"] [data-theme-toggle] .icon-moon{display:none}body[data-theme="light"] [data-theme-toggle] .icon-sun{display:none}body[data-theme="light"] [data-theme-toggle] .icon-moon{display:block}.course-tools button:focus-visible,.course-tools a:focus-visible{outline:3px solid #f7c26d}body[data-course-audience="developer"] pre[data-prompt-id]{white-space:pre-wrap;overflow:auto;max-height:56vh;line-height:1.5;font-size:clamp(12px,1.1vw,15px);padding:1rem;background:#101827;color:#eff5ff;border:1px solid #61799b;border-radius:10px;text-align:left}.copy-prompt{padding:.55rem .9rem;border:1px solid #a9c8ee;border-radius:8px;background:#183252;color:white;font:700 14px system-ui;cursor:pointer}@media print{.course-tools,.copy-prompt{display:none!important}pre[data-prompt-id]{max-height:none!important}}</style><link rel="stylesheet" href="course.css?v=20260928-1"></head><body data-course-audience="developer" data-page-type="slides" data-theme="dark"><div class="course-tools"><a href="index.html" aria-label="JSystems - materiały szkoleniowe" style="display:inline-flex;align-items:center;background:#fff;border-radius:6px;padding:3px 7px;text-decoration:none"><img src="assets/logo-jsystems.svg" alt="JSystems" style="height:38px;width:auto;display:block"></a><a href="index.html">Strona główna</a><button type="button" data-theme-toggle aria-label="Przełącz na jasny motyw"><svg aria-hidden="true" class="icon-sun" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><line x1="12" x2="12" y1="2" y2="4"></line><line x1="12" x2="12" y1="20" y2="22"></line><line x1="2" x2="4" y1="12" y2="12"></line><line x1="20" x2="22" y1="12" y2="12"></line><line x1="4.93" x2="6.34" y1="4.93" y2="6.34"></line><line x1="17.66" x2="19.07" y1="17.66" y2="19.07"></line><line x1="4.93" x2="6.34" y1="19.07" y2="17.66"></line><line x1="17.66" x2="19.07" y1="6.34" y2="4.93"></line></svg><svg aria-hidden="true" class="icon-moon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button></div><div id="hud"><div id="bar"></div></div><div id="num" aria-live="polite"></div><div id="clock"></div><div id="credit">Autor i prowadzący: Łukasz Matuszewski · organizator: JSystems · 28.09-02.10.2026</div><div id="shortcut-hint">← → nawigacja · F pełny ekran · D motyw</div><button id="prev" class="nav-arrow nav-left" type="button" aria-label="Poprzedni slajd">‹</button><button id="next" class="nav-arrow nav-right" type="button" aria-label="Następny slajd">›</button><div id="breakbar" role="status"><div id="bb-t" class="bb-title"></div><div id="bb-s" class="bb-sub"></div><button id="bb-x" type="button" aria-label="Zamknij komunikat">×</button></div><div id="deck"><section class="slide"><div class="slide-body"><div class="kicker">Wczoraj / dzień 1</div><h2>Od potrzeb grupy do wspólnego PRD</h2><ul><li>Omówiliśmy Wasze potrzeby, zalogowaliśmy się na VM i uruchomiliśmy Codex CLI oraz Claude Code.</li><li>Porównaliśmy CLI i IDE, modele, koszty i bezpieczeństwo; zainstalowaliśmy <a href="https://github.com/EdukeyTeam/agent-toolbox">publiczne skills</a>.</li><li>Zaczęliśmy PRD aplikacji do zwrotów i reklamacji, z zakresem na dwa dni.</li></ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Dzień 2 / punkt wyjścia</div><h2>Wracamy do PRD i wybieramy projekt</h2><p>Wczoraj zrobiliśmy PRD. Dziś agent przechodzi przez pełny cykl: architektura → plan → implementacja → testy → pull request.</p>
+<ul>
+  <li>Możesz pracować na PRD z grupy albo wybrać <strong>własny pomysł</strong>.</li>
+  <li>Celem jest przejście całego procesu na małym fragmencie, nie ukończenie pełnego MVP.</li>
+</ul>
+<p><a href="cwiczenia.html#projekt-zwroty-reklamacje">Główne ćwiczenie</a> · <a href="agenda.html">Przebieg dnia</a></p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">01 / architektura</div><h2>Agent porównuje, Ty wybierasz</h2><ul>
+  <li>Wyodrębnij z PRD decyzje o architekturze, bibliotekach, modelu danych i środowisku.</li>
+  <li><strong>Agent sprawdza</strong> aktualną dokumentację i porównuje opcje - <strong>Ty oceniasz dowody</strong> i wybierasz.</li>
+  <li>Zapisz każdą decyzję w ADR przez <code>write-adr</code> z <a href="https://github.com/EdukeyTeam/agent-toolbox">EdukeyTeam/agent-toolbox</a>. Przykład: jeden ADR dla bazy danych i modelu danych, drugi dla frameworka lub biblioteki agenta AI.</li>
+  <li><strong>Podaj linki do bibliotek, które rozważasz</strong>, np. <a href="https://chat-sdk.dev/">Chat SDK</a>, <a href="https://openrouter.ai/docs/api_reference/responses/overview">OpenRouter Responses API</a>, <a href="https://openrouter.ai/docs/guides/community/vercel-ai-sdk">OpenRouter z Vercel AI SDK</a>. Bez nich agent często ich nie znajdzie i wybierze starsze wzorce. <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Prompt%20examples/ADR-generation-typescript-vercel-ai-sdk.md">Przykładowy prompt</a></li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">02 / planowanie</div><h2>Z PRD i ADR do planu i macierzy zależności</h2><p>Agent tworzy plan: lista zadań, kolejność, właściciele plików, testy i punkty kontroli. Ty sprawdzasz i zatwierdzasz zakres przed implementacją.</p>
+<ul>
+  <li><strong>Tryb Plan</strong> - agent opracowuje plan i zatrzymuje się przed edycją plików.</li>
+  <li><strong>Zwykła sesja</strong> - też może przygotować plan; wyraźnie poproś o zatrzymanie przed implementacją.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">02 / prompt planu</div><h2>Prompt planu z macierzą zależności</h2><p>Podaj agentowi ścieżki do aktualnego PRD i ADR-ów. Jeśli ich brakuje, agent zapyta przed przygotowaniem planu.</p>
+<p><a href="prompty.html#P19-plan-matryca">Biblioteka promptów</a> · <a href="prompts/P19-plan-matryca.md">Markdown</a></p><div class="prompt-full"><button type="button" class="copy-prompt" data-copy-prompt="slide-prompt-P19-plan-matryca">Kopiuj prompt</button><pre id="slide-prompt-P19-plan-matryca" data-prompt-id="P19-plan-matryca" data-prompt-version="4"># Plan pracy nad aplikacją na podstawie PRD
+
+Pracuję nad projektem opisanym w aktualnym PRD. Zapytaj mnie o ścieżkę do PRD i istniejących ADR-ów, jeśli ich nie podałem. Źródłem wymagań jest **aktualny PRD mojego projektu**, nie przykładowy prompt z materiałów kursowych. Jeśli pracuję nad grupową aplikacją do obsługi zwrotów i reklamacji elektroniki, pomiń funkcje opcjonalne usunięte z PRD podczas zajęć.
+
+Najpierw ustal stan faktyczny. Przeczytaj wskazany przeze mnie PRD, istniejące ADR-y, wytyczne projektu, README i bieżący kod. Wskaż pliki, które rzeczywiście udało Ci się otworzyć, oraz polecenia uruchomienia i testów, które da się potwierdzić. Katalog `course-materials/` zawiera materiały dydaktyczne i przykłady; nie przeszukuj go ani nie traktuj jego PRD/ADR jako dokumentacji aplikacji, chyba że wskażę konkretny plik. Nie zakładaj, że projekt już działa ani że każdy uczestnik ma ten sam stan repozytorium.
+
+Jeśli wybór bibliotek, architektury lub sposobu uruchomienia nie został jeszcze rozstrzygnięty, wypisz potrzebne decyzje. Sprawdź aktualną dokumentację oficjalną z datą lub wersją, porównaj rozsądne opcje i zaproponuj użycie zainstalowanej umiejętności `write-adr`. Oddziel fakty potwierdzone od założeń. Dla niezależnych decyzji zaproponuj oddzielne ADR-y; nie wymyślaj ich treści przed moją decyzją.
+
+Przygotuj **plan, bez implementowania go teraz**. Podczas warsztatu chcemy przejść cały proces na jednym niewielkim fragmencie, bez obietnicy ukończenia całej aplikacji. Pokaż, jak użyłbyś trybu Plan, i czym różni się plan zapisany w zwykłej sesji: co możesz tam tylko opisać, a co wymaga mojej zgody przed edycją. Jeśli brakuje kluczowych danych, zadaj najpierw kilka konkretnych pytań zamiast zgadywać.
+
+Zwróć:
+1. Jednozdaniowy cel najbliższego fragmentu z PRD, zakres poza zadaniem i kryteria akceptacji możliwe do sprawdzenia.
+2. Fazy: rozpoznanie stanu → ewentualne ADR → plan → test, który początkowo nie przechodzi → niewielka implementacja → testy i kontrola ręczna w przeglądarce, jeśli jest UI → pokaz grupie → poprawka rzeczywistego problemu → niezależny przegląd → pull request tylko dla gotowego fragmentu.
+3. **Macierz zadań i zależności**. Dla każdego wiersza podaj: identyfikator, wynik, zależności, właściciela, pliki lub obszar własności, kryterium ukończenia, test albo inny dowód, punkt kontroli człowieka i możliwy następny krok. Oznacz, co da się robić równolegle, a co trzeba wykonać po kolei.
+4. Propozycję delegowania wyłącznie niezależnych zadań. Porównaj jednego agenta z subagentami domyślnymi, doraźnymi i własnymi; dla każdego delegowanego zadania przygotuj krótki, wystarczający brief i granice plików. Nie zakładaj, że wszystkie rodzaje subagentów są dostępne w moim wydaniu Copilota. Wskaż ryzyko konfliktów przy wspólnym katalogu i kiedy osobne worktree lub sesje byłyby użyteczne, a kiedy zwiększają narzut.
+5. Jeden wspólny sposób śledzenia stanu pracy w zespole (np. GitHub Issues, Jira, Linear albo Beads, jeśli już go używamy). Nie twórz równoległych źródeł prawdy bez potrzeby. Pokaż przekazanie zadania między agentami i sposób scalenia wyników przed testami całości.
+6. Plan kontroli jakości: testy lokalne, kontrola działania aplikacji przez agenta i człowieka, przegląd zmian, reakcja na uwagi z code review, dokumentacja wyników. Oddziel wynik faktycznie sprawdzony od deklaracji agenta.
+7. Plan awaryjny, jeśli zabraknie czasu, dostępu, przeglądarki lub kredytów AI: najmniejszy pokaz możliwy do wykonania z istniejącym kodem i jasny zapis pracy do dokończenia.
+
+Zapisz plan jako dokument tylko w miejscu, które wskażę lub zatwierdzę. Poza tym dokumentem nie modyfikuj plików; nie implementuj funkcji, nie twórz gałęzi, issue ani pull requesta i nie uruchamiaj delegowanych agentów, dopóki nie przejrzę planu. Nie narzucaj z góry konkretnego języka, frameworka, liczby agentów ani nazw plików, których nie ma w projekcie. Na końcu wskaż trzy najważniejsze decyzje, które mam zatwierdzić przed rozpoczęciem pracy.
+</pre></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">03 / podział pracy</div><h2>Deleguj według macierzy zależności</h2><ul>
+  <li>Zlecaj równolegle tylko zadania z <strong>oddzielnymi plikami i jasnym wynikiem</strong>. Każdy agent dostaje cel, zakres, sposób sprawdzenia i informację o pracy pozostałych.</li>
+  <li><strong>Jeden katalog:</strong> przypisz właścicieli plików i ustal kolejność zależności. Jeden agent integruje wyniki i uruchamia testy całości.</li>
+  <li><strong>Worktree:</strong> ogranicza konflikty, ale wymaga osobnych zależności, serwera i późniejszego scalenia.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">03 / sesje i role</div><h2>Równoległość wymaga wspólnego stanu</h2><ul>
+  <li><strong>Copilot CLI:</strong> <code>←</code> otwiera panel sesji (przy pustym polu), a <code>/session</code> kartę wszystkich sesji (<a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/work-with-multiple-sessions">dokumentacja</a>).</li>
+  <li><strong>Subagenci:</strong> zacznij od roli doraźnej; własną konfigurację utwórz dla powtarzalnych zadań lub innych uprawnień.</li>
+  <li>Do zarządzania wieloma trwałymi procesami agentów możesz użyć <a href="https://github.com/herdrdev/herdr">Herdr</a>.</li>
+  <li><strong>Wspólny stan:</strong> <a href="https://github.com/gastownhall/beads">Beads</a> lub plik Markdown/JSON; <a href="https://linear.app/">Linear</a> do zadań zespołu.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">04 / implementacja</div><h2>Mały fragment, test przed kodem</h2><ul>
+  <li>Wybierz jedną funkcję z PRD i ustal <strong>mierzalne kryterium</strong> zaliczenia.</li>
+  <li><strong>Agent dodaje lub uruchamia test</strong>, który ujawnia brak zachowania - nie zmieniaj asercji, żeby uzyskać pozorny zielony wynik.</li>
+  <li>Agent wdraża <strong>najmniejszą potrzebną zmianę</strong> i uruchamia testy fragmentu, a potem testy całości.</li>
+  <li><strong>Ty</strong> ustalasz zakres, przeglądasz diff, sprawdzasz zgodność z ADR i zatwierdzasz wynik.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">05 / sprawdzenie w praktyce</div><h2>Pokaż działanie i napraw prawdziwy błąd</h2><p>Poproś agenta o przejście rzeczywistego przepływu. Jeśli aplikacja ma UI, niech użyje Playwright lub Chrome DevTools i pokaże zrzut oraz wynik nawigacji klawiaturą.</p>
+<ul>
+  <li>Sprawdź też <strong>ręcznie</strong> najważniejszą ścieżkę użytkownika.</li>
+  <li>Wybierz błąd lub rozbieżność z PRD, zlec poprawkę agentowi i uruchom testy ponownie.</li>
+  <li>Jeśli skończy się czas lub kredyty - zapisz stan, testy i następny krok.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">06 / współpraca przez GitHub</div><h2>Pull request dopiero po lokalnym sprawdzeniu</h2><p>Zakończ fragment, uruchom testy, poproś drugiego agenta o <strong>niezależny lokalny przegląd</strong>. Oceń uwagi, popraw, sprawdź ponownie - dopiero potem wypchnij gałąź.</p>
+<ul>
+  <li>Opisz PR i dołącz wyniki testów oraz krótką demonstrację.</li>
+  <li>Przejrzyj uwagi człowieka i Copilot code review. Weryfikuj każdą uwagę przed zmianą kodu i ponów testy.</li>
+  <li>Scalaj dopiero gdy zmiana jest gotowa i zaakceptowana.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">07 / dalsza praktyka</div><h2>Sprawdź zasady i wybierz dalszy krok</h2><ul>
+  <li>Pracujesz z kodem firmowym? Sprawdź zasady ochrony danych i dostępne funkcje Copilota w swojej organizacji.</li>
+  <li>Chcesz przećwiczyć pracę z kodem legacy? Poznaj publiczny projekt JFTP.</li>
+  <li>Zobacz też <a href="pytania.html">odpowiedzi na pytania z kursu</a>.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">08 / pytania z kursu</div><h2>Wasze pytania: krótkie odpowiedzi</h2><ul>
+  <li><a href="pytania.html#harness">Agent Host i WSL</a>: połącz VS Code z WSL, a agent działa w Linuksie. Assisted permissions są tylko w Agent Host.</li>
+  <li><a href="pytania.html#worktrees">Worktrees z pnpm</a>: <code>virtualStoreType: global</code> i kolejny worktree instaluje się w kilka sekund.</li>
+  <li><a href="pytania.html#hooki">Hooki</a>: matcher, <code>if</code> albo skrypt zawężają hook do plików i poleceń. <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/hooks-example">Blokada sekretów</a> dla Copilota, Claude Code i Codex.</li>
+  <li><a href="pytania.html#cicd">Agent w CI/CD</a>: code review i security review w Azure, GitLab i Bitbucket, z komentarzem w Jira. <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/cicd-headless/agent-review">Gotowe pipeline'y</a>.</li>
+  <li><a href="pytania.html#indeks">Indeks kodu</a>: Copilot ma wyszukiwanie semantyczne jak Cursor; agent używa go sam, ręcznie przez <code>#codebase</code>.</li>
+  <li><a href="pytania.html#historia">Session Sync</a>: ikona Copilota w prawym dolnym rogu i <code>Session Sync: Enable</code>.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Uzupełnienie / przegląd</div><h2>Przegląd kodu i instrukcje Copilota</h2><p>Przejrzyj uwagi Copilota i sam zdecyduj, które są trafne dla Twojej zmiany.</p>
+<ul>
+  <li>Przeczytaj <code>.github/copilot-instructions.md</code> w repozytorium warsztatowym.</li>
+  <li>Stałe reguły zapisuj w <code>.github/copilot-instructions.md</code>, <code>AGENTS.md</code> lub instrukcjach dla ścieżek plików (<code>.github/instructions/</code>). Sprawdź, czy Copilot rzeczywiście z nich korzysta.</li>
+  <li><a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/AGENTS.md">Przykłady plików AGENTS.md</a> - wybierz i dostosuj do swojego projektu.</li>
+</ul>
+<p><a href="cwiczenia.html#copilot-review">Ćwiczenie</a></p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Uzupełnienie / rozszerzenia</div><h2>Prompty, agenci, MCP i CLI</h2><ul>
+  <li>W ćwiczeniu z publicznym skillem wypróbuj <code>write-adr</code> z listy <a href="https://github.com/EdukeyTeam/agent-toolbox">EdukeyTeam/agent-toolbox</a>.</li>
+  <li>Zapisz jako skill procedurę, którą powtarzasz w projekcie, np. przegląd zmian w jednej funkcji.</li>
+  
+</ul>
+<p><a href="cwiczenia.html#copilot-custom">Ćwiczenie</a></p></div></section>
+
+<section class="slide"><div class="slide-body"><div class="kicker">Moduł 2.1</div><h2>Czym jest MCP</h2><p class="subtitle">MCP łączy agenta z zewnętrznymi narzędziami.</p><div class="two-col"><div><h3 class="accent2">Jak działa</h3><div class="card"><ul class="feature-list"><li>Serwer udostępnia narzędzia; agent wywołuje je, gdy są potrzebne.</li><li>Dostęp i uprawnienia określa konfiguracja.</li></ul></div></div><div><h3 class="accent">Przykłady</h3><div class="card amber"><ul class="feature-list"><li>Dokumentacja bibliotek, przeglądarka, bazy danych i API.</li><li>Sprawdź, jakie dane trafiają do narzędzia.</li></ul></div></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Moduł 2.2</div><h2>Skills - umiejętności agenta</h2><div class="two-col"><div><h3 class="accent2">Czym jest skill</h3><div class="card ok"><ul class="feature-list"><li>Powtarzalna procedura dla agenta.</li><li>Łączy instrukcje ze skryptami i materiałami pomocniczymi.</li></ul></div></div><div><h3 class="accent">Co zawiera</h3><div class="card amber"><ul class="feature-list"><li><code>SKILL.md</code> opisuje, kiedy i jak go użyć.</li><li>Opcjonalnie: skrypty, szablony, przykłady.</li></ul></div></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Moduł 2.2 / Harness</div><h2>Hooks - deterministyczne bramki jakości</h2><div class="two-col"><div><h3 class="accent2">Instrukcja</h3><div class="card"><ul class="feature-list"><li>Prosi agenta o działanie, np. uruchomienie testów.</li><li>Agent musi ją odczytać i zastosować.</li></ul></div></div><div><h3 class="accent">Hook</h3><div class="card amber"><ul class="feature-list"><li>Uruchamia akcję po określonym zdarzeniu.</li><li>Przykład: lint po edycji pliku przez narzędzie agenta.</li></ul></div></div></div><div class="note-box" style="margin-top:1rem">Hook może też zablokować wywołanie narzędzia, np. odczyt <code>.env</code>. <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/hooks-example">Przykład dla Copilota, Claude Code i Codex</a>.</div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Agenci / kontekst</div><h2>Gdzie zapisać regułę, a gdzie prompt</h2><div class="cards"><div class="card"><h3>Instrukcja repozytorium</h3><p>Stałe reguły i komendy projektu.</p></div><div class="card"><h3>Prompt zadania</h3><p>Cel, zakres i kryteria dla jednej pracy.</p></div><div class="card"><h3>Skill</h3><p>Powtarzalny proces z instrukcjami i narzędziami.</p></div><div class="card"><h3>CI</h3><p>Testy uruchamiane niezależnie od agenta.</p></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Moduł 2.1 / ważny trend</div><h2>CLI i MCP: koszty oraz korzyści</h2><div class="two-col"><div><h3 class="accent2">MCP</h3><div class="card"><ul class="feature-list"><li>Gotowa integracja udostępnia agentowi narzędzia.</li><li>Wymaga konfiguracji i kontroli dostępu.</li></ul></div></div><div><h3 class="accent">CLI</h3><div class="card ok"><ul class="feature-list"><li>Agent uruchamia polecenie, gdy jest potrzebne.</li><li>Łatwo sprawdzić wejście, wyjście i błędy.</li></ul></div></div></div><div class="note-box" style="margin-top:1rem">Coraz częściej wybieramy CLI: mniej tokenów w kontekście i prostsze debugowanie. MCP zostaje tam, gdzie nie ma dobrego CLI.</div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Moduł 2.2</div><h2>Tworzenie własnych Skills z historii sesji</h2><div class="two-col"><div><h3 class="accent2">Z działającej sesji</h3><div class="card"><ul class="feature-list"><li>Zapisz kroki, które się sprawdziły.</li><li>Usuń dane i decyzje specyficzne dla jednego projektu.</li></ul></div></div><div><h3 class="accent">Z opisu procesu</h3><div class="card amber"><ul class="feature-list"><li>Określ moment użycia, kroki i wynik.</li><li>Dodaj skrypty tylko tam, gdzie pomagają.</li><li>Przetestuj skill w nowej sesji.</li></ul></div></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Instalacja</div><h2>Skills z publicznego źródła</h2><p>Uruchom polecenia w katalogu projektu. Nazwy skilli potwierdź przez <code>--list</code>.</p>
+<ul>
+  <li>Sprawdź <code>.agents/skills/</code> i <code>skills-lock.json</code> w bieżącym projekcie.</li>
+  <li>Skills zainstalowane w jednym projekcie nie stają się automatycznie częścią innych projektów.</li>
+</ul><pre>npx --yes skills@latest add EdukeyTeam/agent-toolbox --list
+npx --yes skills@latest add EdukeyTeam/agent-toolbox --skill write-prd
+npx --yes skills@latest add EdukeyTeam/agent-toolbox --skill write-adr</pre></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Narzędzia</div><h2>CLI, MCP i skill - kryteria wyboru</h2><ul>
+  <li><strong>CLI:</strong> gdy narzędzie jest dostępne w powłoce, ma stabilne wyjście i łatwo je przetestować.</li>
+  <li><strong>MCP:</strong> gdy integracja dostarcza agentowi narzędzia wymagające konfiguracji i kontroli uprawnień.</li>
+  <li><strong>Skill:</strong> procedura i wiedza wielokrotnego użycia, czasem z własnymi skryptami.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Nowe trendy</div><h2>Skills przez MCP i WebMCP</h2><div class="two-col"><div><h3 class="accent2">Skills przez MCP</h3><ul>
+  <li>Serwer MCP udostępnia skille, agent pobiera je na żądanie.</li>
+  <li>Zawsze aktualna wersja, bez ręcznej aktualizacji w każdym repozytorium.</li>
+  <li>Standard od 13.09.2026 (<a href="https://modelcontextprotocol.io/community/working-groups/skills-over-mcp">SEP-2640</a>); klienci dopiero go wdrażają.</li>
+</ul></div><div><h3 class="accent">WebMCP</h3><ul>
+  <li>Strona sama deklaruje narzędzia dla agenta: formularz HTML albo <code>navigator.modelContext.registerTool()</code>.</li>
+  <li>Kilka wywołań narzędzi zamiast klikania i czytania DOM: szybciej, taniej, pewniej.</li>
+  <li>Chrome 149: origin trial, lokalnie flaga <code>chrome://flags/#enable-webmcp-testing</code> (<a href="https://developer.chrome.com/docs/ai/webmcp">dokumentacja</a>).</li>
+</ul></div></div><p>Przykład WebMCP: <a href="https://devpost.com/software/stack-underflow-your-ai-agent-plays-in-the-office">Stack Underflow</a>, gra z OpenAI WebMCP Challenge, w której agent przeglądarki gra jako współpracownik w biurze (<a href="https://play.devpowers.com">zagraj</a>).</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Moduł 2.3</div><h2>Orkiestracja: zadania z jasnym właścicielem</h2><div class="cards"><div class="card ok"><div class="card-title">Plan</div><p>Główny agent wyznacza zadania i zależności.</p></div><div class="card amber"><div class="card-title">Delegowanie</div><p>Każdy wykonawca dostaje cel, pliki i kryteria odbioru.</p></div><div class="card"><div class="card-title">Kontrola</div><p>Agent prowadzący sprawdza wyniki i testy.</p></div><div class="card warn"><div class="card-title">Integracja</div><p>Jedna osoba lub agent odpowiada za końcowy diff.</p></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Copilot / rozszerzenie</div><h2>Wiele ról przy jednym pull requeście</h2><ul>
+  <li>Rozdziel specyfikację, implementację i review jako <strong>osobne punkty kontroli</strong>.</li>
+  <li>Jedna osoba odpowiada za finalny diff, testy i decyzję o przyjęciu zmiany.</li>
+  <li>Dodatkowym agentom dawaj tylko <strong>niezależne pliki</strong> i sprawdzaj ich wyniki.</li>
+  <li>Gdy brak tej funkcji, wykonaj te same role kolejno w Copilot Chat/Agent.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Moduł 2.4 / TDD</div><h2>TDD z agentem: Red-Green-Refactor</h2><div class="two-col"><div><h3 class="accent2">Cykl TDD</h3><div class="demo-flow"><div class="df-step"><div class="df-num" style="background:#ef4444">1</div><div class="df-text"><strong>Red:</strong> test ujawnia brak zachowania.</div></div><div class="df-step"><div class="df-num" style="background:#10b981">2</div><div class="df-text"><strong>Green:</strong> najmniejsza zmiana daje zielony test.</div></div><div class="df-step"><div class="df-num" style="background:#3b82f6">3</div><div class="df-text"><strong>Refactor:</strong> popraw kod bez zmiany zachowania.</div></div></div></div><div><h3 class="accent">Sprawdź z agentem</h3><div class="card ok"><ul class="feature-list check"><li>Test sprawdza wynik, nie sposób implementacji.</li><li>Uruchom test po każdym kroku.</li><li>Przed zmianą upewnij się, że test potrafi wykryć błąd.</li></ul></div></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Moduł 2.4 / wymóg</div><h2>Małe commity po sprawdzonych zmianach</h2><div class="two-col"><div><h3 class="accent2">Dobra historia</h3><div class="card ok"><ul class="feature-list check"><li>Jeden spójny, sprawdzony fragment na commit.</li><li>Test i kod mogą trafić do tego samego działającego commitu.</li></ul></div></div><div><h3 class="danger">Unikaj</h3><div class="card warn"><ul class="feature-list cross"><li>Jednego commitu ze wszystkim na koniec.</li><li>Łączenia niezależnych zmian.</li><li>Commitu bez uruchomionych testów.</li></ul></div></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Test ręczny</div><h2>Agent przechodzi przez rzeczywisty przepływ</h2><ul>
+  <li>Agent otwiera stronę lub CLI i wykonuje scenariusz jak użytkownik - sprawdza stan pusty, błąd i poprawne zgłoszenie.</li>
+  <li>Jeśli jest UI: agent zbiera zrzut, dane z DOM, wynik nawigacji klawiaturą i komunikaty.</li>
+  <li>Porównuje zachowanie z wymaganiami; rozbieżności zapisuje z krokami odtworzenia.</li>
+  <li>Integracje płatne lub zewnętrzne testuj tylko w kontrolowanym środowisku.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Copilot / opcjonalnie</div><h2>Delegowanie tylko przy niezależnych zadaniach</h2><p>Najpierw ustal kontrakt, właściciela plików i test dla każdej części.</p>
+<ul>
+  <li>Nie przypisuj dwóch wykonawców do tego samego pliku.</li>
+  <li>Każdy wynik wymaga weryfikacji w głównej zmianie.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Dodatkowy prompt / plan</div><h2>Krótszy plan dla małego zadania</h2><p>Dla małej zmiany możesz użyć <a href="prompts/P04-plan-podzial-pracy.md">krótszego promptu do planowania</a>: 3-5 zadań na podstawie aktualnego PRD. Przy większym projekcie skorzystaj z <a href="prompty.html#P19-plan-matryca">planu z macierzą zależności</a>.</p><div class="prompt-full"><h3>Plan zespołu agentów</h3><div class="prompt-full"><button type="button" class="copy-prompt" data-copy-prompt="prompt-P04-plan-podzial-pracy">Kopiuj prompt</button><pre id="prompt-P04-plan-podzial-pracy" data-prompt-id="P04-plan-podzial-pracy" data-prompt-version="3">Plan one small feature from the PRD the user has approved for this application: either the group project or the participant&#x27;s own idea. Give each task a clear owner, file boundary, handoff and check. Confirm the current tool supports parallel agents before proposing them.
+
+Locate the current approved PRD in this application project; if several candidate PRDs exist, ask which one governs before planning. Read all relevant approved ADRs and design guidance, if any, then inspect the current code and tests. Do not treat PRD or ADR examples in `course-materials/` as project decisions unless the user explicitly names one for this task. Choose **one vertical slice** that can be demonstrated through a user-visible or API-visible result. Do not plan the entire application at once. Resolve the acceptance criterion, the starting state, the smallest files likely to change, and the commands or observable checks that prove completion. If any of those are unclear, list targeted questions before work begins.
+
+Produce a table with 3-5 tasks. For each task include: ID, deliverable, input/context files, owner role, files it may edit, dependency, verification command/check, and a concrete Definition of Done. Mark which tasks are sequential and which could proceed independently. If the tool supports sub-agents and isolated worktrees, propose how to assign independent tasks without overlapping files. If it does not, use the same table as a single-agent checklist; do not fabricate sub-agent commands.
+
+Make testing a real dependency: a test or observable baseline precedes implementation, an integration check follows the affected components, and a final diff/review follows all changes. Keep commits small and meaningful after a green phase. The plan must state how to handle a failed test, an unexpected existing change, a version/API mismatch, and an external model unavailable during the lab. Protect existing work and avoid destructive reset commands.
+
+Stop at the plan. Return the dependency matrix, a one-paragraph critical path, and the first bounded task ready for a developer or coding agent. If the user has approved a destination path, save the complete plan there as a reviewable document. Otherwise propose a path and ask before writing the file; still return the draft in the response. Creating the plan document is allowed, but do not implement code, start delegation, open a pull request or merge anything until the user has reviewed the plan and explicitly asks to proceed.
+</pre></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Zespół agentów</div><h2>Kiedy delegować, kiedy zostać przy jednym</h2><ul>
+  <li>Rozdziel zadania z <strong>niezależnymi plikami i kryteriami wyniku</strong>.</li>
+  <li>Główny agent uzgadnia interfejsy, zbiera wyniki i uruchamia testy całego przepływu.</li>
+  <li>Nie deleguj współdzielonego pliku dwóm wykonawcom bez kontraktu.</li>
+  <li>Każdy wynik ma listę zmian, testów i ryzyk.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Ćwiczenie / dane</div><h2>Praca na syntetycznym zbiorze</h2><p>W <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/exercise-data">danych ćwiczeniowych</a> znajdziesz syntetyczne pliki <code>csv/complaints.csv</code> i <code>csv/products.csv</code>. Korzystają z nich prompty na kolejnych slajdach.</p>
+<ul>
+  <li>Zdefiniuj regułę jakości danych, a potem zleć agentowi mały skrypt kontrolny.</li>
+  <li>Najpierw pokaż oczekiwane wiersze i przypadek błędny. Następnie uruchom kontrolę na pełnym zbiorze.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Dane / pełny prompt</div><h2>Syntetyczne dane i testy</h2><p>Skopiuj prompt poniżej lub otwórz <a href="prompts/P06-dane-syntetyczne.md">plik Markdown</a> albo <a href="prompty.html#P06-dane-syntetyczne">bibliotekę promptów</a>.</p><div class="prompt-full"><h3>Analiza danych syntetycznych</h3><div class="prompt-full"><button type="button" class="copy-prompt" data-copy-prompt="prompt-P06-dane-syntetyczne">Kopiuj prompt</button><pre id="prompt-P06-dane-syntetyczne" data-prompt-id="P06-dane-syntetyczne" data-prompt-version="3">Pracuj wyłącznie na syntetycznych plikach z repozytorium kursowego: `course-materials/exercise-data/csv/complaints.csv` i `course-materials/exercise-data/csv/products.csv`. Otwórz tylko te wskazane materiały ćwiczeniowe; nie traktuj innych plików w `course-materials/` jako wymagań aplikacji. Nie używaj danych klientów ani produkcyjnych baz.
+
+Najpierw pokaż nagłówki, liczbę wierszy i sposób połączenia `complaints.product_id` z `products.id`. Rozróżnij reklamacje (`type=complaint`) od zwrotów (`type=return`). Wybierz jedną ścieżkę:
+
+- **SQL:** zbuduj lokalną bazę SQLite z tych CSV. Policz reklamacje według kategorii produktu. Pokaż zapytanie i wynik. Sprawdź go niezależnie w Pythonie lub ręcznie na próbce.
+- **Python:** sprawdź brakujące wartości, duplikaty identyfikatorów i zgłoszenia bez odpowiadającego produktu. Napisz test funkcji liczącej reklamacje według kategorii, uwzględniając produkt bez zgłoszeń i błędny `product_id`. Pokaż czerwony test, najmniejszą implementację i zielony wynik.
+
+Zapisz polecenia, wyniki i rozbieżności. Sama liczba reklamacji nie jest &quot;wskaźnikiem reklamacji&quot;: w danych brakuje liczby sprzedanych sztuk.
+</pre></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Interfejs / opcjonalnie</div><h2>Dowody wizualne i dostępność</h2><ul>
+  <li>Przekaż agentowi kontekst układu, stany interakcji i priorytety dostępności.</li>
+  <li>Porównuj zrzuty lub DOM z wymaganiami - nie z samym opisem.</li>
+  <li>Weryfikuj klawiaturę, fokus, kontrast i przepełnienie.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Interfejs / pełny prompt</div><h2>Odtworzenie systemu wizualnego</h2><p>Skopiuj prompt poniżej lub otwórz <a href="prompts/P05-system-designu.md">plik Markdown</a> albo <a href="prompty.html#P05-system-designu">bibliotekę promptów</a>.</p><div class="prompt-full"><h3>System projektowy</h3><div class="prompt-full"><button type="button" class="copy-prompt" data-copy-prompt="prompt-P05-system-designu">Kopiuj prompt</button><pre id="prompt-P05-system-designu" data-prompt-id="P05-system-designu" data-prompt-version="2">Use a real browser automation tool available in this environment to inspect **one public reference page chosen by the learner** and document a reusable design system for a course UI. Do not assume a particular plugin name; first identify the actual browser surface and permissions.
+
+Capture a desktop and mobile screenshot of the chosen page. Inspect visible DOM and computed styles for the header, navigation, one primary action, one form field, a card/list item and the footer. Record concrete design tokens: colors (hex), type families/sizes/weights/line heights, spacing, border radius, borders, shadows and responsive breakpoints. Distinguish measured values from approximations. Record keyboard focus, contrast and error-state behavior where visible. Avoid inventing hidden components from a single screenshot.
+
+Save `assets/design-tokens.json` with a compact set of semantic tokens and `docs/design-guidelines.md` with component patterns, screenshots, responsive notes, accessibility observations and source URL/date. Explain how a frontend developer should apply the tokens to the course app without copying protected brand assets or claiming affiliation with the reference site. If an asset cannot be reused, describe its visual role and provide a neutral substitute. Keep the output actionable: show at least one button, input and card specification and a small verification checklist for comparing the resulting UI in a browser.
+
+Before finishing, reopen the generated files, check token values against the captured evidence and identify any unresolved visual assumptions. Do not implement the application in the same task.
+</pre></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Opcjonalnie / po głównym projekcie</div><h2>JFTP: prawdziwy projekt legacy</h2><p>Po przejściu przez główny proces możesz poznać <a href="https://github.com/sai-pullabhotla/jftp">publiczny projekt JFTP</a> z <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Prompt%20examples/Legacy-Code-JFTP-modernization.md">promptem z repozytorium kursu</a>.</p>
+<ul>
+  <li>Agent poznaje kod i zapisuje mapę architektury.</li>
+  <li>W razie potrzeby wprowadza najmniejszą zmianę potrzebną do uruchomienia.</li>
+  <li>Dodaje 1-2 testy zachowania i modernizuje jeden ograniczony fragment.</li>
+</ul>
+<p>Pełny prompt: <a href="prompty.html#P18-jftp-legacy">biblioteka</a> · <a href="prompts/P18-jftp-legacy.md">Markdown</a>.</p><div class="prompt-full"><button type="button" class="copy-prompt" data-copy-prompt="slide-prompt-P18-jftp-legacy">Kopiuj prompt</button><pre id="slide-prompt-P18-jftp-legacy" data-prompt-id="P18-jftp-legacy" data-prompt-version="1"># P18 - JFTP: poznanie i mała modernizacja prawdziwego projektu legacy
+
+Pracujemy **dopiero po ukończeniu i przeglądzie głównej aplikacji kursowej**. Otwórz we własnej kopii projekt JFTP wskazany w materiale źródłowym: https://github.com/sai-pullabhotla/jftp. To publiczna aplikacja Java FTP, nie przygotowany pod kurs fragment kodu. Nie zakładaj z góry, że znamy jej aktualny stan, wersję Javy, sposób budowania ani przyczynę ewentualnego błędu. Pracuj w GitHub Copilot w udostępnionym środowisku. Nie łącz aplikacji z cudzym serwerem FTP ani nie używaj prawdziwych danych uwierzytelniających.
+
+**Etap 1 - rozpoznanie, bez edycji.** Przeczytaj README, konfigurację budowania, strukturę katalogów i reprezentatywne pliki startowe, UI, logiki FTP oraz zależności. Wskaż pliki, na których opierasz każdą ważną obserwację. Wyjaśnij mi prostym językiem, jak uruchamia się aplikację, jakie ma główne części, jak przepływa typowa operacja i od czego zależy. Rozdziel fakty potwierdzone w kodzie od hipotez. Zaproponuj krótką mapę architektury w `docs/`, listę ryzyk i kolejność dalszej pracy. Sprawdź, które pliki instrukcji dla agenta są faktycznie obsługiwane w tej powierzchni Copilot, zanim zaproponujesz `AGENTS.md` lub instrukcje Copilota. **Zatrzymaj się i pokaż plan przed zmianą plików.**
+
+**Etap 2 - uruchomienie minimalnym kosztem.** Po mojej zgodzie ustal dostępne lokalnie JDK i narzędzie budowania, uruchom istniejące polecenia, zachowaj dokładny błąd oraz odróżnij problem środowiska od błędu kodu. Zaproponuj najmniejszą odwracalną zmianę potrzebną do zbudowania lub uruchomienia aplikacji. Nie zaczynaj od szerokiej migracji zależności ani zmiany wyglądu. Po jednej zmianie pokaż polecenie, wynik i diff. Jeżeli projekt nadal nie startuje, opisz konkretną blokadę; nie deklaruj sukcesu na podstawie samej kompilacji.
+
+**Etap 3 - kilka testów chroniących zachowanie.** Wybierz z dokumentacji jedną lub dwie ważne, możliwe do sprawdzenia funkcje. Zaproponuj testy charakterystyki oparte na wejściu i obserwowalnym wyniku, a nie na prywatnych metodach czy bieżącej implementacji. Użyj fikcyjnych danych i lokalnego/izolowanego środowiska. Dobierz framework testowy dopiero po sprawdzeniu wersji Javy i systemu budowania. Pokaż czerwony wynik dla wykrytej luki lub zielony baseline dla zachowania już działającego; wyjaśnij, czego te testy **nie** pokrywają. Nie obiecuj pełnego pokrycia w tym ćwiczeniu.
+
+**Etap 4 - jeden bezpieczny krok modernizacji.** Gdy aplikacja uruchamia się na tyle, by sprawdzić wybrany przepływ, a testy dają użyteczny punkt odniesienia, zaproponuj jedną małą aktualizację Javy, zależności albo refaktoryzację bez zamierzonej zmiany funkcji. Przed edycją pokaż zgodność, ryzyko, pliki w zakresie, komendę weryfikacji i sposób cofnięcia. Po zmianie uruchom te same testy i krótki test ręczny aplikacji, porównaj wyniki z baseline i pokaż diff. Jeśli test przestanie przechodzić, najpierw podejrzewaj zmianę kodu, a nie poprawiaj asercji dla zielonego wyniku.
+
+Na koniec zwróć: mapę projektu, rzeczywiście uruchomione polecenia i wyniki, listę dodanych testów, mały diff, ograniczenia oraz następne kroki. To pokaz metody pracy z legacy; **nie** twierdź, że cały JFTP został zmodernizowany. Jeśli czas kursu się skończy, zakończ po dowolnym etapie, zostaw odtwarzalny checkpoint i plan jako pracę własną.
+</pre></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Testy / pełny prompt</div><h2>Niezależny przegląd zmiany</h2><p>Skopiuj prompt poniżej lub otwórz <a href="prompts/P08-testy-przeglad-zmian.md">plik Markdown</a> albo <a href="prompty.html#P08-testy-przeglad-zmian">bibliotekę promptów</a>.</p><div class="prompt-full"><h3>Testy i przegląd diffu</h3><div class="prompt-full"><button type="button" class="copy-prompt" data-copy-prompt="prompt-P08-testy-przeglad-zmian">Kopiuj prompt</button><pre id="prompt-P08-testy-przeglad-zmian" data-prompt-id="P08-testy-przeglad-zmian" data-prompt-version="2"># P08 - Testy charakterystyki i niezależny przegląd zmiany
+
+Jesteś recenzentem małej zmiany w repozytorium. Otrzymasz PRD lub opis celu, diff i wynik dostępnych testów. Twoim zadaniem jest znaleźć błędy zachowania i luki w dowodach, a nie wygenerować pochwałę. Najpierw przeczytaj instrukcje projektu, testy najbliższego modułu i kod, który rzeczywiście wykonuje zmieniany przepływ. Zapisz kryteria akceptacji własnymi słowami i powiąż każde z konkretnym testem, kontrolą ręczną albo jawną luką.
+
+Przeprowadź dwa niezależne przebiegi. W pierwszym śledź typową ścieżkę użytkownika od wejścia do wyniku. W drugim szukaj kontrprzykładów: puste dane, błędny identyfikator, duplikat, konflikt aktualizacji, błędna kolejność, brak uprawnień oraz niepowodzenie zależności zewnętrznej. Nie wymyślaj zachowania, którego nie ma w wymaganiach; przy niejednoznaczności zapisz pytanie.
+
+Napisz lub zaproponuj niewielki zestaw testów na granicach zachowania. Każdy test powinien mieć czytelną nazwę, dane wejściowe, oczekiwany wynik i powód, dla którego chroni kontrakt. Jeśli dodajesz test przed poprawką, uruchom go i pokaż oczekiwany czerwony wynik. Następnie pozwól na minimalną poprawkę, uruchom test ponownie i pokaż zielony wynik. Osobno uruchom odpowiedni istniejący zestaw regresji. Nie modyfikuj asercji po niepowodzeniu bez wyjaśnienia i dowodu, że wymaganie było błędne.
+
+Wynik przeglądu przedstaw jako tabelę: ważność, plik/linia, obserwacja, odtwarzalny scenariusz, wpływ i proponowana poprawka. Oddziel fakty potwierdzone uruchomieniem od hipotez. Jeżeli nie możesz uruchomić aplikacji, podaj dokładny powód i najbliższy dostępny dowód. Sprawdź także niezamierzone pliki w diffie, przypadkowe dane prywatne, zmianę publicznego kontraktu i potrzebę aktualizacji dokumentacji. Na końcu wskaż, czy kryteria akceptacji mają komplet dowodów, a jeśli nie - czego brakuje.
+</pre></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">SQL / pełny prompt</div><h2>Weryfikacja wyników drugim sposobem</h2><p>Skopiuj prompt poniżej lub otwórz <a href="prompts/P09-sql-weryfikacja.md">plik Markdown</a> albo <a href="prompty.html#P09-sql-weryfikacja">bibliotekę promptów</a>.</p><div class="prompt-full"><h3>Analiza na danych syntetycznych</h3><div class="prompt-full"><button type="button" class="copy-prompt" data-copy-prompt="prompt-P09-sql-weryfikacja">Kopiuj prompt</button><pre id="prompt-P09-sql-weryfikacja" data-prompt-id="P09-sql-weryfikacja" data-prompt-version="3">Pracuj wyłącznie na syntetycznych plikach `course-materials/exercise-data/csv/complaints.csv` i `course-materials/exercise-data/csv/products.csv` z repozytorium kursowego. Otwórz tylko te wskazane materiały ćwiczeniowe. Nie łącz się z produkcyjną bazą ani zewnętrzną usługą.
+
+Najpierw sprawdź nagłówki, liczbę wierszy, puste wartości, duplikaty `id` i powiązanie `complaints.product_id` z `products.id`. Zbuduj lokalną bazę SQLite lub użyj narzędzia, które już masz. Zapisz sposób importu bez zmieniania danych wejściowych.
+
+Przygotuj zapytanie pokazujące liczbę reklamacji (`type=complaint`) według produktu i kategorii. Uwzględnij produkty bez reklamacji. Pokaż pełny SQL oraz wynik. Nie nazywaj liczby zgłoszeń &quot;wskaźnikiem reklamacji&quot;, bo nie znamy liczby sprzedanych sztuk.
+
+Zweryfikuj wynik drugim sposobem: niezależną agregacją w Pythonie albo innym zapytaniem SQL, nie kopią tego samego `SELECT`. Porównaj wyniki wiersz po wierszu. Dodaj test z nieistniejącym `product_id` i pokaż, czy kontrola integralności go wykrywa.
+
+Zapisz `docs/analysis-report.md`: definicję metryki, zapytania, wyniki obu metod, rozbieżności i ograniczenia interpretacji. Przed edycją pokaż plan plików i testów; po pracy pokaż polecenia, wynik i diff.
+</pre></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Przegląd</div><h2>Dowód ukończenia zadania</h2><ul>
+  <li><strong>Repozytorium:</strong> tylko zamierzone pliki, żadnych śmieci.</li>
+  <li><strong>Diff:</strong> odpowiada PRD, ADR i planowi.</li>
+  <li><strong>Testy:</strong> automatyczne i ręczny przepływ.</li>
+  <li><strong>Opis wyniku:</strong> co działa, co zostało sprawdzone, co wymaga decyzji.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Kontrakt na granicy</div><h2>Test schematu nie zastępuje testu reguły</h2><ul>
+  <li>Jeżeli dwa moduły wymieniają dane, spisz kształt wiadomości i dopuszczalne błędy.</li>
+  <li><strong>Test kontraktowy</strong> wykrywa brak pola, zmianę typu i <code>null</code> w wymaganym polu.</li>
+  <li><strong>Test reguły</strong> osobno sprawdza poprawność decyzji biznesowej.</li>
+  <li>Nie zmieniaj kontraktu pod przypadkową implementację.</li>
+</ul>
+<p>Przykład: wynik funkcji klasyfikującej zgłoszenie (<code>classify_ticket</code>) albo odpowiedź API.</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Jakość</div><h2>Cztery poziomy, cztery pytania</h2><ul>
+  <li><strong>Jednostkowy:</strong> czy reguła działa na wartościach granicznych?</li>
+  <li><strong>Kontraktowy:</strong> czy wejście i wyjście spełniają uzgodniony schemat?</li>
+  <li><strong>Integracyjny:</strong> czy dwa moduły współpracują na danych testowych?</li>
+  <li><strong>Przepływ użytkownika:</strong> czy zadanie od początku do końca działa?</li>
+</ul>
+<p>Liczba testów nie mierzy ryzyka. Test metody wewnętrznej może być zielony, gdy zachowanie jest błędne.</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Review</div><h2>Trzy raporty, jedna decyzja</h2><p>Oddziel przegląd zgodności z PRD, przegląd kodu i przegląd bezpieczeństwa. Każda uwaga ma wagę, lokalizację i odtwarzalny skutek.</p>
+<ul>
+  <li><strong>Napraw:</strong> trafne i w zakresie zadania.</li>
+  <li><strong>Odrzuć:</strong> błędne - z uzasadnieniem.</li>
+  <li><strong>Odnotuj:</strong> trafne, lecz poza zakresem obecnej zmiany.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Przekazanie</div><h2>Wynik powiązany z wymaganiem</h2><p>Opis zmiany podaje numery AC, powiązane decyzje, wynik testów, ręczny scenariusz, świadomie pominięty zakres i pozostałe ryzyko.</p>
+<ul>
+  <li>Zielony test nie zastępuje decyzji człowieka, który czyta diff i ocenia, czy zmiana odpowiada zatwierdzonemu planowi.</li>
+  <li>Brak wyniku z dnia 1? Zacznij od ostatniego commita i aktualnego PRD.</li>
+</ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Po kursie</div><h2>Praktyczny zestaw do ponownego użycia</h2><ul>
+  <li><a href="checklisty.html">Checklisty procesu</a> pomagają w pracy greenfield, brownfield i przy budowie harnessu.</li>
+  <li>Gotowe polecenia znajdziesz w <a href="prompty.html">bibliotece promptów</a>.</li>
+  <li>W nowym projekcie dopasuj fakty i uprawnienia, zachowaj metodę weryfikacji.</li>
+  <li><a href="biblioteka-rozszerzen.html">Tematy do dalszej nauki</a>.</li>
+</ul></div></section>
+
+
+
+<section class="slide"><div class="slide-body"><div class="kicker">Po kursie / materiał dodatkowy</div><h2>Copilot w firmowym repozytorium</h2><ul>
+  <li>Korzystaj tylko z narzędzi i danych dopuszczonych przez organizację. Sprawdź dostępne funkcje Copilota i obowiązujące limity.</li>
+  <li>Wykluczanie treści ma ograniczenia w trybach Edit i Agent - sprawdź <a href="https://docs.github.com/en/enterprise-cloud@latest/copilot/concepts/security-governance-and-network-settings/content-exclusion">aktualną dokumentację GitHub</a>. Nie traktuj tej funkcji jako jedynego zabezpieczenia.</li>
+  <li>Przed pracą w firmowym projekcie skorzystaj z <a href="prompty.html#P17-policy">krótkiej listy pytań o dostęp i ochronę danych</a>.</li>
+</ul></div></section></div><script src="materialy/schedule.js?v=20260928-1"></script><script>window.COURSE_SCHEDULE=window.COURSE_DAYS[1];</script><script src="materialy/deck-runtime.js?v=20260928-1"></script><script>(function(){const KEY='developer-course-theme';function setTheme(value){const t=value==='light'?'light':'dark';document.body.dataset.theme=t;document.body.classList.toggle('light',t==='light');document.querySelectorAll('[data-theme-toggle]').forEach(b=>{const label=t==='dark'?'Przełącz na jasny motyw':'Przełącz na ciemny motyw';b.setAttribute('aria-label',label);b.setAttribute('title',label)})}try{setTheme(localStorage.getItem(KEY)||'dark')}catch(_){setTheme('dark')}document.querySelectorAll('[data-theme-toggle]').forEach(b=>b.addEventListener('click',()=>{const next=document.body.dataset.theme==='dark'?'light':'dark';setTheme(next);try{localStorage.setItem(KEY,next)}catch(_){}}));document.querySelectorAll('[data-copy-prompt]').forEach(b=>{const target=document.getElementById(b.dataset.copyPrompt);if(target?.dataset.promptId)b.setAttribute('aria-label','Kopiuj prompt '+target.dataset.promptId);const live=document.createElement('span');live.className='copy-status-live';live.setAttribute('role','status');live.setAttribute('aria-live','polite');b.after(live);b.addEventListener('click',async()=>{const pre=document.getElementById(b.dataset.copyPrompt);if(!pre)return;const txt=pre.textContent;let copied=false;try{await navigator.clipboard.writeText(txt);copied=true}catch(_){}if(!copied){const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{copied=document.execCommand('copy')===true}catch(_){}ta.remove()}if(!copied){const range=document.createRange();range.selectNodeContents(pre);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}const old=b.dataset.copyLabel||b.textContent;b.dataset.copyLabel=old;b.dataset.copyState=copied?'success':'manual';b.textContent=copied?'Skopiowano':'Zaznaczono — Ctrl+C';live.textContent=copied?'Prompt skopiowany do schowka.':'Nie udało się skopiować. Tekst zaznaczono; naciśnij Ctrl+C.';clearTimeout(b._copyReset);b._copyReset=setTimeout(()=>{b.textContent=old;delete b.dataset.copyState;live.textContent=''},2200)})})})();</script></body></html>

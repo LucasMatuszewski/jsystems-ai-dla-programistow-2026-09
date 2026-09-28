@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+<title>Pytania po pierwszym dniu | AI dla programistów - od pomysłu do MVP</title>
+<meta name="description" content="Sprawdzone odpowiedzi o przywracaniu zmian, uprawnieniach, skills, instrukcjach i historii sesji agentów.">
+<script>(function(){try{var t=localStorage.getItem('developer-course-theme');if(t==='light')document.documentElement.dataset.theme='light'}catch(_){}})();</script>
+<link rel="stylesheet" href="course.css?v=20260928-1">
+<style>
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:78px}body{margin:0;line-height:1.65}a{color:var(--accent)}a:hover{text-decoration:underline}
+.qa-hero{padding:68px 0 38px;border-bottom:1px solid var(--line);background:radial-gradient(700px 360px at 85% 0%,var(--accent-soft),transparent 75%)}
+.qa-kicker{font:700 12px var(--font-mono);letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin:0 0 13px}
+.qa-hero h1{font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;letter-spacing:-.035em;color:var(--heading);margin:0 0 15px;max-width:850px}
+.qa-lead{font-size:clamp(1rem,2vw,1.2rem);max-width:760px;margin:0;color:var(--muted)}
+.qa-meta{font:500 13px var(--font-mono);color:var(--muted);margin:22px 0 0}
+.qa-nav{display:flex;flex-wrap:wrap;gap:8px;padding:26px 0}.qa-nav a{display:inline-block;padding:8px 13px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--text);font-size:14px}.qa-nav a:hover{border-color:var(--accent);color:var(--heading);background:var(--accent-soft)}
+.qa-main{padding-bottom:75px}.qa-card{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:clamp(21px,3vw,34px);margin:0 0 18px;box-shadow:var(--shadow)}
+.qa-card h2{color:var(--heading);font-size:clamp(1.3rem,2.6vw,1.75rem);line-height:1.3;letter-spacing:-.018em;margin:0 0 15px}.qa-card p{margin:10px 0}.qa-card ul{margin:10px 0;padding-left:1.4rem}.qa-card li{margin:6px 0}.qa-card code{font:600 .9em var(--font-mono);background:var(--bg3);color:var(--heading);padding:2px 5px;border-radius:5px;overflow-wrap:anywhere}
+.qa-card pre{overflow:auto;background:var(--code-bg);color:var(--code-text);border:1px solid var(--line);border-radius:10px;padding:15px;font:13px/1.55 var(--font-mono)}.qa-card pre code{padding:0;color:inherit;background:none}
+.qa-sources{border-top:1px solid var(--line);padding-top:12px;margin-top:18px!important;color:var(--muted);font-size:13px}.qa-sources a{white-space:nowrap}
+.qa-note{border-left:3px solid var(--accent2);background:var(--soft2);border-radius:0 9px 9px 0;padding:11px 15px;margin:14px 0;color:var(--text)}
+.qa-theme{margin-left:auto;border:1px solid var(--line);border-radius:9px;background:var(--bg2);color:var(--text);font:600 13px var(--font-sans);padding:8px 12px;cursor:pointer}.qa-theme:hover{border-color:var(--accent)}
+.qa-foot{border-top:1px solid var(--line);padding:24px 0;color:var(--muted);font-size:13px}.qa-foot a{margin-right:18px}
+@media(max-width:700px){.hub-top-in{flex-wrap:wrap;gap:8px;padding-top:8px;padding-bottom:8px}.hub-brand img{max-width:125px;height:auto}.qa-hero{padding-top:40px}.qa-card{border-radius:12px}}
+</style>
+</head>
+<body data-course-audience="developer" data-page-type="qa" data-theme="dark">
+<a class="hub-skip" href="#tresc">Przejdź do treści</a>
+<header class="hub-top"><div class="hub-container hub-top-in">
+  <a class="hub-brand" href="index.html" aria-label="Wróć do wszystkich materiałów"><span style="display:inline-flex;background:#fff;border-radius:6px;padding:3px 7px;margin-right:8px"><img src="assets/logo-jsystems.svg" alt="JSystems" style="height:41px;width:auto;display:block"></span> AI dla programistów<span class="hub-brand-sub">/ pytania</span></a>
+  <button class="qa-theme" id="themeToggle" type="button" aria-label="Przełącz motyw">Przełącz motyw</button>
+</div></header>
+<section class="qa-hero"><div class="hub-container">
+  <p class="qa-kicker">AI dla programistów - od pomysłu do MVP · pytania z kursu</p>
+  <h1>Pytania o codzienną pracę z agentem</h1>
+  <p class="qa-lead">Krótka ściąga na pokaz i do wykorzystania po zajęciach. Najpierw pracujemy nad własnym projektem; te odpowiedzi pomagają wtedy, gdy pojawia się konkretna decyzja.</p>
+  <p class="qa-meta">Stan dokumentacji: 28 września 2026 · sprawdź wersję narzędzia przed użyciem</p>
+</div></section>
+<main id="tresc" class="hub-container qa-main">
+<nav class="qa-nav" aria-label="Pytania"><a href="#cofanie">Cofanie</a><a href="#uprawnienia">Uprawnienia</a><a href="#skills">Skills w IDE</a><a href="#instrukcje">AGENTS.md</a><a href="#historia">Historia</a><a href="#organizacja">Organizacja i offline</a><a href="#indeks">Indeks kodu</a><a href="#harness">Agent Host i WSL</a><a href="#worktrees">Worktrees i pnpm</a><a href="#hooki">Hooki</a><a href="#cicd">CI/CD</a></nav>
+
+<article class="qa-card" id="cofanie"><h2>Jak cofnąć pracę agenta?</h2>
+<p>W Copilot CLI użyj <code>/undo</code> lub <code>/rewind</code> (alias), wybierz wcześniejszy prompt, a potem <code>Conversation only</code> albo <code>Conversation + files</code>. Pierwsza opcja cofa rozmowę; druga próbuje dodatkowo przywrócić pliki zmienione przez Copilota. W VS Code użyj <code>Restore Checkpoint</code>; interfejs oferuje też <code>Redo</code> i rozgałęzienie rozmowy.</p>
+<div class="qa-note">Zrób próbę na nieistotnym pliku i obejrzyj podgląd. Cofanie nie odwraca zewnętrznych akcji, np. już wypchniętego commita. Po przywróceniu sprawdź <code>git status</code> i <code>git diff</code>.</div>
+<p>CLI może pominąć plik zmieniony później ręcznie, a także bardzo duże pliki lub długie tury. W dokumentacji GitHub opis ograniczeń cofania nie jest całkiem spójny. Traktuj Git jako niezależny punkt odzyskania.</p>
+<p class="qa-sources">Źródła: <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/roll-back-changes">GitHub - rollback CLI</a>, <a href="https://code.visualstudio.com/docs/agents/run/review-code-edits">VS Code - checkpoints</a>.</p></article>
+
+<article class="qa-card" id="uprawnienia"><h2>Assisted permissions a Autopilot - co jest czym?</h2>
+<p>W VS Code <strong>Manual</strong>, eksperymentalne <strong>Assisted</strong> i <strong>Allow all</strong> to poziomy zgód w sesji. Assisted używa modelu oceniającego wywołanie narzędzia i pyta człowieka, gdy nie zatwierdzi go automatycznie. <strong>Autopilot</strong> to tryb kontynuowania zadania, który pomija pytania o zgodę; <strong>Advanced Autopilot</strong> dodaje osobny model oceniający ukończenie. To różne funkcje.</p>
+<p>W CLI <code>/permissions assisted</code> zmienia bieżącą sesję, a <code>/permissions show</code> pokazuje stan. W CLI 1.0.88 ustawienie <code>defaultPermissionMode: "assisted"</code> w <code>~/.copilot/settings.json</code> może ustawić domyślny poziom dla <em>nowych interaktywnych</em> sesji, jeśli funkcja eksperymentalna i polityka organizacji na to pozwalają. To inne ustawienie niż VS Code <code>chat.permissions.default</code>.</p>
+<p>W VS Code oba tryby są eksperymentalne i każdy działa w innym harnessie. <strong>Assisted</strong> działa tylko w <a href="https://code.visualstudio.com/docs/agents/concepts/agent-host"><strong>Agent Host</strong></a> (włącz <code>chat.assistedPermissions.enabled</code>). <strong>Advanced Autopilot</strong> działa tylko w harnessie <strong>Local</strong>, czyli w Extension Host (włącz <code>chat.autopilot.advanced.enabled</code>). Dokumentacja nie podaje osobnej ceny ani nazwy modelu oceniającego Assisted, więc nie zakładaj, że jest bezpłatny.</p>
+<p>Poziom zgód wybierasz dla bieżącej sesji w pickerze czatu. <code>chat.permissions.default</code> ustawia poziom dla nowych sesji; starsze <code>chat.experimentalModePermissionsPicker</code> nie jest już udokumentowaną instrukcją włączenia pickera. Advanced Autopilot działa podobnie jak <code>/goal</code> w Claude Code i Codex: agent pracuje dalej, aż osobny model uzna zadanie za ukończone. W Copilot CLI <code>/goal</code> uruchamia Autopilot.</p>
+<p>Jeśli chcesz udostępnić narzędzie tylko do jednego pytania, w sesji <strong>Local</strong> otwórz <code>Configure Tools</code> przy polu czatu i wybierz narzędzia przed wysłaniem wiadomości. W <strong>Copilot harness</strong> wybór narzędzi w <code>Agent Customizations</code> zapisuje się w profilu użytkownika. Włączenie narzędzia nie oznacza automatycznej zgody na jego wywołanie.</p>
+<p>Przykład automatycznego zatwierdzania i blokowania wybranych poleceń CLI jest w <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/.copilot-example">repozytorium kursu</a>. Copilot nie odczytuje takich list z repozytoryjnego <code>.github/copilot/settings.json</code>.</p>
+<p class="qa-sources">Źródła: <a href="https://code.visualstudio.com/docs/agents/run/approvals">VS Code - approvals</a>, <a href="https://code.visualstudio.com/docs/agents/run/tools">VS Code - narzędzia</a>, <a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference">GitHub - komendy CLI</a>, lokalny <code>copilot help config</code> 1.0.88.</p></article>
+
+<article class="qa-card" id="skills"><h2>Dlaczego skill nie pojawia się w IntelliJ?</h2>
+<p>Sprawdź wersję pluginu GitHub Copilot, wybrany harness i panel <code>Customizations</code>. Obsługa skills w JetBrains jest nadal dostępna jako wersja testowa. Repozytoryjne <code>.agents/skills/&lt;nazwa&gt;/SKILL.md</code> jest oficjalną lokalizacją skills, ale wykrywanie zależy od powierzchni i konfiguracji. Jeśli nie widać skilla w <strong>Local</strong>, sprawdź <strong>Copilot</strong> harness; nie kopiuj od razu skilla do kolejnych miejsc.</p>
+<p>W VS Code "Local" oznacza host rozszerzenia w edytorze, a nie model uruchomiony lokalnie. Copilot harness działa na Agent Host i korzysta z Copilot SDK. Sam SDK pozwala też budować własne aplikacje z silnikiem Copilot. Copilot CLI w terminalu i JetBrains AI Assistant przez ACP to kolejne odrębne interfejsy.</p>
+<p class="qa-sources">Źródła: <a href="https://docs.github.com/en/copilot/reference/customization-cheat-sheet">GitHub - mapa customizacji</a>, <a href="https://docs.github.com/en/copilot/concepts/agents/copilot-in-jetbrains">GitHub - JetBrains</a>, <a href="https://github.blog/changelog/2026-09-22-new-features-and-improvements-in-copilot-for-jetbrains/">JetBrains 1.18.0</a>, <a href="https://code.visualstudio.com/docs/agents/run/agent-harnesses">VS Code - harnesses</a>, <a href="https://github.com/github/copilot-sdk">GitHub - Copilot SDK</a>.</p></article>
+
+<article class="qa-card" id="instrukcje"><h2>Czy zagnieżdżone AGENTS.md działają automatycznie?</h2>
+<p>W VS Code <strong>Local</strong> odczyt zagnieżdżonych plików zależy od <code>chat.useNestedAgentsMdFiles</code>, które jest domyślnie wyłączone. Plik główny ma osobne ustawienie <code>chat.useAgentsMdFile</code>. Agent Host stosuje reguły wybranego harnessu; nie przenoś ustawienia Local na wszystkie narzędzia bez testu.</p>
+<p>Dla instrukcji przypiętych do konkretnych plików można użyć <code>.github/instructions/*.instructions.md</code> i <code>applyTo</code>. W repo kursu jest <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/AGENTS.md">folder przykładów AGENTS.md</a> dla Next.js i MCP. To materiały do adaptacji; same pliki w tym folderze nie stają się automatycznie instrukcjami bieżącego projektu. Poproś agenta o wskazanie, które instrukcje faktycznie zastosował do bieżącego pliku.</p>
+<p class="qa-sources">Źródła: <a href="https://code.visualstudio.com/docs/agent-customization/custom-instructions">VS Code - custom instructions</a>, <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/AGENTS.md">przykłady z repo kursu</a>.</p></article>
+
+<article class="qa-card" id="historia"><h2>Gdzie trafia historia sesji?</h2>
+<p>VS Code Session Sync jest domyślnie włączone, jeśli pozwala na to polityka firmy. Sesje są synchronizowane z osobistym kontem GitHub; można wyłączyć synchronizację przez <code>chat.sessionSync.enabled</code> lub wykluczyć wybrane repozytoria. Jeśli synchronizacja jest wyłączona, kliknij ikonę Copilota na pasku stanu (prawy dolny róg) i wybierz <code>Session Sync: Enable</code>. Chronicle pomaga wyszukać wcześniejsze sesje.</p>
+<p class="qa-sources">Źródło: <a href="https://code.visualstudio.com/docs/agents/run/sessions/session-history">VS Code - session history</a>.</p></article>
+
+<article class="qa-card" id="organizacja"><h2>Co może ustawić organizacja, a co zrobić lokalnie?</h2>
+<p>Administratorzy mogą zarządzać częścią polityk Copilota, MCP i enterprise plugin standards. Nie ma w dokumentacji jednego uniwersalnego przełącznika "wymagaj tego skilla wszystkim". Nowy plugin JetBrains deklaruje obsługę skills organizacyjnych, lecz dokładną ścieżkę publikacji trzeba potwierdzić dla danej powierzchni.</p>
+<p>Bezpośrednia instalacja pluginu z repozytorium nadal działa, ale jest oznaczona jako deprecated; dla pluginów preferowany jest marketplace. Publiczne pojedyncze skills z <a href="https://github.com/EdukeyTeam/agent-toolbox">EdukeyTeam/agent-toolbox</a> instalujemy zgodnie z instrukcją kursu. BYOK samo w sobie nie oznacza modelu lokalnego. Praca lokalna wymaga zaplecza uruchomionego na własnym urządzeniu lub w zatwierdzonym środowisku; zgodność z polityką firmy wymaga osobnej decyzji organizacji.</p>
+<p class="qa-sources">Źródła: <a href="https://docs.github.com/en/copilot/concepts/enterprise/plugin-standards">GitHub - enterprise plugin standards</a>, <a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference">GitHub - plugin CLI</a>, <a href="https://code.visualstudio.com/docs/agent-customization/language-models">VS Code - language models</a>.</p></article>
+
+<article class="qa-card" id="indeks"><h2>Czy Copilot indeksuje repozytorium jak Cursor?</h2>
+<p>Tak. Narzędzie <strong>semantic search</strong> szuka kodu po znaczeniu, nie tylko po słowach. Agent używa go sam, gdy to pomaga; możesz je wskazać przez <code>#codebase</code>.</p>
+<ul><li><strong>GitHub i Azure DevOps</strong>: indeks buduje się zdalnie i automatycznie.</li><li><strong>Inne repozytoria</strong>: indeks lokalny, pierwsze budowanie trwa kilka minut. Dla kont organizacji jest domyślnie wyłączony i włącza go polityka Copilota.</li><li>Pomija pliki z <code>.gitignore</code>, <code>files.exclude</code> i <code>search.exclude</code>. Przebudowa: <code>Build Codebase semantic index</code> w palecie poleceń.</li></ul>
+<p>Agenci coraz lepiej radzą sobie zwykłym przeszukiwaniem plików (grep, ripgrep), więc indeks najbardziej pomaga w dużych repozytoriach i przy pytaniach o znaczenie ("gdzie liczymy rabat?").</p>
+<p class="qa-sources">Źródło: <a href="https://code.visualstudio.com/docs/agents/reference/workspace-context#_semantic-search">VS Code: workspace context</a>.</p></article>
+
+<article class="qa-card" id="harness"><h2>Agent Host, harnessy i praca w WSL</h2>
+<p>W VS Code agent działa w jednym z dwóch miejsc. <strong>Local</strong> (Extension Host) to domyślny czat rozszerzenia Copilot. <strong>Agent Host</strong> to osobny proces, w którym działają harnessy <strong>Copilot</strong> (Copilot SDK), <strong>Claude</strong> i <strong>Codex</strong>. Tylko w Agent Host są m.in. Assisted permissions, sesje współdzielone między oknami i zdalne uruchamianie agenta.</p>
+<p>Agent Host działa tam, gdzie workspace. Połącz VS Code z WSL (przycisk w lewym dolnym rogu, rozszerzenie WSL): agent i jego polecenia działają wtedy w Linuksie, nie w Windows. Tak samo przy SSH; w Dev Containers to wciąż funkcja eksperymentalna.</p>
+<p class="qa-sources">Źródła: <a href="https://code.visualstudio.com/docs/agents/concepts/agent-host">VS Code: Agent Host</a>, <a href="https://code.visualstudio.com/docs/agents/run/agent-harnesses">VS Code: harnesses</a>.</p></article>
+
+<article class="qa-card" id="worktrees"><h2>Git worktrees bez instalowania wszystkiego od nowa</h2>
+<p>Każdy worktree potrzebuje własnego <code>node_modules</code>. Z pnpm prawie nic to nie kosztuje: pakiety leżą w jednym magazynie na dysku, a <code>node_modules</code> w worktree zawiera tylko linki. Włącz globalny wirtualny magazyn w <code>pnpm-workspace.yaml</code>:</p>
+<pre><code>virtualStoreType: global</code></pre>
+<p>W pnpm starszym niż 11.23 to <code>enableGlobalVirtualStore: true</code>. Pierwsze <code>pnpm install</code> pobiera pakiety, w kolejnych worktree instalacja trwa chwilę. npm i Yarn nie mają takiego mechanizmu: każdy worktree to pełna instalacja.</p>
+<div class="qa-note">Jeden zapisywalny magazyn tylko dla agentów, którym ufasz w równym stopniu. Pozostałe koszty worktree zostają: osobne porty serwerów, kopia <code>.env</code> i sprzątanie przez <code>git worktree remove</code>.</div>
+<p class="qa-sources">Źródło: <a href="https://pnpm.io/git-worktrees">pnpm: git worktrees</a>.</p></article>
+
+<article class="qa-card" id="hooki"><h2>Hooki: czy można je ograniczyć do plików i poleceń?</h2>
+<p>Tak. Hook uruchamia się na zdarzeniu, np. przed każdym użyciem narzędzia (<code>preToolUse</code> w Copilocie, <code>PreToolUse</code> w Claude Code i Codex), i dostaje pełne argumenty wywołania: polecenie, ścieżkę pliku, wzorzec wyszukiwania. Zawęzisz go na trzy sposoby:</p>
+<ul><li><strong>matcher</strong>: nazwa narzędzia jako wyrażenie regularne, np. <code>Bash|Read</code>,</li><li><strong><code>if</code></strong> (Claude Code): składnia reguł uprawnień, np. <code>Bash(git commit *)</code>,</li><li><strong>skrypt</strong>: sam sprawdza plik lub polecenie i zwraca odmowę (kod wyjścia <code>2</code>).</li></ul>
+<p>W repozytorium kursu jest <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/hooks-example">jeden skrypt blokujący odczyt <code>.env</code>, kluczy SSH i <code>secrets/</code></a> z konfiguracją dla Copilota, Claude Code i Codex. Hooki Copilota z <code>.github/hooks/*.json</code> działają w Copilot CLI, cloud agencie i VS Code (preview).</p>
+<p class="qa-sources">Źródła: <a href="https://docs.github.com/en/copilot/concepts/agents/hooks">GitHub: hooki</a>, <a href="https://docs.github.com/en/copilot/reference/hooks-reference">GitHub: hooks reference</a>, <a href="https://code.visualstudio.com/docs/copilot/customization/hooks">VS Code: hooki</a>, <a href="https://code.claude.com/docs/en/hooks-guide">Claude Code: hooki</a>, <a href="https://developers.openai.com/codex/hooks">Codex: hooki</a>.</p></article>
+
+<article class="qa-card" id="cicd"><h2>Agent w CI/CD: Azure, GitLab, Bitbucket</h2>
+<p><a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/cicd-headless/agent-review">Gotowy zestaw w repozytorium kursu</a>: agent robi code review i security review każdego pull requestu, dodaje komentarz do PR, czyta zadanie z Jira i dopisuje tam wynik. Agenta wybierasz jedną zmienną: Copilot, Claude Code, Codex albo OpenCode.</p>
+<ul><li><strong>Pipeline'y</strong>: Azure Pipelines, GitLab CI i Bitbucket Pipelines; dla GitHub Actions osobne przykłady w tym samym folderze.</li><li><strong>Dostęp</strong>: najprościej jeden klucz <code>OPENROUTER_API_KEY</code> dla wszystkich agentów. Copilot na własnym koncie wymaga fine-grained PAT z uprawnieniem <em>Copilot Requests</em>, Claude Code <code>ANTHROPIC_API_KEY</code>, Codex <code>CODEX_API_KEY</code>.</li><li><strong>Obraz</strong>: własny, na Debian slim z czterema CLI. Alpine odpada, bo narzędzia agentów zakładają glibc.</li><li><strong>Bitbucket</strong>: app passwords przestały działać w lipcu 2026; użyj access tokena repozytorium.</li></ul>
+<p class="qa-sources">Źródła: <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/run-cli-programmatically">Copilot CLI programowo</a>, <a href="https://code.claude.com/docs/en/headless">Claude Code headless</a>, <a href="https://developers.openai.com/codex/noninteractive">Codex exec</a>, <a href="https://www.atlassian.com/blog/bitbucket/bitbucket-cloud-transitions-to-api-tokens-enhancing-security-with-app-password-deprecation">Bitbucket API tokens</a>.</p></article>
+</main>
+<footer class="qa-foot"><div class="hub-container"><a href="index.html">← Wszystkie materiały</a><a href="Prezentacja_Dzien2.html">Prezentacja dnia 2</a><span>AI dla programistów - od pomysłu do MVP</span><span>Autor i prowadzący: <a href="https://devpowers.com/about/lucas-matuszewski/" style="color:var(--accent);text-decoration-color:currentColor;text-underline-offset:.18em">Łukasz Matuszewski</a> · © 2026 Łukasz Matuszewski</span></div></footer>
+<script>(function(){var b=document.getElementById('themeToggle');function apply(t){document.documentElement.dataset.theme=t;document.body.dataset.theme=t;b.setAttribute('aria-pressed',String(t==='light'));b.textContent=t==='light'?'Motyw: jasny':'Motyw: ciemny'}apply(document.documentElement.dataset.theme==='light'?'light':'dark');b.addEventListener('click',function(){var t=document.documentElement.dataset.theme==='light'?'dark':'light';apply(t);try{localStorage.setItem('developer-course-theme',t)}catch(_){}})})();</script>
+</body>
+</html>

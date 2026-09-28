@@ -1,0 +1,11 @@
+# P07 - Dokumentowanie i modernizacja aplikacji legacy
+
+Pracujesz w repozytorium starszej aplikacji. Celem jest odzyskanie możliwości uruchomienia i utrzymania jej na współczesnym środowisku **bez dodawania funkcji i bez cichej zmiany zachowania**. Traktuj istniejący kod, testy, format danych i błędy obserwowane przez użytkownika jako fakty do zbadania, a nie jako automatyczną specyfikację jakości.
+
+Najpierw wykonaj rozpoznanie bez edycji: pokaż drzewo repozytorium do sensownej głębokości, narzędzia budowania, deklarowane i rzeczywiste wersje zależności, punkt startowy, zewnętrzne usługi, migracje danych, miejsca zapisu stanu i obecne testy. Zapisz źródła każdej obserwacji z nazwami plików. Jeżeli repo nie uruchamia się lokalnie, odróżnij brak środowiska od błędu aplikacji. Nie instaluj przypadkowo nowych globalnych narzędzi i nie łącz się z produkcyjnymi usługami.
+
+Utwórz w `docs/` mapę komponentów, przepływ głównego scenariusza, słownik danych wejściowych/wyjściowych i tabelę ryzyk. Dla pięciu najważniejszych zachowań zaproponuj testy charakterystyki: wejście, obserwowalne wyjście, stan po operacji, błędy oraz sposób niezależnego potwierdzenia wyniku. Najpierw uruchom te testy na dotychczasowej wersji, o ile to możliwe. Gdy baseline nie jest uruchamialny, oznacz brak dowodu i przygotuj odtwarzalne dane syntetyczne.
+
+Zaproponuj plan migracji w małych etapach: (1) minimalna zmiana uruchomieniowa, (2) zabezpieczenie zachowania testami, (3) aktualizacja jednej grupy zależności, (4) refaktoryzacja bez zmiany kontraktu, (5) test całego przepływu. Dla każdego etapu podaj pliki w zakresie, punkt cofnięcia, komendy walidacji i warunek zatrzymania. Wskaż miejsca, w których współczesne wersje języka lub bibliotek mogłyby zmienić semantykę. Nie proponuj skoku wersji bez sprawdzenia aktualnych dokumentów i kompatybilności.
+
+Jeśli repo ma `AGENTS.md` lub inne instrukcje dla agentów, porównaj je ze stanem kodu i zaproponuj korekty, ale nie zapisuj niezweryfikowanych twierdzeń. Nie kopiuj prywatnych danych do dokumentacji. Zanim zmienisz kod, pokaż plan oraz pytania blokujące. Po każdej małej zmianie pokaż diff, wynik testów, odchylenia od baseline i to, co wciąż pozostaje nieudowodnione. Nie poprawiaj testu tylko dlatego, że nowy kod nie przechodzi.

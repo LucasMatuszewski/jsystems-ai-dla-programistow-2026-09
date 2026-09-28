@@ -1,0 +1,416 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dzień 1 | AI dla programistów - od pomysłu do MVP</title><link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png"><style>
+:root{
+  /* Slajdy tytulowe (granat/biel/zloto) - identyczne w obu motywach */
+  --dark-bg:#0f172a;--dark-bg2:#1e293b;--dark-text:#f1f5f9;
+  /* Motyw domyslny: dark (Tokyo Night) */
+  --bg:#1a1b26;--bg2:#24283b;--bg3:#2f3549;
+  --text:#c0caf5;--heading:#e6ecff;
+  --accent:#e0af68;--accent2:#7aa2f7;--accent3:#9ece6a;
+  --muted:#7d84a8;--danger:#f7768e;
+  --code-bg:#16161e;--code-text:#a9b1d6;
+  --note-bg:rgba(224,175,104,.09);--note-bd:rgba(224,175,104,.35);--note-text:#e6c187;
+
+}
+body.light{
+  --bg:#ffffff;--bg2:#f1f5f9;--bg3:#e2e8f0;
+  --text:#1e293b;--heading:#0f172a;
+  --accent:#d97706;--accent2:#2563eb;--accent3:#059669;
+  --muted:#64748b;--danger:#dc2626;
+  --code-bg:#1e293b;--code-text:#e2e8f0;
+  --note-bg:#fef9c3;--note-bd:#facc15;--note-text:#92400e;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:clamp(13px,1.4vw,19px)}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#000;overflow:hidden}
+#deck{position:relative;width:100vw;height:100vh}
+.slide{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:var(--bg);color:var(--text);
+  opacity:0;pointer-events:none;transition:opacity .3s ease;
+  overflow-y:auto;overflow-x:hidden;
+}
+.slide.on{opacity:1;pointer-events:auto}
+.slide.dark{background:var(--dark-bg);color:var(--dark-text)}
+.slide a{color:var(--accent2);text-decoration:underline;text-underline-offset:3px}
+.slide.dark a{color:var(--accent)}
+.slide h1,.slide h2,.slide h3{color:var(--heading)}
+.slide.dark h1,.slide.dark h2,.slide.dark h3{color:var(--dark-text)}
+.slide-body{
+  max-width:min(1680px,95vw);margin:0 auto;
+  padding:clamp(2rem,4vh,3rem) clamp(1.6rem,3vw,3.5rem) clamp(1.6rem,3.5vh,2.6rem);
+  min-height:100%;display:flex;flex-direction:column;justify-content:center;
+}
+.title-body{align-items:center;text-align:center}
+.kicker{
+  font-size:.8rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.15em;color:var(--accent);margin-bottom:.5rem;
+}
+h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1.15;margin-bottom:1rem}
+h2{font-size:clamp(1.4rem,3vw,2.1rem);font-weight:700;line-height:1.2;margin-bottom:.9rem}
+h3{font-size:clamp(1.1rem,2.2vw,1.6rem);font-weight:600;margin-bottom:.8rem}
+h4{font-size:1rem;font-weight:600;margin-bottom:.4rem}
+p{font-size:clamp(.95rem,1.6vw,1.15rem);line-height:1.6;margin-bottom:.6rem}
+.subtitle{font-size:clamp(1rem,1.9vw,1.3rem);opacity:.8;margin-bottom:1rem}
+.accent{color:var(--accent)}
+.accent2{color:var(--accent2)}
+.accent3{color:var(--accent3)}
+.danger{color:var(--danger)}
+.title-meta{
+  display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;
+  font-size:1.1rem;opacity:.85;margin-bottom:1.5rem;
+}
+.title-meta div{padding:.3rem .8rem;background:rgba(255,255,255,.08);border-radius:8px}
+.break-badge{
+  background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);
+  border-radius:12px;padding:1rem 1.5rem;margin-top:1rem;display:inline-block;
+}
+.break-badge .bb-label{
+  font-size:.75rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--accent);margin-bottom:.5rem;
+}
+.break-badge .bb-items{display:flex;gap:1.2rem;flex-wrap:wrap;justify-content:center;font-size:.9rem}
+.break-badge .bb-items span::before{content:"\25CF";color:var(--accent);margin-right:.4rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-top:.5rem}
+/* Symetryczne siatki: 4 kafle = 2x2, 5-6 kafli = 3 kolumny (zamiast 3+1 / 4+1) */
+.cards:has(> :nth-child(4):last-child){grid-template-columns:repeat(2,1fr)}
+.cards:has(> :nth-child(5):last-child),.cards:has(> :nth-child(6):last-child){grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cards:has(> :nth-child(5):last-child),.cards:has(> :nth-child(6):last-child){grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.cards{grid-template-columns:1fr !important}}
+.card{
+  background:var(--bg2);border-radius:10px;padding:1rem 1.2rem;
+  border-left:4px solid var(--accent2);
+}
+.card.warn{border-left-color:var(--danger)}
+.card.ok{border-left-color:var(--accent3)}
+.card.amber{border-left-color:var(--accent)}
+.card-title{font-weight:700;color:var(--accent);margin-bottom:.4rem;font-size:1rem}
+.slide.dark .card{background:var(--dark-bg2)}
+.slide.dark .card-title{color:var(--accent)}
+.feature-list{list-style:none;padding:0}
+.feature-list li{padding:.32rem 0 .32rem 1.6rem;position:relative;font-size:clamp(.9rem,1.5vw,1.05rem);line-height:1.5}
+.feature-list li::before{content:"\25B8";position:absolute;left:.3rem;color:var(--accent);font-weight:700}
+.feature-list.check li::before{content:"\2713";color:var(--accent3)}
+.feature-list.cross li::before{content:"\2717";color:var(--danger)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:.5rem}
+@media(max-width:768px){.two-col{grid-template-columns:1fr}}
+.code-block{
+  background:var(--code-bg);color:var(--code-text);padding:.8rem 1.2rem;border-radius:8px;
+  font-family:Consolas,Monaco,"Courier New",monospace;font-size:.85rem;
+  overflow-x:auto;line-height:1.5;margin:.5rem 0;white-space:pre-wrap;
+  position:relative;border:1px solid rgba(125,132,168,.25);
+}
+.copy-btn{
+  position:absolute;top:.4rem;right:.4rem;
+  background:var(--bg3);color:var(--text);border:1px solid var(--muted);
+  border-radius:6px;font-size:.65rem;padding:.2rem .55rem;cursor:pointer;
+  opacity:.65;transition:opacity .15s;font-family:inherit;
+}
+.copy-btn:hover{opacity:1}
+.copy-btn.ok{background:var(--accent3);color:#0f172a;border-color:var(--accent3);opacity:1}
+.code-inline{
+  background:var(--bg2);padding:.1rem .4rem;border-radius:4px;
+  font-family:Consolas,Monaco,monospace;font-size:.9em;color:var(--accent2);
+}
+.slide.dark .code-inline{background:rgba(255,255,255,.1)}
+.badge{
+  display:inline-block;padding:.2rem .7rem;border-radius:999px;
+  font-size:.75rem;font-weight:700;background:var(--accent);color:#fff;
+}
+.badge.blue{background:var(--accent2)}
+.badge.green{background:var(--accent3)}
+.badge.red{background:var(--danger)}
+.badge.lab{background:var(--accent);color:#1a1b26;font-size:.85rem;padding:.3rem 1rem}
+.note-box{
+  background:var(--note-bg);border:1px solid var(--note-bd);border-radius:8px;
+  padding:.8rem 1.2rem;margin:.5rem 0;font-size:.9rem;color:var(--note-text);
+}
+.slide.dark .note-box{background:rgba(250,204,21,.1);border-color:rgba(250,204,21,.3);color:#fef3c7}
+/* Process map */
+.proc-map{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1rem}
+.proc-step{
+  background:var(--bg2);border-radius:10px;padding:1rem;
+  position:relative;text-align:center;border:2px solid transparent;
+}
+.proc-step .ps-num{
+  width:32px;height:32px;border-radius:50%;background:var(--accent2);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;
+  margin:0 auto .5rem;font-size:.9rem;
+}
+.proc-step.active{border-color:var(--accent);background:rgba(224,175,104,.1)}
+.proc-step.active .ps-num{background:var(--accent)}
+.proc-step.optional{opacity:.6}
+.proc-step.optional .ps-num{background:var(--muted)}
+.proc-step .ps-title{font-weight:600;font-size:.85rem;margin-bottom:.2rem}
+.proc-step .ps-desc{font-size:.75rem;color:var(--muted)}
+.slide.dark .proc-step{background:var(--dark-bg2)}
+.slide.dark .proc-step .ps-desc{color:#94a3b8}
+@media(max-width:900px){.proc-map{grid-template-columns:repeat(2,1fr)}}
+/* Footer */
+.slide-footer{
+  position:fixed;bottom:.4rem;right:1.5rem;font-size:.85rem;
+  color:var(--muted);opacity:.7;z-index:50;pointer-events:none;
+}
+.slide.dark .slide-footer{color:rgba(255,255,255,.3)}
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;height:4px;background:rgba(0,0,0,.1);z-index:200}
+#bar{height:100%;width:1%;background:var(--accent);transition:width .3s ease;border-radius:0 3px 3px 0}
+#num{
+  position:fixed;top:.5rem;left:1rem;font-size:.95rem;color:var(--muted);
+  z-index:200;font-variant-numeric:tabular-nums;font-weight:600;
+}
+#clock{
+  position:fixed;top:.5rem;right:3.9rem;font-size:.95rem;color:var(--muted);
+  z-index:200;font-variant-numeric:tabular-nums;
+}
+#theme-btn{
+  position:fixed;top:.3rem;right:1rem;width:34px;height:34px;z-index:210;
+  background:transparent;border:1px solid var(--muted);border-radius:50%;
+  color:var(--muted);cursor:pointer;font-size:1rem;line-height:1;
+  display:flex;align-items:center;justify-content:center;opacity:.7;
+}
+#theme-btn:hover{opacity:1;color:var(--accent)}
+#trainer-credit{
+  position:fixed;bottom:.4rem;left:1.5rem;font-size:.85rem;
+  color:var(--muted);opacity:.7;z-index:50;pointer-events:none;
+}
+.slide.dark #trainer-credit{color:rgba(255,255,255,.3)}
+#shortcut-hint{
+  position:fixed;top:.5rem;left:50%;transform:translateX(-50%);
+  z-index:200;color:var(--muted);pointer-events:none;font-size:.8rem;
+}
+@media(max-width:900px){#shortcut-hint{display:none}}
+#theme-btn .icon-sun,#theme-btn .icon-moon{width:18px;height:18px;display:block}
+#theme-btn .icon-moon{display:none}
+body.light #theme-btn .icon-sun{display:none}
+body.light #theme-btn .icon-moon{display:block}
+/* Nav arrows */
+.nav-arrow{
+  position:fixed;top:50%;transform:translateY(-50%);
+  background:rgba(0,0,0,.25);color:#fff;border:none;width:44px;height:44px;
+  border-radius:50%;font-size:1.3rem;cursor:pointer;z-index:200;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.nav-arrow:hover{background:rgba(0,0,0,.5);transform:translateY(-50%) scale(1.1)}
+.nav-left{left:12px}
+.nav-right{right:12px}
+/* Break banner */
+#breakbar{
+  position:fixed;top:20px;left:50%;
+  transform:translateX(-50%) translateY(-200%);
+  background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;
+  padding:1.2rem 2rem;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.35);
+  z-index:10000;transition:transform .4s ease;min-width:340px;text-align:center;
+}
+#breakbar.show{transform:translateX(-50%) translateY(0)}
+.bb-icon{font-size:1.5rem;margin-bottom:.3rem}
+.bb-title{font-size:1.3rem;font-weight:700}
+.bb-sub{font-size:1rem;opacity:.9;margin-top:.2rem}
+#bb-x{
+  position:absolute;top:.5rem;right:.8rem;background:rgba(255,255,255,.2);
+  border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;
+  font-size:1rem;line-height:1;
+}
+#bb-x:hover{background:rgba(255,255,255,.35)}
+/* Nawigacja klikiem obslugiwana na .slide (linki i przyciski maja priorytet) */
+/* Misc */
+.big-num{font-size:3rem;font-weight:800;color:var(--accent);line-height:1}
+.timeline{display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
+.timeline-item{display:flex;gap:1rem;align-items:flex-start;padding:.6rem 1rem;background:var(--bg2);border-radius:8px;border-left:4px solid var(--accent2)}
+.timeline-item.break{border-left-color:var(--accent)}
+.timeline-time{font-weight:700;color:var(--accent);min-width:80px;font-size:.9rem}
+.slide.dark .timeline-item{background:var(--dark-bg2)}
+hr.sep{border:none;border-top:1px solid var(--muted);opacity:.2;margin:1rem 0}
+.slide.dark hr.sep{border-top-color:var(--dark-text);opacity:.15}
+.strike{text-decoration:line-through;opacity:.5}
+.demo-flow{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem}
+.demo-flow .df-step{display:flex;gap:1rem;align-items:center}
+.df-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0}
+.df-text{font-size:clamp(.85rem,1.4vw,1rem)}
+</style><style>body{overflow:hidden}#deck{height:100vh}.slide{overflow:auto}.slide-body{padding-top:4.5rem;padding-bottom:5rem}.slide h2{max-width:100%}.prompt-full{width:100%;max-width:1000px;text-align:left}.prompt-full pre{max-height:45vh!important}.prompt-full h3{margin:.25rem 0}.prompt-full p{margin:.25rem 0 .5rem}.course-note{border-left:4px solid #e0af68;padding:1rem;background:rgba(224,175,104,.1);border-radius:6px}.recap-breaks{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem .8rem;margin-top:clamp(1.5rem,4vh,2.5rem);padding:.7rem .9rem;border-left:3px solid var(--accent);border-radius:6px;background:var(--accent-soft);font-size:clamp(.8rem,1.3vw,.95rem)}.recap-breaks-label{color:var(--muted);font-weight:600}.recap-breaks time{color:var(--heading);font-weight:700;font-variant-numeric:tabular-nums}#page-count{position:fixed;bottom:18px;right:18px;color:#d7dff8;z-index:101;background:#182334;padding:4px 9px;border-radius:6px}#deck .slide:not(.on){display:none}@media print{html,body[data-page-type="slides"]{overflow:visible!important;height:auto!important;background:#fff!important}body[data-page-type="slides"] #deck{position:static!important;width:auto!important;height:auto!important;overflow:visible!important}body[data-page-type="slides"] #deck .slide,body[data-page-type="slides"] #deck .slide:not(.on){display:block!important;position:relative!important;inset:auto!important;width:auto!important;height:auto!important;min-height:0!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;overflow:visible!important;break-after:page;page-break-after:always}body[data-page-type="slides"] #deck .slide-body{min-height:0!important;max-width:none!important;padding:1.2rem!important;display:block!important}body[data-page-type="slides"] #deck pre[data-prompt-id]{max-height:none!important;overflow:visible!important;white-space:pre-wrap!important;word-break:break-word!important}body[data-page-type="slides"] .course-tools,body[data-page-type="slides"] #hud,body[data-page-type="slides"] #num,body[data-page-type="slides"] #clock,body[data-page-type="slides"] #shortcut-hint,body[data-page-type="slides"] .nav-arrow,body[data-page-type="slides"] #breakbar,body[data-page-type="slides"] .copy-prompt{display:none!important}body[data-page-type="slides"] #deck .slide,body[data-page-type="slides"] #deck .slide.dark{background:#fff!important;color:#111!important}body[data-page-type="slides"] #deck .slide h1,body[data-page-type="slides"] #deck .slide h2,body[data-page-type="slides"] #deck .slide h3{color:#111!important}body[data-page-type="slides"] #deck pre,body[data-page-type="slides"] #deck .code-block{background:#f4f4f4!important;color:#111!important;border:1px solid #aaa!important}}.slide-body ol,.slide-body ul{margin-top:.5rem}.slide-body li{margin:.25rem 0}.slide-body a{color:#9dc8ff}</style><style>.course-tools{position:fixed;z-index:1000;right:16px;top:12px;display:flex;gap:8px;align-items:center}.course-tools a,.course-tools button{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 12px;border:1px solid #7890ac;border-radius:9px;background:#182334;color:#fff;text-decoration:none;font:600 14px system-ui;cursor:pointer}.course-tools button svg{width:20px;height:20px}.course-tools .icon-sun{display:none}[data-theme-toggle] .icon-sun,[data-theme-toggle] .icon-moon{width:20px;height:20px}body[data-theme="dark"] [data-theme-toggle] .icon-sun{display:block}body[data-theme="dark"] [data-theme-toggle] .icon-moon{display:none}body[data-theme="light"] [data-theme-toggle] .icon-sun{display:none}body[data-theme="light"] [data-theme-toggle] .icon-moon{display:block}.course-tools button:focus-visible,.course-tools a:focus-visible{outline:3px solid #f7c26d}body[data-course-audience="developer"] pre[data-prompt-id]{white-space:pre-wrap;overflow:auto;max-height:56vh;line-height:1.5;font-size:clamp(12px,1.1vw,15px);padding:1rem;background:#101827;color:#eff5ff;border:1px solid #61799b;border-radius:10px;text-align:left}.copy-prompt{padding:.55rem .9rem;border:1px solid #a9c8ee;border-radius:8px;background:#183252;color:white;font:700 14px system-ui;cursor:pointer}@media print{.course-tools,.copy-prompt{display:none!important}pre[data-prompt-id]{max-height:none!important}}</style><link rel="stylesheet" href="course.css?v=20260928-1"></head><body data-course-audience="developer" data-page-type="slides" data-theme="dark"><div class="course-tools"><a href="index.html" aria-label="JSystems - materiały szkoleniowe" style="display:inline-flex;align-items:center;background:#fff;border-radius:6px;padding:3px 7px;text-decoration:none"><img src="assets/logo-jsystems.svg" alt="JSystems" style="height:38px;width:auto;display:block"></a><a href="index.html">Strona główna</a><button type="button" data-theme-toggle aria-label="Przełącz na jasny motyw"><svg aria-hidden="true" class="icon-sun" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><line x1="12" x2="12" y1="2" y2="4"></line><line x1="12" x2="12" y1="20" y2="22"></line><line x1="2" x2="4" y1="12" y2="12"></line><line x1="20" x2="22" y1="12" y2="12"></line><line x1="4.93" x2="6.34" y1="4.93" y2="6.34"></line><line x1="17.66" x2="19.07" y1="17.66" y2="19.07"></line><line x1="4.93" x2="6.34" y1="19.07" y2="17.66"></line><line x1="17.66" x2="19.07" y1="6.34" y2="4.93"></line></svg><svg aria-hidden="true" class="icon-moon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button></div><div id="hud"><div id="bar"></div></div><div id="num" aria-live="polite"></div><div id="clock"></div><div id="credit">Autor i prowadzący: Łukasz Matuszewski · organizator: JSystems · 28.09-02.10.2026</div><div id="shortcut-hint">← → nawigacja · F pełny ekran · D motyw</div><button id="prev" class="nav-arrow nav-left" type="button" aria-label="Poprzedni slajd">‹</button><button id="next" class="nav-arrow nav-right" type="button" aria-label="Następny slajd">›</button><div id="breakbar" role="status"><div id="bb-t" class="bb-title"></div><div id="bb-s" class="bb-sub"></div><button id="bb-x" type="button" aria-label="Zamknij komunikat">×</button></div><div id="deck"><section class="slide"><div class="slide-body"><div class="kicker">Dzień 1</div><h2>Od agentów do pomysłu na aplikację</h2><p class="subtitle">Poznamy Wasze doświadczenia, zalogujemy się na maszyny VM i uruchomimy agentów: Codex i Claude Code.</p><p>Najwięcej czasu poświęcimy pracy z agentami: w CLI i w IDE.</p><p><a href="agenda.html">Program szkolenia · 5 dni</a> · <a href="index.html">Wszystkie materiały</a></p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Dzień 1 / plan</div><h2>Od potrzeb grupy do wspólnego PRD</h2><ol><li>Wasze doświadczenia, potrzeby i pytania.</li><li>Logowanie do maszyn VM (Pulpit zdalny), konta AI i dostęp do repozytorium.</li><li>CLI czy IDE, wybór modelu, koszty, bezpieczeństwo i instrukcje dla agentów.</li><li>Skills z publicznego repozytorium i ćwiczenie z systemem wizualnym.</li><li>PRD aplikacji do zwrotów i reklamacji elektroniki, z zakresem na pięć dni.</li></ol><aside class="recap-breaks" aria-label="Przerwy"><span class="recap-breaks-label">Przerwy · czas polski</span><time datetime="11:00">11:00-11:15</time><time datetime="13:00">13:00-13:30</time></aside></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Skills</div><h2>Skills w praktyce</h2><ul><li>Instalujemy skills z <a href="https://github.com/EdukeyTeam/agent-toolbox">publicznego repozytorium EdukeyTeam</a> i porównujemy dwie metody instalacji.</li><li>Skill do systemu wizualnego: agent czyta instrukcję, używa narzędzi i przygotowuje pliki do przeglądu.</li><li>Przy PRD skill dostarcza metodę, a prompt tylko opis naszej aplikacji.</li></ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Wspólny projekt</div><h2>PRD aplikacji do zwrotów i reklamacji</h2><p>Zaczynamy od <a href="https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Prompt%20examples/PRD-electronics-returns-complains-app.md">promptu opisującego aplikację</a> i ograniczamy zakres do tego, co przećwiczymy w ciągu kursu. Funkcje opcjonalne odkładamy.</p><p>Możesz też rozwijać własny pomysł, tą samą metodą.</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Dalsza praktyka</div><h2>Przenieś tę metodę do swojego projektu</h2><p>Zacznij od konkretnego problemu i PRD, zapisz ważne decyzje w ADR, a pierwszą zmianę oprzyj na teście. Możesz ćwiczyć na własnym pomyśle.</p></div></section>
+<section class="slide">
+<div class="slide-body">
+<div class="kicker">Moduł 1.1</div>
+<h2>Korzyści vs ryzyka</h2>
+<div class="two-col">
+<div>
+<h3 class="accent3">Korzyści</h3>
+<ul class="feature-list check">
+<li><strong>Szybkość dostarczania</strong> - scaffolding, boilerplate, refaktoryzacja w minuty</li>
+<li><strong>Mniej powtarzalnej pracy</strong> - agent przejmuje CRUD, testy, dokumentację</li>
+<li><strong>Nauka nowych wzorców</strong> - agent pokazuje rozwiązania, które sam byś przegapił</li>
+<li><strong>Eksploracja</strong> - szybkie prototypowanie pomysłów</li>
+<li><strong>Dokumentacja na bieżąco</strong> - instrukcje repozytorium agenta (AGENTS.md), ADR i aktualizowana dokumentacja</li>
+<li><strong>Projekty, na które nie było czasu</strong> - dziś realne do zrobienia</li>
+<li><strong>Startupy, MVP i PoC</strong> - nigdy nie było prościej ich zbudować</li>
+<li><strong>Kompensacja kompetencji</strong> - BE/SQL dev generuje ładny UI, FE dev tworzy sobie backend</li>
+</ul>
+</div>
+<div>
+<h3 class="danger">Ryzyka</h3>
+<ul class="feature-list cross">
+<li><strong>Więcej bugów i rework</strong> - kod powstaje szybciej, ale badania notują więcej defektów i poprawek na produkcji (dane z 2025; dziś modele są lepsze)</li>
+<li><strong>Więcej kodu ≠ więcej wartości</strong> - rośnie dług techniczny, legacy i koszt utrzymania</li>
+<li><strong>Halucynacje</strong> - agent zmyśla API, funkcje, biblioteki, które nie istnieją</li>
+<li><strong>Context rot</strong> - w długich sesjach agent traci kontekst, gubi wymagania</li>
+<li><strong>Koszty</strong> - tokeny, wywołania API, mogą rosnąć niekontrolowanie</li>
+<li><strong>Fałszywe poczucie bezpieczeństwa</strong> - Agent: "testy ok" -&gt; błędy na prod</li>
+<li><strong>Zależność</strong> - bez agenta trudniej pracować (atrofia umiejętności)</li>
+</ul>
+</div>
+</div>
+<div class="note-box"><strong>Mitygacja:</strong> weryfikacja, testy, code review, świadome zarządzanie kontekstem. O tym cały kurs.</div>
+<div class="note-box" style="margin-top:.5rem"><strong>Co mówią badania:</strong>
+<ul class="feature-list" style="margin-top:.3rem;font-size:.85rem">
+<li><strong>Krzywa J</strong> - produktywność spada na 1-2 miesiące przy nauce nowego workflow</li>
+<li><strong>Zanik pamięci mięśniowej</strong> do ręcznego kodu jest realny - ale czy kiedyś będziemy znów pisać kod ręcznie?</li>
+<li><strong>Mierz własne ROI:</strong> velocity, issues/tickety, liczba bugów, poprawki i uwagi na code review</li>
+<li><strong>Źródła:</strong> <a href="https://www.youtube.com/watch?v=JvosMkuNxF8">Stanford (100k+ dev)</a> · <a href="https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/">METR 2025</a> · <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5842302">SSRN: ukryte koszty GenAI</a> · <a href="https://arxiv.org/abs/2509.19708">arXiv 2025 (Indie)</a></li>
+</ul>
+</div>
+</div>
+
+</section>
+<section class="slide">
+<div class="slide-body">
+<div class="kicker">Moduł 1.3</div>
+<h2>Od prompt engineering do context engineering</h2>
+<div class="two-col">
+<div>
+<h3 class="muted">Prompt engineering</h3>
+<div class="card"><p>Jak sformułować pojedyncze zapytanie, żeby dostać dobrą odpowiedź.</p>
+<ul class="feature-list" style="margin-top:.4rem">
+<li>"Zrefaktoruj ten moduł na async/await; publiczne API bez zmian, testy mają przechodzić"</li>
+<li>"POST /orders zwraca 500 przy pustym body - znajdź przyczynę, napraw i dodaj test regresyjny"</li>
+<li>Cały potrzebny kontekst upychasz w jednym prompcie - za każdym razem od nowa</li>
+</ul></div>
+</div>
+<div>
+<h3 class="accent">Context engineering</h3>
+<div class="card amber"><p>Jak zbudować całe środowisko agenta, żeby <strong>systematycznie</strong> dostawać dobre wyniki.</p>
+<ul class="feature-list" style="margin-top:.4rem">
+<li>instrukcje repozytorium agenta (AGENTS.md)</li>
+<li>Konwencje, zasady, stack</li>
+<li>Struktura projektu opisana dla agenta</li>
+<li>Trwała pamięć między sesjami</li>
+</ul></div>
+</div>
+</div>
+<div class="note-box" style="margin-top:1rem"><strong>Kluczowa różnica:</strong> prompt engineering = pojedyncze zapytanie. Context engineering = środowisko, w którym agent działa i pracuje.</div>
+</div>
+
+</section>
+<section class="slide"><div class="slide-body"><div class="kicker">Codex / kontekst</div><h2>Skąd agent bierze kontekst</h2><ul><li>Otwarte pliki, zaznaczenie i rozmowa pomagają ustalić punkt wejścia.</li><li>Instrukcje repozytorium opisują stałe reguły; prompt opisuje jedną zmianę.</li><li>Przed zadaniem sprawdź, jakie pliki i źródła są faktycznie dołączone do rozmowy.</li><li>Gdy odpowiedź nie ma podstawy w kodzie, poproś o ścieżkę, fragment i test.</li></ul><div class="course-note">W ćwiczeniu: dołącz plik, który zmieniasz, i jego testy; poproś agenta o wskazanie kryterium akceptacji (AC), którego dotyczy zmiana.</div></div></section>
+<section class="slide">
+<div class="slide-body">
+<div class="kicker">Moduł 1.1 | Kierunki rozwoju</div>
+<h2>Multimodalność: screenshoty i HTML jako warstwa prezentacji</h2>
+<div class="two-col">
+<div>
+<h3 class="accent2">Screenshot jako kontekst</h3>
+<div class="card ok"><p>Screenshot bywa wygodniejszy do przekazania modelowi <strong>układu, kolorów i stanu UI</strong>; koszt i jakość zależą od rozdzielczości oraz modelu.</p>
+<ul class="feature-list" style="margin-top:.4rem">
+<li>Jeden obraz zastępuje akapit opisu UI</li>
+<li>Model widzi layout, a nie tylko tekst</li>
+<li>Model nie zawsze poprawnie odczyta drobne szczegóły interfejsu</li>
+<li>Przydatne przy debugowaniu UI i analizie błędów wizualnych</li>
+</ul></div>
+</div>
+<div>
+<h3 class="accent">HTML z Markdown</h3>
+<div class="card amber"><p>Markdown zostaje <strong>formatem źródłowym</strong>, a agent może wygenerować z niego czytelny, interaktywny HTML.</p>
+<ul class="feature-list" style="margin-top:.4rem">
+<li>PRD, ADR, plan - czytelne w przeglądarce</li>
+<li>Interaktywne diagramy zamiast statycznego tekstu</li>
+<li>Źródło w git (Markdown), prezentacja w HTML</li>
+<li>Dokumentacja żyje razem z kodem</li>
+</ul></div>
+</div>
+</div>
+<div class="note-box" style="margin-top:1rem"><strong>Na tym kursie:</strong> PRD i ADR piszemy w Markdown, a ta prezentacja jest generowanym HTML-em. Zobaczysz ten wzorzec wielokrotnie.</div>
+</div>
+
+</section>
+<section class="slide"><div class="slide-body"><div class="kicker">Codex / kontekst</div><h2>Kontroluj kontekst rozmowy</h2><div class="cards"><div class="card"><h3>Zakres</h3><p>Przekaż tylko pliki istotne dla zadania. Duży kontekst utrudnia sprawdzenie źródeł.</p></div><div class="card"><h3>Stan</h3><p>Po długiej rozmowie zapisz decyzje, ograniczenia i wyniki testów w repozytorium.</p></div><div class="card"><h3>Nowe zadanie</h3><p>Rozpocznij nową rozmowę z krótkim, sprawdzonym stanem wejściowym.</p></div></div><p>Nie zakładaj, że agent zapamięta poprzednie sesje albo automatycznie odczyta wszystkie pliki.</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Kontekst</div><h2>Krótka instrukcja to za mało dla długiego zadania</h2><div class="cards"><div class="card"><h3>Cel</h3><p>Problem użytkownika, wartość, mierzalny wynik.</p></div><div class="card"><h3>Stan</h3><p>Istniejący kod, testy, zależności, ograniczenia.</p></div><div class="card"><h3>Dowód</h3><p>Komendy walidacji, artefakty, kryteria akceptacji.</p></div></div><div class="course-note">Długi prompt w bibliotece jest kontekstem zadania, nie sloganem. Kopiuj pełną wersję, potem dopasuj fakty do repozytorium.</div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Agenci / tryby</div><h2>Od podpowiedzi do trybu Agent</h2><ol><li><strong>Podpowiedzi (Copilot w IDE):</strong> zaakceptuj małą sugestię i sprawdź diff.</li><li><strong>Chat (Codex, Claude Code):</strong> pytaj o istniejący kod i test, żądaj wskazania źródła.</li><li><strong>Plan:</strong> ustal pliki, kroki i kryterium wyniku przed edycją.</li><li><strong>Agent:</strong> pozwól na ograniczoną zmianę, kontroluj uprawnienia, uruchom testy i przejrzyj diff.</li></ol></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Model pracy</div><h2>Dwie pętle: budowa i weryfikacja</h2><ol><li>Poproś o rozpoznanie i plan bez edycji.</li><li>Zatwierdź mały zakres.</li><li>Agent edytuje i pokazuje diff.</li><li>Uruchom testy oraz ocenę ręczną.</li><li>Zapisz decyzję i następny krok.</li></ol><p>Jeśli test nie przechodzi, wróć do obserwacji. Nie maskuj błędu zmianą testu bez uzasadnienia.</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">PRD</div><h2>Co i dla kogo budujemy</h2><div class="two-col"><div><h3>PRD opisuje problem</h3><ul><li>Użytkownik, jego zadanie i miara sukcesu.</li><li>Zakres pierwszej wersji i elementy poza zakresem.</li><li>Przepływy, błędy i kryteria akceptacji.</li></ul></div><div><h3>Przypadek kursowy</h3><ul><li>Aplikacja do zwrotów i reklamacji elektroniki, na danych syntetycznych.</li><li>Formularz ze zdjęciem produktu i walidacją.</li><li>Rekomendacja AI, decyzja człowieka i czat z klientem.</li></ul></div></div><p>Publiczny skill <code>write-prd</code> prowadzi metodę; prompt PRD (P01) opisuje naszą aplikację.</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">ADR</div><h2>Dlaczego wybraliśmy rozwiązanie</h2><div class="two-col"><div><h3>ADR zapisuje decyzję</h3><ul><li>Kontekst i siły działające na wybór.</li><li>Realistyczne opcje oraz konsekwencje.</li><li>Decyzję, którą można później ponownie ocenić.</li></ul></div><div><h3>Przypadek kursowy</h3><ul><li>Biblioteka AI i dostawca modeli.</li><li>Analiza zdjęcia i ustrukturyzowana decyzja.</li><li>Przechowywanie zgłoszeń i dokumentów z zasadami zwrotów.</li></ul></div></div><p>Publiczny skill <code>write-adr</code> prowadzi metodę; prompt ADR (P02) podaje decyzje do podjęcia.</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Agenci / repozytorium</div><h2>Instrukcje repozytorium dla agenta</h2><div class="cards"><div class="card"><h3>Stałe fakty</h3><p>Cel projektu, mapa plików, komendy testów potwierdzone na starterze.</p></div><div class="card"><h3>Granice</h3><p>Nie edytuj testów tylko po to, by były zielone. Nie umieszczaj sekretów ani danych klientów.</p></div><div class="card"><h3>Weryfikacja</h3><p>Po zmianie pokaż diff, wynik testów i jedną rzecz nadal niepewną.</p></div></div><p>Plik: <code>AGENTS.md</code> w katalogu głównym repozytorium (Copilot: <code>.github/copilot-instructions.md</code>). W Codex polecenie <code>/init</code> tworzy szkic. Pełny prompt: zasady repozytorium (P03).</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Skills / ćwiczenie</div><h2>Zainstaluj publiczne skills ręcznie</h2><p>W katalogu projektu sprawdź listę w publicznym repozytorium:</p><pre>npx --yes skills@latest add EdukeyTeam/agent-toolbox --list</pre><p>Zweryfikowane nazwy w źródle: <code>write-prd</code> i <code>write-adr</code>. Potem wybierz jedną:</p><pre>npx --yes skills@latest add EdukeyTeam/agent-toolbox --skill write-prd</pre><p>Instalacja do projektu jest domyślna. Jeśli CLI pyta o miejsce, wybierz projekt. Sprawdź, czy skill trafił do <code>.agents/skills/</code> bieżącego projektu i został zapisany w <code>skills-lock.json</code>. Nie kopiuj folderu ręcznie.</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">PRD / pełny prompt</div><h2>Zadanie: serwis zgłoszeń produktów</h2><div class="prompt-full"><h3>PRD serwisu zgłoszeń</h3><p>Skopiuj prompt poniżej lub otwórz go <a href="prompts/P01-prd-serwis.md">jako plik Markdown</a> albo <a href="prompty.html#P01-prd-serwis">w bibliotece promptów</a>.</p><div class="prompt-full"><button type="button" class="copy-prompt" data-copy-prompt="prompt-P01-prd-serwis">Kopiuj prompt</button><pre id="prompt-P01-prd-serwis" data-prompt-id="P01-prd-serwis" data-prompt-version="2">Use the installed `write-prd` skill to create `docs/PRD.md` for an educational MVP called **Hardware Service Decision Copilot**. This is a synthetic course case, not a real company&#x27;s policy or customer system. Follow the skill&#x27;s interview and PRD workflow. Use the product facts below as the starting brief; resolve missing behavior with the learner before writing. Do not invent business limits or technical architecture.
+
+## Problem and users
+
+The support team receives electronics return and complaint requests through email. The initial report often lacks a product category, purchase date, useful description, or image. Agents switch between a policy document and the message thread and spend time requesting missing information. The MVP should guide a customer through an intake form and give the support employee an **advisory recommendation** with a reason and next steps. A person makes the final decision.
+
+Primary users are (1) a customer submitting a case on a laptop or phone, (2) a support employee checking the recommendation and continuing a conversation, and (3) a support lead who needs to inspect whether recommendations follow the written policy. Describe their distinct goals and the main flow from first form field through human review. Include alternative flows for unclear images, missing purchase data, service unavailable, and a customer adding new information after the first recommendation.
+
+## Intake and behavior
+
+- The form asks whether this is a return or complaint, equipment category, product name/model, purchase date, description, and at least one image. A complaint needs a description. The selected path determines which synthetic policy document is relevant.
+- The system validates the form before submission and shows a clear, field-specific error. It must not silently discard an uploaded image or a typed description.
+- After submission, the user sees a progress state. Image analysis describes visible condition and uncertainty. A second step compares the form, image description, and applicable synthetic policy. A low-confidence or contradictory case is marked for human review.
+- The result shows recommendation category, concise reason, evidence used, uncertainty, and next steps. It does not present the recommendation as a final legal decision.
+- The user can ask follow-up questions in chat. The conversation keeps the submitted form and recommendation as context. New facts may trigger a fresh review but must not rewrite the original record without a visible trace.
+- A support employee can inspect what information led to the recommendation. The MVP must not expose raw model reasoning or secrets.
+
+Use only synthetic examples in the document. Propose at least four demo cases: an eligible return, a damaged complaint, an ambiguous image requiring a person, and a failed external service. For each, state the expected visible outcome and a measurable, numbered acceptance criterion (AC-1.1, AC-1.2, etc.). Each criterion must be precise enough to produce a test that can fail before implementation. Include a simple traceability table mapping AC -&gt; proposed test -&gt; evidence, while leaving implementation choices for the ADR. Make the out-of-scope boundary explicit: no production customer database, payment/refund processing, final automatic decision, account management, or external ticketing integration.
+
+Output a concrete PRD that a developer and tester can use. Keep framework, SDK, database schema and implementation choices for the later ADR. Show assumptions separately and ask the learner to settle the questions required by the skill before treating the document as final.
+</pre></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">ADR / pełny prompt</div><h2>Decyzja: magazynowanie zgłoszeń</h2><div class="prompt-full"><h3>ADR: wybór magazynu danych</h3><p>Skopiuj prompt poniżej lub otwórz go <a href="prompts/P02-adr-serwis.md">jako plik Markdown</a> albo <a href="prompty.html#P02-adr-serwis">w bibliotece promptów</a>.</p><div class="prompt-full"><button type="button" class="copy-prompt" data-copy-prompt="prompt-P02-adr-serwis">Kopiuj prompt</button><pre id="prompt-P02-adr-serwis" data-prompt-id="P02-adr-serwis" data-prompt-version="2">Use the installed `write-adr` skill to document the architecture for the synthetic **Hardware Service Decision Copilot** described in `docs/PRD.md`. Read the whole PRD first. Follow the skill&#x27;s clarification, current-documentation and ADR workflow; do not write code in this step. The PRD controls product behavior, and the ADR records technical decisions and their tradeoffs.
+
+The course repo starts from an unsolved scaffold and may be used by people in different stacks. Ask which language, framework and local environment this group is actually using before selecting components. The instructor&#x27;s example may use a web UI plus API, but a CLI-first implementation is also acceptable if it satisfies the same acceptance criterion. Do not copy a historical Next.js/Spring/Angular decision without validating it for this repo and the current official documentation.
+
+Resolve and record at least these decisions:
+
+- Where form validation occurs and how field-level errors cross the UI/API boundary.
+- How images are accepted, size-limited, temporarily stored or discarded, and represented in the model request. State how failures are shown to the user.
+- How the return and complaint policy documents are loaded, versioned and cited by the recommendation. The synthetic policy files must be the only policy facts in the lab.
+- How image analysis and decision generation are separated, including structured output validation, uncertain results and the human-review category.
+- How the first recommendation, follow-up chat and any re-evaluation are related without losing the original outcome.
+- How an external model is isolated behind a testable seam. Unit tests use deterministic fixtures; an optional live check is bounded and clearly separated from repeatable tests.
+- How secrets and logs are handled. No key belongs in browser code, prompt examples, screenshots or Git history.
+
+For each choice, describe an alternative and why it was rejected or deferred. Provide a component diagram, a sequence diagram for successful submission, a sequence diagram or table for failure/uncertainty, conceptual data structures, interface contracts, and a testing strategy tied to PRD acceptance criteria. List exact build/test/run commands for the chosen scaffold only after verifying them locally. Record the official documentation sources and versions used for every selected library. Keep a short list of unresolved decisions rather than guessing.
+
+Write the ADR under `docs/ADR/` using the file layout the skill selects. Stop after the ADR and its verification; implementation is a separate exercise.
+</pre></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Zasady repo / pełny prompt</div><h2>Kontrakt jakości z agentem</h2><div class="prompt-full"><h3>Zasady repozytorium i jakości</h3><p>Skopiuj prompt poniżej lub otwórz go <a href="prompts/P03-zasady-repo-jakosc.md">jako plik Markdown</a> albo <a href="prompty.html#P03-zasady-repo-jakosc">w bibliotece promptów</a>.</p><div class="prompt-full"><button type="button" class="copy-prompt" data-copy-prompt="prompt-P03-zasady-repo-jakosc">Kopiuj prompt</button><pre id="prompt-P03-zasady-repo-jakosc" data-prompt-id="P03-zasady-repo-jakosc" data-prompt-version="2">Inspect this repository and propose a concise repo-level instruction file for the coding agent that the course actually uses. Define only rules justified by **this** scaffold; do not assume a language, test runner, package manager, user-level settings path, or agent syntax from a different course.
+
+
+If this repository contains `course-materials/`, treat it as an inert teaching library. Application agents must not search or read it unless the user explicitly names a course material for this task. Example PRDs and ADRs there are not current product requirements or decisions. Put this boundary in the root agent instructions (and any tool-specific active instruction file), while allowing explicit user-directed course-material work.
+
+First report the real repository structure and commands you verified. State which files contain the product brief, architecture decision, policies, tests and synthetic fixtures. Identify generated directories, secrets and data files that must stay out of Git. If a command cannot run in this environment, quote the exact failure and do not present it as verified.
+
+Create a short root instruction file that tells an agent:
+
+1. What this project is for, which source documents decide behavior, and which directories contain code versus exercises.
+2. How to run the fast test, full test, lint/type check and application (using observed commands only).
+3. How to scope work: inspect relevant code, state a small plan, keep changes tied to one acceptance criterion, and review the diff before a commit. Define an explicit pre-commit quality gate using only verified repository commands: required fast tests and lint/type checks must pass, the diff must contain only intended files, and failures block the commit.
+4. How to test: write or update a behavior-focused test first where appropriate, observe its failure for the intended reason, implement the smallest change, rerun tests, and document any manual UI/API check.
+5. How to handle model calls: use deterministic fixtures for repeatable tests, mark the optional live check, and avoid secrets or real participant/customer data in prompts and logs.
+6. What blocks completion: failing required tests, unreviewed diff, an unverified claim, accidental generated/private files, or a change outside the agreed scope.
+
+If frontend and backend truly have different commands or conventions, propose small nested instruction files. Keep shared rules in the root file and local rules near the relevant code. If this tool requires a different filename or import mechanism than another agent, explain that difference rather than copying a symlink recipe blindly. Show the complete proposed file(s), the observed commands/results, and one example of a task that would invoke the quality gate. Do not modify global configuration or install tools unless this exercise explicitly asks for it.
+</pre></div></div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Praktyka</div><h2>Kryteria akceptacji są testowalne</h2><ul><li><strong>Wejście:</strong> zgłoszenie zawiera identyfikator produktu, opis, kanał i priorytet.</li><li><strong>Walidacja:</strong> błędny identyfikator i puste pola są odrzucane w przewidywalny sposób.</li><li><strong>Ślad:</strong> status może być odtworzony z danych, a nie jedynie z opisu agenta.</li><li><strong>Dowód:</strong> test automatyczny i ręczny przechodzą.</li></ul></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Ćwiczenie</div><h2>Przeprowadź rozmowę PRD i ADR</h2><ol><li>Użyj promptu P01 z zainstalowanym <code>write-prd</code>.</li><li>Sprawdź, czy agent pyta o brakujące wymagania i oddziela hipotezy od decyzji.</li><li>Użyj P02 z <code>write-adr</code>; rozważ koszty i możliwość zmiany wyboru.</li><li>Przejrzyj dokumenty i wróć do testu startera.</li></ol></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">PRD / kryteria</div><h2>Numerowane AC dają się testować</h2><div class="two-col"><div><h3>Życzenie</h3><p>System poprawnie obsługuje błędny formularz.</p><p>Nie ma mierzalnego wyniku ani granicy.</p></div><div><h3>Kryterium AC-L1.2</h3><p>Brak kategorii produktu daje status <code>review</code> (decyzja człowieka); pozostałe pola zostają bez zmian.</p><p>Test ma wejście, oczekiwany wynik i numer AC w nazwie.</p></div></div><p>W PRD oznacz osobno fakt, założenie i pytanie. Każde AC połącz z testem i śladem zmiany.</p></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Plan / zależności</div><h2>Zatwierdź kolejność zanim kod powstanie</h2><ol><li>Zapisz kontrakt wejścia/wyjścia oraz kryteria AC.</li><li>Wskaż konkretne pliki i testy, które się zmienią.</li><li>Zaznacz zadania równoległe tylko wtedy, gdy nie współdzielą plików ani niezdecydowanego interfejsu.</li><li>Podaj warunek ukończenia i granice zadania.</li></ol><div class="course-note">Przykład: test reguły klasyfikacji i dokument PRD można przygotować niezależnie; implementacja reguły zależy od zatwierdzonego AC.</div></div></section>
+<section class="slide"><div class="slide-body"><div class="kicker">Research / ADR</div><h2>Oddziel dowód od pewnego tonu modelu</h2><ul><li>Wybierz opcje i sprawdź oficjalną dokumentację z datą lub wersją.</li><li>Każdą tezę techniczną oznacz jako zweryfikowaną albo niepewną.</li><li>W ADR pokaż konsekwencje dla testowania, utrzymania, migracji i kosztu.</li><li>Brak źródła lub wersji przy bardzo konkretnej nazwie API to sygnał do zatrzymania.</li></ul></div></section>
+
+<section class="slide"><div class="slide-body"><div class="kicker">Repozytorium</div><h2>Agent potrzebuje granic zadania</h2><ul><li>Podaj punkt wejścia, testy, definicję gotowości i pliki poza zakresem.</li><li>Zacznij od odczytu statusu oraz struktury repozytorium; nie od masowej edycji.</li><li>Zapytaj o plan, potem pozwól zmieniać mały zakres.</li><li>Po każdym kroku czytaj diff i uruchom właściwe testy.</li></ul></div></section>
+
+
+
+
+
+
+
+</div><script src="materialy/schedule.js?v=20260928-1"></script><script>window.COURSE_SCHEDULE=window.COURSE_DAYS[0];</script><script src="materialy/deck-runtime.js?v=20260928-1"></script><script>(function(){const KEY='developer-course-theme';function setTheme(value){const t=value==='light'?'light':'dark';document.body.dataset.theme=t;document.body.classList.toggle('light',t==='light');document.querySelectorAll('[data-theme-toggle]').forEach(b=>{const label=t==='dark'?'Przełącz na jasny motyw':'Przełącz na ciemny motyw';b.setAttribute('aria-label',label);b.setAttribute('title',label)})}try{setTheme(localStorage.getItem(KEY)||'dark')}catch(_){setTheme('dark')}document.querySelectorAll('[data-theme-toggle]').forEach(b=>b.addEventListener('click',()=>{const next=document.body.dataset.theme==='dark'?'light':'dark';setTheme(next);try{localStorage.setItem(KEY,next)}catch(_){}}));document.querySelectorAll('[data-copy-prompt]').forEach(b=>{const target=document.getElementById(b.dataset.copyPrompt);if(target?.dataset.promptId)b.setAttribute('aria-label','Kopiuj prompt '+target.dataset.promptId);const live=document.createElement('span');live.className='copy-status-live';live.setAttribute('role','status');live.setAttribute('aria-live','polite');b.after(live);b.addEventListener('click',async()=>{const pre=document.getElementById(b.dataset.copyPrompt);if(!pre)return;const txt=pre.textContent;let copied=false;try{await navigator.clipboard.writeText(txt);copied=true}catch(_){}if(!copied){const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{copied=document.execCommand('copy')===true}catch(_){}ta.remove()}if(!copied){const range=document.createRange();range.selectNodeContents(pre);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range)}const old=b.dataset.copyLabel||b.textContent;b.dataset.copyLabel=old;b.dataset.copyState=copied?'success':'manual';b.textContent=copied?'Skopiowano':'Zaznaczono — Ctrl+C';live.textContent=copied?'Prompt skopiowany do schowka.':'Nie udało się skopiować. Tekst zaznaczono; naciśnij Ctrl+C.';clearTimeout(b._copyReset);b._copyReset=setTimeout(()=>{b.textContent=old;delete b.dataset.copyState;live.textContent=''},2200)})})})();</script></body></html>
