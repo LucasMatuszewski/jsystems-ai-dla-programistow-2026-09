@@ -275,7 +275,7 @@ Notes from course for JSystem — AI dla programistów: od pomysłu do MVP
     - Not only GPT, Claude Opus in all plans: [Claude Opus 4.5 is now generally available in GitHub Copilot - GitHub Changelog](https://github.blog/changelog/2025-12-18-claude-opus-4-5-is-now-generally-available-in-github-copilot/)
     - VS Code harnesses: **Local** (Extension Host, default chat) vs **Agent Host** (separate process running Copilot SDK, Claude and Codex harnesses; needed for Assisted permissions, shared sessions, remote hosts). Connected to WSL/SSH, the agent runs inside that environment: [Agent Host](https://code.visualstudio.com/docs/agents/concepts/agent-host), [Agent harnesses](https://code.visualstudio.com/docs/agents/run/agent-harnesses)
     - Session history synced to your GitHub account: enable from the Copilot status bar icon (bottom right) > `Session Sync: Enable`: [Session history](https://code.visualstudio.com/docs/agents/run/sessions/session-history)
-    - Answers to participants' Copilot questions (rewind, permissions, Autopilot, skills in JetBrains, nested AGENTS.md, hooks, CI/CD): [Copilot Q&A page](https://devpowers.com/szkolenia/futureskills/sii-github-copilot-2026-09/copilot-pytania.html)
+    - Answers to participants' Copilot questions (rewind, permissions, Autopilot, skills in JetBrains, nested AGENTS.md, hooks, CI/CD): [Copilot Q&A page](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/pytania.html)
   - [Google Antigravity IDE](https://antigravity.google/product/antigravity-ide)
   - [Junie | IntelliJ IDEA Documentation](https://www.jetbrains.com/help/idea/junie.html)
   - [Cline - AI Coding, Open Source and Uncompromised](https://cline.bot/)

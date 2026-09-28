@@ -2,7 +2,7 @@
 
 ## Project
 
-This is a **course project** for the "GitHub Copilot" training for Sii, 2 days, remote. The app is a multimodal AI assistant built live during the course. The domain, tech stack, and architecture are decided by the group through a structured process: research → PRD → ADR → implementation with agents.
+This is a **course project** for the "AI dla programistów - od pomysłu do MVP" training organized by JSystems, 5 days (28.09-02.10.2026), remote on cloud VMs. The primary taught agent is OpenAI Codex CLI, with Claude Code and GitHub Copilot as covered alternatives. The app is a multimodal AI assistant built live during the course. The domain, tech stack, and architecture are decided by the group through a structured process: research → PRD → ADR → implementation with agents.
 
 This is only the **base starting repository** for the course; concrete decisions are made live with the group.
 
