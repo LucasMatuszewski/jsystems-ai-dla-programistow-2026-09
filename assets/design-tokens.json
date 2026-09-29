@@ -1,0 +1,171 @@
+{
+  "metadata": {
+    "source": "https://allegro.pl/",
+    "capturedAt": "2026-09-29",
+    "method": "Playwright CLI 0.1.22, headed Chrome, logged-out Polish desktop homepage",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scope": "Observed desktop styles; normalized semantic names are local, not official Allegro tokens.",
+    "unknown": [
+      "colors.brand.error",
+      "colors.background.overlay",
+      "mobile breakpoints",
+      "disabled and validation states"
+    ],
+    "notes": [
+      "Null means not verified on the inspected homepage.",
+      "Alpha text colors retain their original CSS values.",
+      "Spacing is a curated subset of observed values, not a claimed official scale.",
+      "Open Sans is used in the header; Inter dominates product modules; Roboto appears in footer headings."
+    ]
+  },
+  "colors": {
+    "brand": {
+      "primary": "#FF5A00",
+      "accent": "#008673",
+      "error": null,
+      "success": "#107B1E"
+    },
+    "background": {
+      "default": "#FFFFFF",
+      "light": "#ECEFF1",
+      "dark": "#3A4E58",
+      "overlay": null
+    },
+    "text": {
+      "primary": "rgba(0, 0, 0, 0.87)",
+      "secondary": "rgba(0, 0, 0, 0.54)",
+      "muted": "#767676",
+      "onDark": "#FFFFFF"
+    },
+    "border": {
+      "subtle": "rgba(0, 0, 0, 0.12)"
+    },
+    "membership": {
+      "smart": "#422779"
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "primary": "\"Open Sans\", sans-serif",
+      "commerce": "Inter, sans-serif",
+      "legacyHeading": "Roboto, sans-serif"
+    },
+    "fontWeights": {
+      "light": 300,
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "fontSize": {
+      "xs": "12px",
+      "sm": "13.008px",
+      "base": "14px",
+      "md": "16px",
+      "lg": "20px",
+      "price": "22px",
+      "xl": "24px",
+      "legacyHeading": "21.008px"
+    },
+    "lineHeight": {
+      "caption": "16px",
+      "product": "20px",
+      "body": "21px",
+      "button": "22.08px",
+      "heading": "31.2px"
+    },
+    "letterSpacing": {
+      "normal": "normal",
+      "action": "2px"
+    }
+  },
+  "spacing": {
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "6": "24px",
+    "8": "32px",
+    "10": "40px"
+  },
+  "borderRadius": {
+    "none": "0px",
+    "control": "2px",
+    "sm": "4px",
+    "md": "8px",
+    "lg": "16px",
+    "circle": "100%"
+  },
+  "components": {
+    "button": {
+      "primary": {
+        "backgroundColor": "#FF5A00",
+        "color": "#FFFFFF",
+        "height": "40px",
+        "padding": "0px 16px",
+        "borderRadius": "2px",
+        "fontFamily": "\"Open Sans\", sans-serif",
+        "fontSize": "16px",
+        "fontWeight": 700,
+        "letterSpacing": "2px",
+        "textTransform": "uppercase",
+        "border": "none",
+        "boxShadow": "none",
+        "hover": {
+          "backgroundColor": "rgba(255, 90, 0, 0.8)"
+        }
+      }
+    },
+    "header": {
+      "backgroundColor": "#FFFFFF",
+      "padding": "0px",
+      "fontSize": "14px",
+      "fontFamily": "\"Open Sans\", sans-serif",
+      "height": "129px",
+      "mainRowHeight": "75px",
+      "navigationRowHeight": "53px",
+      "logoWidth": "128px",
+      "logoHeight": "43px"
+    },
+    "nav": {
+      "color": "rgba(0, 0, 0, 0.87)",
+      "fontFamily": "\"Open Sans\", sans-serif",
+      "fontSize": "14px",
+      "fontWeight": 400,
+      "lineHeight": "21px",
+      "linkPadding": "14px 14px 14px 0px",
+      "categoryFontSize": "16px",
+      "categoryFontWeight": 700
+    },
+    "input": {
+      "height": "40px",
+      "fontFamily": "\"Open Sans\", sans-serif",
+      "fontSize": "14px",
+      "color": "rgba(0, 0, 0, 0.87)",
+      "padding": "8px",
+      "borderRadius": "2px 0px 0px 2px"
+    },
+    "product": {
+      "fontFamily": "Inter, sans-serif",
+      "titleFontSize": "14px",
+      "titleLineHeight": "20px",
+      "metaFontSize": "12px",
+      "metaLineHeight": "16px",
+      "promotionColor": "#107B1E"
+    },
+    "sectionHeading": {
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "24px",
+      "fontWeight": 400,
+      "lineHeight": "31.2px",
+      "marginBottom": "16px"
+    },
+    "footer": {
+      "backgroundColor": "#3A4E58",
+      "logo": "logo-inverted.svg"
+    }
+  }
+}

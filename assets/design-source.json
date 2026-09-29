@@ -1,0 +1,710 @@
+{
+  "source": {
+    "source": "https://allegro.pl/",
+    "capturedAt": "2026-09-29",
+    "method": "Playwright CLI 0.1.22, headed Chrome, logged-out Polish desktop homepage",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scope": "Observed desktop styles; normalized semantic names are local, not official Allegro tokens.",
+    "unknown": [
+      "colors.brand.error",
+      "colors.background.overlay",
+      "mobile breakpoints",
+      "disabled and validation states"
+    ],
+    "notes": [
+      "Null means not verified on the inspected homepage.",
+      "Alpha text colors retain their original CSS values.",
+      "Spacing is a curated subset of observed values, not a claimed official scale.",
+      "Open Sans is used in the header; Inter dominates product modules; Roboto appears in footer headings."
+    ]
+  },
+  "core": {
+    "header": {
+      "tag": "HEADER",
+      "text": "Wszystkie kategorie\nWszystkie kategorie\nStrefa Okazji\nDom i Ogród\nDziecko\nElektr",
+      "width": 1425,
+      "height": 129,
+      "color": "rgb(0, 0, 0)",
+      "backgroundColor": "rgb(255, 255, 255)",
+      "fontFamily": "\"Times New Roman\"",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "padding": "0px",
+      "margin": "0px",
+      "borderRadius": "0px",
+      "lineHeight": "normal",
+      "border": "",
+      "gap": "normal",
+      "letterSpacing": "normal",
+      "textTransform": "none"
+    },
+    "input": {
+      "tag": "INPUT",
+      "text": "",
+      "width": 393.4375,
+      "height": 40,
+      "color": "rgba(0, 0, 0, 0.87)",
+      "backgroundColor": "rgba(255, 255, 255, 0)",
+      "fontFamily": "\"Open Sans\", sans-serif",
+      "fontSize": "14px",
+      "fontWeight": "400",
+      "padding": "8px",
+      "margin": "0px",
+      "borderRadius": "2px 0px 0px 2px",
+      "lineHeight": "40px",
+      "border": "",
+      "gap": "normal",
+      "letterSpacing": "normal",
+      "textTransform": "none"
+    },
+    "h2": {
+      "tag": "H2",
+      "text": "Znajdź pomysły w kategorii Motoryzacja",
+      "width": 1377,
+      "height": 31.1875,
+      "color": "rgba(0, 0, 0, 0.87)",
+      "backgroundColor": "rgba(255, 255, 255, 0)",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "24px",
+      "fontWeight": "400",
+      "padding": "0px",
+      "margin": "0px 0px 16px",
+      "borderRadius": "0px",
+      "lineHeight": "31.2px",
+      "border": "0px none rgba(0, 0, 0, 0.87)",
+      "gap": "normal",
+      "letterSpacing": "normal",
+      "textTransform": "none"
+    }
+  },
+  "components": {
+    "button": {
+      "tag": "BUTTON",
+      "text": "SZUKAJ",
+      "width": 101.140625,
+      "height": 40,
+      "color": "rgb(255, 255, 255)",
+      "backgroundColor": "rgb(255, 90, 0)",
+      "fontFamily": "\"Open Sans\", sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "lineHeight": "22.08px",
+      "padding": "0px",
+      "gap": "normal",
+      "border": "0px none rgb(0, 0, 0)",
+      "borderRadius": "2px",
+      "letterSpacing": "2px",
+      "textTransform": "uppercase",
+      "outline": "rgb(0, 134, 115) none 2px",
+      "boxShadow": "none"
+    },
+    "buttonLabel": {
+      "tag": "SPAN",
+      "text": "SZUKAJ",
+      "width": 101.140625,
+      "height": 40,
+      "color": "rgb(255, 255, 255)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "\"Open Sans\", sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "700",
+      "lineHeight": "40px",
+      "padding": "0px 16px",
+      "gap": "normal",
+      "border": "0px none rgb(255, 255, 255)",
+      "borderRadius": "0px",
+      "letterSpacing": "2px",
+      "textTransform": "uppercase",
+      "outline": "rgb(255, 255, 255) none 3px",
+      "boxShadow": "none"
+    },
+    "nav": {
+      "tag": "A",
+      "text": "Strefa Okazji",
+      "width": 120.03125,
+      "height": 52,
+      "color": "rgba(0, 0, 0, 0.87)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "\"Open Sans\", sans-serif",
+      "fontSize": "14px",
+      "fontWeight": "400",
+      "lineHeight": "21px",
+      "padding": "14px 14px 14px 0px",
+      "gap": "normal",
+      "border": "0px none rgba(0, 0, 0, 0.87)",
+      "borderRadius": "0px",
+      "letterSpacing": "normal",
+      "textTransform": "none",
+      "outline": "rgba(0, 0, 0, 0.87) none 3px",
+      "boxShadow": "none"
+    },
+    "productTitle": {
+      "tag": "A",
+      "text": "4x opony całoroczne 245/45R18 PIRELLI Cinturato All Season SF3 10",
+      "width": 160,
+      "height": 40,
+      "color": "rgba(0, 0, 0, 0.87)",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "fontFamily": "Inter, sans-serif",
+      "fontSize": "14px",
+      "fontWeight": "400",
+      "lineHeight": "20px",
+      "padding": "0px",
+      "gap": "normal",
+      "border": "0px none rgba(0, 0, 0, 0.87)",
+      "borderRadius": "0px",
+      "letterSpacing": "normal",
+      "textTransform": "none",
+      "outline": "rgba(0, 0, 0, 0.87) none 3px",
+      "boxShadow": "none"
+    }
+  },
+  "visibleElementStyleFrequencies": {
+    "backgroundColor": [
+      [
+        "rgb(255, 255, 255)",
+        302
+      ],
+      [
+        "rgba(0, 0, 0, 0.87)",
+        132
+      ],
+      [
+        "color(srgb 1 1 1 / 0.8)",
+        131
+      ],
+      [
+        "rgb(255, 90, 0)",
+        89
+      ],
+      [
+        "rgba(255, 255, 255, 0)",
+        86
+      ],
+      [
+        "rgb(16, 123, 30)",
+        52
+      ],
+      [
+        "rgba(0, 0, 0, 0.54)",
+        16
+      ],
+      [
+        "rgba(255, 255, 255, 0.8)",
+        7
+      ],
+      [
+        "rgba(255, 255, 255, 0.7)",
+        5
+      ],
+      [
+        "rgba(0, 0, 0, 0.12)",
+        3
+      ],
+      [
+        "rgb(0, 0, 0)",
+        3
+      ],
+      [
+        "rgb(236, 239, 241)",
+        2
+      ],
+      [
+        "rgb(66, 39, 121)",
+        2
+      ],
+      [
+        "rgb(27, 184, 38)",
+        2
+      ],
+      [
+        "rgba(255, 255, 255, 0.9)",
+        1
+      ],
+      [
+        "rgb(35, 47, 53)",
+        1
+      ],
+      [
+        "rgb(0, 135, 176)",
+        1
+      ],
+      [
+        "rgb(176, 184, 188)",
+        1
+      ],
+      [
+        "rgb(58, 78, 88)",
+        1
+      ]
+    ],
+    "color": [
+      [
+        "rgba(0, 0, 0, 0.87)",
+        2372
+      ],
+      [
+        "rgb(0, 0, 0)",
+        2322
+      ],
+      [
+        "rgb(118, 118, 118)",
+        1006
+      ],
+      [
+        "rgba(0, 0, 0, 0.54)",
+        484
+      ],
+      [
+        "rgb(255, 255, 255)",
+        292
+      ],
+      [
+        "rgb(0, 0, 238)",
+        177
+      ],
+      [
+        "rgb(16, 123, 30)",
+        118
+      ],
+      [
+        "rgb(0, 134, 115)",
+        16
+      ],
+      [
+        "rgb(148, 78, 8)",
+        5
+      ],
+      [
+        "rgb(128, 128, 128)",
+        3
+      ],
+      [
+        "rgb(101, 101, 101)",
+        2
+      ],
+      [
+        "rgb(109, 65, 189)",
+        2
+      ],
+      [
+        "rgb(176, 184, 188)",
+        1
+      ]
+    ],
+    "borderRadius": [
+      [
+        "0px",
+        6181
+      ],
+      [
+        "8px",
+        354
+      ],
+      [
+        "16px",
+        162
+      ],
+      [
+        "2px",
+        70
+      ],
+      [
+        "0px 0px 16px 16px",
+        21
+      ],
+      [
+        "100%",
+        4
+      ],
+      [
+        "0px 8px 0px 0px",
+        3
+      ],
+      [
+        "8px 0px 0px",
+        2
+      ],
+      [
+        "0px 0px 0px 8px",
+        1
+      ],
+      [
+        "2px 0px 0px 2px",
+        1
+      ],
+      [
+        "4px",
+        1
+      ]
+    ],
+    "fontFamily": [
+      [
+        "Inter, sans-serif",
+        5302
+      ],
+      [
+        "\"Times New Roman\"",
+        944
+      ],
+      [
+        "\"Open Sans\", sans-serif",
+        529
+      ],
+      [
+        "Arial",
+        13
+      ],
+      [
+        "Roboto, sans-serif",
+        10
+      ],
+      [
+        "Inter",
+        2
+      ]
+    ],
+    "fontSize": [
+      [
+        "16px",
+        2861
+      ],
+      [
+        "12px",
+        2603
+      ],
+      [
+        "14px",
+        639
+      ],
+      [
+        "13.008px",
+        514
+      ],
+      [
+        "24px",
+        105
+      ],
+      [
+        "22px",
+        29
+      ],
+      [
+        "13.3333px",
+        13
+      ],
+      [
+        "32.73px",
+        12
+      ],
+      [
+        "17.008px",
+        10
+      ],
+      [
+        "21.008px",
+        5
+      ],
+      [
+        "26.1px",
+        4
+      ],
+      [
+        "10.91px",
+        2
+      ],
+      [
+        "20px",
+        2
+      ],
+      [
+        "25.008px",
+        1
+      ]
+    ],
+    "fontWeight": [
+      [
+        "400",
+        6129
+      ],
+      [
+        "700",
+        640
+      ],
+      [
+        "600",
+        21
+      ],
+      [
+        "500",
+        10
+      ]
+    ],
+    "lineHeight": [
+      [
+        "normal",
+        2569
+      ],
+      [
+        "21px",
+        1680
+      ],
+      [
+        "16px",
+        1607
+      ],
+      [
+        "22.08px",
+        433
+      ],
+      [
+        "18px",
+        328
+      ],
+      [
+        "20px",
+        136
+      ],
+      [
+        "24px",
+        25
+      ],
+      [
+        "52.368px",
+        8
+      ],
+      [
+        "27.3104px",
+        5
+      ],
+      [
+        "40px",
+        3
+      ],
+      [
+        "31.2px",
+        3
+      ],
+      [
+        "32.5104px",
+        1
+      ],
+      [
+        "36px",
+        1
+      ],
+      [
+        "18.9px",
+        1
+      ]
+    ],
+    "padding": [
+      [
+        "0px",
+        6019
+      ],
+      [
+        "24px",
+        156
+      ],
+      [
+        "0px 0px 0px 8px",
+        130
+      ],
+      [
+        "0px 0px 4px",
+        130
+      ],
+      [
+        "6px 9px 7px",
+        80
+      ],
+      [
+        "36px 0px 0px",
+        77
+      ],
+      [
+        "2px 4px",
+        54
+      ],
+      [
+        "6px 0px",
+        53
+      ],
+      [
+        "0px 0px 0px 16px",
+        23
+      ],
+      [
+        "8px",
+        10
+      ],
+      [
+        "4px",
+        10
+      ],
+      [
+        "0px 24px",
+        6
+      ],
+      [
+        "24px 8px 24px 135px",
+        5
+      ],
+      [
+        "0px 12px 2px",
+        5
+      ],
+      [
+        "16px",
+        5
+      ],
+      [
+        "0px 4px",
+        4
+      ],
+      [
+        "0px 0px 24px",
+        4
+      ],
+      [
+        "4px 0px 8px",
+        4
+      ],
+      [
+        "8px 16px",
+        2
+      ],
+      [
+        "0px 16px",
+        2
+      ],
+      [
+        "14px",
+        2
+      ],
+      [
+        "0px 24px 0px 0px",
+        2
+      ],
+      [
+        "0px 0px 16px",
+        2
+      ],
+      [
+        "40px 0px 40px 24px",
+        2
+      ],
+      [
+        "0px 0px 0px 4px",
+        2
+      ],
+      [
+        "2px 16px 2px 8px",
+        1
+      ],
+      [
+        "16px 24px",
+        1
+      ],
+      [
+        "8px 8px 8px 0px",
+        1
+      ],
+      [
+        "8px 0px 8px 8px",
+        1
+      ],
+      [
+        "0px 8px",
+        1
+      ],
+      [
+        "8px 16px 8px 24px",
+        1
+      ],
+      [
+        "14px 14px 14px 0px",
+        1
+      ],
+      [
+        "14px 0px 14px 14px",
+        1
+      ],
+      [
+        "0px 0px 0px 24px",
+        1
+      ],
+      [
+        "8px 0px",
+        1
+      ]
+    ],
+    "gap": [
+      [
+        "normal",
+        6634
+      ],
+      [
+        "4px",
+        131
+      ],
+      [
+        "8px",
+        10
+      ],
+      [
+        "0px",
+        7
+      ],
+      [
+        "16px",
+        7
+      ],
+      [
+        "8px normal",
+        6
+      ],
+      [
+        "32px normal",
+        3
+      ],
+      [
+        "6px",
+        1
+      ],
+      [
+        "10px",
+        1
+      ]
+    ]
+  },
+  "fonts": [
+    "@font-face { font-display: swap; font-family: Inter; font-style: normal; font-weight: 300; src: local(\"Inter Light\"), local(\"Inter-Light\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/inter-300_6e675dc7.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/inter-300_1c624856.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E-171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: Inter; font-style: normal; font-weight: 400; src: local(\"Inter Regular\"), local(\"Inter-Regular\"), local(\"Inter\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/inter-400_ff6a2a72.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/inter-400_42f2651c.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E-171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: Inter; font-style: normal; font-weight: 500; src: local(\"Inter SemiBold\"), local(\"Inter-SemiBold\"), local(\"Inter Semibold\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/inter-500_16fd771f.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/inter-500_845e6226.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E-171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: Inter; font-style: normal; font-weight: 700; src: local(\"Inter Bold\"), local(\"Inter-Bold\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/inter-700_460e5670.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/inter-700_65de5b6e.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E-171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: \"Open Sans\"; font-style: normal; font-weight: 300; src: local(\"Open Sans Light\"), local(\"OpenSans-Light\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans_6cc28a8e.woff2\") format(\"woff2-variations\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans-300_dd9ab660.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans-300_e2bedf5c.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E, U+16F, U+170, U+171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: \"Open Sans\"; font-style: normal; font-weight: 400; src: local(\"Open Sans Regular\"), local(\"OpenSans-Regular\"), local(\"Open Sans\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans_6cc28a8e.woff2\") format(\"woff2-variations\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans-400_1be1a8e4.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans-400_69adf794.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E, U+16F, U+170, U+171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: \"Open Sans\"; font-style: normal; font-weight: 600; src: local(\"Open Sans SemiBold\"), local(\"OpenSans-SemiBold\"), local(\"Open Sans Semibold\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans_6cc28a8e.woff2\") format(\"woff2-variations\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans-600_56f07915.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans-600_fdccd06a.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E, U+16F, U+170, U+171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: \"Open Sans\"; font-style: normal; font-weight: 700; src: local(\"Open Sans Bold\"), local(\"OpenSans-Bold\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans_6cc28a8e.woff2\") format(\"woff2-variations\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans-700_6dbf1d9d.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/open-sans-700_df84867d.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E, U+16F, U+170, U+171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: Roboto; font-style: normal; font-weight: 300; src: local(\"Roboto Light\"), local(\"Roboto-Light\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto_e4451a57.woff2\") format(\"woff2-variations\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto-300_fac79133.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto-300_32c627ed.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E, U+16F, U+170, U+171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: Roboto; font-style: normal; font-weight: 400; src: local(\"Roboto\"), local(\"Roboto-Regular\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto_e4451a57.woff2\") format(\"woff2-variations\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto-400_4428adfc.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto-400_1da7832a.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E, U+16F, U+170, U+171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: Roboto; font-style: normal; font-weight: 500; src: local(\"Roboto Medium\"), local(\"Roboto-Medium\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto_e4451a57.woff2\") format(\"woff2-variations\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto-500_d3167088.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto-500_5aaa0958.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E, U+16F, U+170, U+171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }",
+    "@font-face { font-display: swap; font-family: Roboto; font-style: normal; font-weight: 700; src: local(\"Roboto Bold\"), local(\"Roboto-Bold\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto_e4451a57.woff2\") format(\"woff2-variations\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto-700_be1a5cef.woff2\") format(\"woff2\"), url(\"https://assets.allegrostatic.com/sc-15284/statics/roboto-700_e948d3f1.woff\") format(\"woff\"); unicode-range: U+9, U+20-7E, U+AB, U+BB, U+C1, U+C4, U+C9, U+CD, U+D3, U+D4, U+D6, U+D7, U+DA, U+DC, U+DD, U+E1, U+E4, U+E9, U+ED, U+F3, U+F4, U+F6, U+FA, U+FC, U+FD, U+104-107, U+10C-10F, U+118-11B, U+139, U+13A, U+13D, U+13E, U+141-144, U+147, U+148, U+150, U+151, U+154, U+155, U+158-15B, U+160, U+161, U+164, U+165, U+16E, U+16F, U+170, U+171, U+179-17E, U+404, U+406, U+407, U+410-429, U+42C, U+42E-449, U+44C, U+44E, U+44F, U+454, U+456, U+457, U+490, U+491, U+491, U+2013, U+2014, U+2018-201A, U+201C-201E, U+2033, U+2039, U+203A, U+20AC; }"
+  ],
+  "logoSources": {
+    "logo.svg": "https://a.allegroimg.com/original/343297/28c4320247179d1326a0c73a423e/logo-allegro-bcec72b532",
+    "logo-inverted.svg": "https://assets.allegrostatic.com/opbox/allegro.pl/playground/Metrum%20Footer%20BETA/allegro-1.svg"
+  },
+  "faviconSource": "https://allegro.pl/favicon.ico",
+  "limitations": [
+    "Container-level browser defaults (Times New Roman, blue links) were excluded from semantic tokens.",
+    "Hidden and offscreen promo dialogs were excluded from the visual reference.",
+    "Frequency counts are supporting evidence only; they can include offscreen descendants.",
+    "Homepage content is personalized and changes over time."
+  ]
+}
