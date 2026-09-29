@@ -1,0 +1,118 @@
+{
+  "source": {
+    "url": "https://www.onet.pl/",
+    "capturedAt": "2026-09-29",
+    "notes": "Observed on the desktop homepage after dismissing consent and onboarding. Anniversary artwork and advertising are campaign-specific."
+  },
+  "colors": {
+    "brand": {
+      "primary": "#FFD200",
+      "accent": "#1E1E1E",
+      "error": "#CC0000",
+      "success": "#339900"
+    },
+    "background": {
+      "default": "#FFFFFF",
+      "light": "#F4F3EE",
+      "placeholder": "#EAEAEA",
+      "dark": "#191919",
+      "overlay": "rgba(0, 0, 0, 0.3)"
+    },
+    "text": {
+      "primary": "#1E1E1E",
+      "secondary": "#424242",
+      "muted": "#919191",
+      "onDark": "#FFFFFF"
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "primary": "\"Fira Sans\", Arial, Helvetica, sans-serif"
+    },
+    "fontWeights": {
+      "regular": 400,
+      "medium": 500,
+      "bold": 700
+    },
+    "fontSize": {
+      "xs": "11px",
+      "sm": "12px",
+      "base": "16px",
+      "section": "15px",
+      "headline": "28px",
+      "display": "32px"
+    },
+    "lineHeight": {
+      "section": "24px",
+      "headline": "31px"
+    }
+  },
+  "spacing": {
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "20px",
+    "6": "24px",
+    "8": "32px"
+  },
+  "borderRadius": {
+    "none": "0px",
+    "sm": "4px",
+    "card": "7px",
+    "md": "8px",
+    "follow": "15px",
+    "search": "20px",
+    "pill": "24px",
+    "circle": "50%"
+  },
+  "components": {
+    "button": {
+      "primary": {
+        "backgroundColor": "#1E1E1E",
+        "color": "#FFFFFF",
+        "borderRadius": "18px",
+        "height": "36px",
+        "note": "Observed in the header subscription control."
+      },
+      "secondary": {
+        "backgroundColor": "#FFFFFF",
+        "color": "#1E1E1E",
+        "border": "1px solid #DCDCDC",
+        "borderRadius": "15px",
+        "fontSize": "11px",
+        "fontWeight": 500,
+        "note": "Observed on follow-author controls."
+      }
+    },
+    "header": {
+      "backgroundColor": "#FFFFFF",
+      "height": "101px",
+      "fontSize": "16px"
+    },
+    "nav": {
+      "color": "#1E1E1E",
+      "fontSize": "16px",
+      "note": "Service menu is displayed as header links and icons, not a semantic nav element."
+    },
+    "search": {
+      "width": "280px",
+      "height": "36px",
+      "borderRadius": "20px",
+      "inputPadding": "6px 82px 6px 42px",
+      "fontSize": "13.3333px"
+    },
+    "articleCard": {
+      "borderRadius": "7px",
+      "headlineFontSize": "28px",
+      "headlineFontWeight": 700,
+      "headlineLineHeight": "31px"
+    },
+    "sectionHeading": {
+      "fontSize": "15px",
+      "fontWeight": 700,
+      "lineHeight": "24px",
+      "padding": "7px 0px 10px 14px"
+    }
+  }
+}
