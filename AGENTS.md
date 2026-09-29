@@ -54,7 +54,7 @@ Use **the Playwright CLI** to drive the real running app like a human tester:
 2. Take a screenshot of every screen you touched.
 3. Exercise the real flow end-to-end by hand: fill the form, upload the image, submit, follow the navigation to the chat, send a message — whatever the changed scope covers.
 4. Verify the flow actually works: correct navigation, correct data displayed, no console errors, Polish UI text.
-5. **Compare your screenshots against the Play brand reference** (`assets/homepage.png` + `docs/design-guidelines.md` tokens): colors, typography (Manrope), spacing, button styles, logo placement must match the Play look.
+5. **Compare your screenshots against the brand reference** (`assets/homepage.png` + `docs/design-guidelines.md` tokens): colors, typography (Manrope), spacing, button styles, logo placement must match our brand look.
 6. Report what you validated (steps + screenshots) in your task summary. If anything looks or behaves wrong, fix it before committing.
 
 ### Verification (required before every commit)
