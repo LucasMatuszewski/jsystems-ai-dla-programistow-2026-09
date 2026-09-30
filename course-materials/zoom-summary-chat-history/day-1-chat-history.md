@@ -1,0 +1,97 @@
+# Dzień 1 — Historia czatu
+
+**Data:** 28 września 2026 r.
+Wiadomości są ułożone chronologicznie. Nazwy uczestników skrócono do imion, a dane dostępowe pominięto.
+
+- **08:17:16 — Konrad:** warp.dev
+- **08:54:40 — Łukasz:** Codex CLI
+- **08:54:43 — Łukasz:** Codex Desktop
+- **08:54:48 — Łukasz:** Codex Web / Cloud
+- **09:02:42 — Łukasz:** https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/index.html
+- **09:04:49 — Łukasz:** https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09
+- **09:09:25 — Łukasz:** Kto chce, aby mocniej omówić Codex Desktop?
+- **09:20:00 — Łukasz:** Dostępy do VM; [plik z danymi dostępowymi]
+- **09:21:56 — Łukasz:** Remmina
+- **09:24:33 — Łukasz:** VM dostępy; [plik z danymi dostępowymi]
+- **09:25:06 — Łukasz:** [dane dostępowe do VM usunięte]
+- **09:40:27 — Łukasz:** aichat
+- **09:44:22 — Łukasz:** `codex login --device-auth`
+- **09:48:55 — Łukasz:** https://auth.openai.com/codex/device
+- **10:00:36 — Artur:** Nic nie słychać.
+- **10:05:05 — Łukasz:** https://learn.chatgpt.com/docs/codex/cli
+- **10:05:51 — Łukasz:** `powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"`
+- **10:08:31 — Łukasz:** 11:25 koniec przerwy?
+- **10:26:20 — Łukasz:** https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Course%20Notes%20-%20AI%20in%20Programming.md
+- **10:28:38 — Łukasz:** https://openrouter.ai/stealth/space-bunny-alpha (ostatni model w testach)
+- **10:38:15 — Łukasz:** https://typesafe.ai/ — Model Systemu Pierwszego: intuicyjny, szybki i tani, nie myli JSON Schema, podaje confidence.
+- **10:43:05 — Łukasz:** https://x.com/thsottiaux
+- **10:43:22 — Łukasz:** https://x.com/elder_plinius
+- **10:44:51 — Łukasz:** https://x.com/bcherny
+- **10:45:36 — Łukasz:** https://x.com/trq212
+- **10:47:32 — Łukasz:** https://www.youtube.com/@NateBJones
+- **10:47:52 — Łukasz:** https://www.youtube.com/@t3dotgg
+- **10:52:11 — Łukasz:** Case Studies — https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Course%20Notes%20-%20AI%20in%20Programming.md#case-studies
+- **10:52:23 — Łukasz:** https://www.linkedin.com/posts/galenh_principal-software-engineer-coreai-microsoft-activity-7407863239289729024-WTzf
+- **10:57:32 — Łukasz:** https://github.com/openclaw/openclaw — twórca: https://github.com/steipete
+- **11:00:10 — Łukasz:** https://steipete.me/posts/2025/essential-reading-august-2025
+- **11:03:12 — Łukasz:** Wybaczcie, przerwa techniczna.
+- **11:06:57 — Łukasz:** Nie słychać mnie?
+- **11:07:00 — Patryk:** Słychać.
+- **11:07:01 — Artur:** Słychać.
+- **11:09:01 — Łukasz:** https://github.com/EdukeyTeam/agent-toolbox
+- **11:17:27 — Łukasz:** https://www.skills.sh/
+- **11:24:34 — Łukasz:** https://www.skills.sh/edukeyteam/agent-toolbox/create-design-system
+- **11:28:11 — Hubert:** Ja raczej lokalnie u siebie będę robił.
+- **11:29:39 — Łukasz:** https://cli.github.com/
+- **11:36:24 — Łukasz:** Lokalny open source do dyktowania komend i nie tylko: https://handy.computer/
+- **11:38:50 — Łukasz:** Przykładowy prompt: https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Prompt%20examples/Handy.computer%20-%20transcription%20prompts.md
+- **11:40:19 — Łukasz:** `gh auth login`
+- **11:42:09 — Łukasz:** Wybór: GitHub.com → HTTPS → Y; 1. logowanie OAuth — pełny użytkownik; 2. token ograniczony dla agentów.
+- **11:43:03 — Łukasz:** https://github.com/settings/credentials
+- **11:46:21 — Łukasz:** Szkolenie JSystems 28.09
+- **11:52:42 — Łukasz:** Ekran konfiguracji uprawnień tokena: Actions, Commit statuses, Contents, Metadata (wymagane), Pull requests.
+- **12:09:45 — Artur:** OK.
+- **12:09:58 — Łukasz:** 13:40 koniec przerwy.
+- **12:42:04 — Łukasz:** OpenCode.
+- **12:42:53 — Artur:** https://harnesstax.github.io
+- **12:43:07 — Artur:** Zestawienie harnessów.
+- **12:43:25 — Artur:** Co prawda nie ma OpenCode, jest testowane na Pi.
+- **12:44:08 — Łukasz:** https://pi.dev/
+- **12:48:23 — Łukasz:** Benchmark harnessów / kodu sterującego agentem (np. Claude SDK w Claude Code): https://artificialanalysis.ai/agents/coding-agents#coding-agents-index
+- **13:22:33 — Łukasz:** https://x.com/mitchellh/status/2057171518027887035?s=20 — Mitchell Hashimoto.
+- **13:29:46 — Łukasz:** `! tryb shell`
+- **13:30:54 — Łukasz:** Zainstalujcie razem ze mną: `npx --yes skills@latest add EdukeyTeam/agent-toolbox --skill create-design-system -g`
+- **13:44:04 — Łukasz:** Herdr; tmux dla agentów; cmux na macOS.
+- **13:47:02 — Łukasz:** `npx skills@latest add EdukeyTeam/agent-toolbox --skill create-design-system`
+- **14:00:28 — Artur:** W planie jest do 16.
+- **14:00:29 — Norbert:** Do 16 było.
+- **14:01:25 — Artur:** OK.
+- **14:01:38 — Łukasz:** Przerwa do 15:06.
+- **14:10:12 — Łukasz:** fresh, micro, nono, nvim, vim.
+- **14:10:50 — Łukasz:** lazyvim.
+- **14:17:41 — Konrad:** Gdzie wchodziłeś na CLI?
+- **14:17:54 — Konrad:** Ustawienia plików or/and.
+- **14:19:08 — Łukasz:** [zrzut ekranu]
+- **14:19:31 — Konrad:** Tak, tyle że u mnie nie widać, więc zakładam, że blokada korporacyjna.
+- **14:19:56 — Łukasz:** https://getfresh.dev/
+- **14:21:27 — Konrad:** newest
+- **14:21:39 — Łukasz:** Claude v2.1.283
+- **14:36:49 — Artur:** Tylko u mnie ścina?
+- **14:54:08 — Artur:** Coś chyba z Zoomem się dzieje, bo niektórym osobom przycina, pozostałym działa :)
+- **14:57:02 — Konrad:** U mnie all OK.
+- **14:57:04 — Artur:** Tak, tylko czasem potrafi ściąć.
+- **14:57:05 — Patryk:** U mnie wszystko OK.
+- **14:57:29 — Konrad:** Ale na Firefoxie padła sesja Zoom, musiałem użyć innej przeglądarki.
+- **14:58:27 — Artur:** Korzystam z apki, ale najwidoczniej wylosował mi się kiepski serwer.
+- **14:58:55 — Konrad:** Muszę zaraz lecieć, mam kalendarz na styk od 16. Dzięki za dzisiaj i do jutra.
+- **15:02:34 — Jakub:** Chyba nas nie słyszysz.
+- **15:02:35 — Patryk:** Chyba znowu nas nie słychać.
+- **15:02:37 — Norbert:** Robert, chyba musisz napisać na czacie.
+- **15:02:39 — Hubert:** Chyba masz głośniki wyłączone, ponieważ Robert mówił.
+- **15:03:42 — Robert:** Pytałem tylko, czy da się to wszystko zrobić w VS Code, ale możemy jutro na spokojnie to omówić.
+- **15:05:33 — Artur:** Dzięki za dzisiaj, do jutra.
+- **15:05:36 — Hubert:** Dzięki, do jutra.
+- **15:05:56 — Bartosz:** Dzięki, cześć.
+- **15:05:56 — Robert:** Dzięki, do jutra.
+- **15:06:12 — Maciej:** Dzięki, cześć.
+- **15:07:05 — Jakub:** Dzięki, cześć!
