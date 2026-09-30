@@ -1,6 +1,6 @@
 # Allegro desktop design reference
 
-Extracted from [allegro.pl](https://allegro.pl/) on 29 September 2026 with Playwright CLI 0.1.22 and **headed Chrome**, at a 1440 × 1000 CSS-pixel viewport. The reference is the logged-out Polish homepage after consent dismissal and scrolling to load content. These are observed styles and locally named tokens, not an official or exhaustive Allegro design specification. This task explicitly uses Allegro as its reference; the repository's generic Play/Manrope instructions do not describe these assets.
+Extracted from [allegro.pl](https://allegro.pl/) on 29 September 2026 with Playwright CLI 0.1.22 and **headed Chrome**, at a 1440 × 1000 CSS-pixel viewport. The reference is the logged-out Polish homepage after consent dismissal and scrolling to load content. These are observed styles and locally named tokens, not an official or exhaustive Allegro design specification.
 
 ## Assets
 
