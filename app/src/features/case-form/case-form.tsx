@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,9 +26,13 @@ export type CaseFormProps = {
   value: CaseFormValues;
   onChange: (value: CaseFormValues) => void;
   onValidSubmit: (value: ValidatedCaseForm) => void;
+  imageSlot?: ReactNode;
+  imageReady?: boolean;
+  imageInputRef?: RefObject<HTMLInputElement | null>;
+  onImageRequired?: () => void;
 };
 
-export function CaseForm({ value, onChange, onValidSubmit }: CaseFormProps) {
+export function CaseForm({ value, onChange, onValidSubmit, imageSlot, imageReady = true, imageInputRef, onImageRequired }: CaseFormProps) {
   const prefix = useId();
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const savedDeliveryDate = useRef("");
@@ -51,6 +55,7 @@ export function CaseForm({ value, onChange, onValidSubmit }: CaseFormProps) {
     const result = createCaseFormSchema(today).safeParse(candidate);
     if (result.success) {
       setErrors({});
+      if (!imageReady) { onImageRequired?.(); imageInputRef?.current?.focus(); return; }
       onValidSubmit(result.data);
       return;
     }
@@ -128,6 +133,7 @@ export function CaseForm({ value, onChange, onValidSubmit }: CaseFormProps) {
       {error("reason")}
     </div>
     {value.scenario === "complaint" && select("requestedRemedy")}
+    {imageSlot}
     <Button type="submit" className="justify-self-start">Dalej</Button>
   </form>;
 }

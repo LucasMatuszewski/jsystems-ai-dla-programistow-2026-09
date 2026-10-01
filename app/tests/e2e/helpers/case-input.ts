@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { resolve } from "node:path";
 import { FORM_OPTIONS, type CaseForm } from "../../../src/lib/contracts/form";
 
 export const labels = {
@@ -63,5 +64,27 @@ export async function submit(page: Page): Promise<void> {
 }
 
 export async function expectLocalSuccess(page: Page): Promise<void> {
-  await expect(page.getByRole("status")).toContainText("Dane formularza są poprawne.");
+  await expect(page.getByRole("status").filter({ hasText: "Dane formularza są poprawne." })).toBeVisible();
+}
+
+export const imageLabels = {
+  input: "Zdjęcie sprzętu", preview: "Podgląd wybranego zdjęcia sprzętu",
+  remove: "Usuń zdjęcie", pending: "Trwa przygotowywanie zdjęcia.",
+  ready: "Zdjęcie jest gotowe.", missing: "Dodaj zdjęcie sprzętu.",
+} as const;
+
+export function imageFixture(name = "intact-smartphone.jpg"): string {
+  return resolve("tests/fixtures/images", name);
+}
+
+export function imagePicker(page: Page): Locator {
+  return page.getByRole("group", { name: imageLabels.input, exact: true });
+}
+
+export async function preparePhoto(page: Page, name = "intact-smartphone.jpg"): Promise<void> {
+  const response = page.waitForResponse((value) => value.url().endsWith("/api/images/prepare") && value.request().method() === "POST");
+  await page.getByLabel(imageLabels.input, { exact: true }).setInputFiles(imageFixture(name));
+  expect((await response).status(), "actual image service must prepare the chosen file").toBe(200);
+  await expect(imagePicker(page).getByRole("status")).toHaveText(imageLabels.ready);
+  await expect(page.getByAltText(imageLabels.preview, { exact: true })).toBeVisible();
 }

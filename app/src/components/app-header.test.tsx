@@ -16,6 +16,10 @@ vi.mock("@/components/ui/button", () => ({
 }));
 
 vi.mock("@/features/case-form/case-form", () => ({ CaseForm: () => null }));
+vi.mock("@/features/case-form/equipment-image-picker", () => ({ EquipmentImagePicker: () => null }));
+vi.mock("@/features/case-workflow/image-preparation-client", () => ({ prepareEquipmentImage: vi.fn(), screenEquipmentImageFiles: vi.fn() }));
+vi.mock("@/features/session/storage-notice", () => ({ StorageNotice: () => null }));
+vi.mock("@/features/session/session-adapter", () => ({ createSessionAdapter: () => ({ restore: () => ({ status: "missing" }), getWarning: () => null, dispose: vi.fn() }) }));
 
 describe("Polish application header", () => {
   it("explains the preliminary employee assessment and personal-information boundary", () => {

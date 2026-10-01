@@ -48,6 +48,21 @@ beforeEach(() => {
   validation.errors.mockReturnValue({});
 });
 
+describe("image readiness follows form validation", () => {
+  it("blocks a valid form without a usable image and focuses the photo input", () => {
+    const submit = vi.fn(); const missing = vi.fn(); const input = document.createElement("input"); document.body.append(input);
+    render(<CaseForm value={complete} onChange={vi.fn()} onValidSubmit={submit} imageReady={false} onImageRequired={missing} imageInputRef={{ current: input }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Dalej" }));
+    expect(submit).not.toHaveBeenCalled(); expect(missing).toHaveBeenCalledOnce(); expect(input).toHaveFocus(); input.remove();
+  });
+  it("focuses invalid form fields before asking for a missing image", () => {
+    rejectField("equipmentName", "Podaj nazwę sprzętu."); const missing = vi.fn();
+    render(<CaseForm value={complete} onChange={vi.fn()} onValidSubmit={vi.fn()} imageReady={false} onImageRequired={missing} />);
+    fireEvent.click(screen.getByRole("button", { name: "Dalej" }));
+    expect(screen.getByLabelText("Nazwa sprzętu")).toHaveFocus(); expect(missing).not.toHaveBeenCalled();
+  });
+});
+
 describe("controlled conditional case form", () => {
   it("starts without a selected scenario or implicit unknown answers", () => {
     render(<Harness />);
