@@ -81,15 +81,28 @@ export async function verifyRealGenerations(records: readonly RuntimeEvidence[],
   return matches;
 }
 
+function checkedArtifactPath(file: string, extension: string): { path: string; root: string } {
+  const root = realpathSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../..", "verification-output"));
+  const requested = resolve(file);
+  const inside = (path: string) => {
+    const name = relative(root, path);
+    return name !== "" && name !== ".." && !name.startsWith(".." + sep) && !isAbsolute(name);
+  };
+  if (!inside(requested) || extname(requested).toLowerCase() !== extension) throw new Error("Unsafe evidence artifact path");
+  const path = realpathSync(requested);
+  if (!inside(path) || extname(path).toLowerCase() !== extension) throw new Error("Unsafe evidence artifact path");
+  return { path, root };
+}
+
 /** Retain only action identity/timing and approved demo screenshots; never params, bodies or logs. */
 export function sanitizeTrace(archive: string): void {
-  const path = resolve(archive);
-  const root = resolve(process.cwd(), "verification-output/Q01/run");
-  if (!path.startsWith(root + sep) || !path.endsWith(".zip")) throw new Error("Unsafe trace artifact path");
-  const temporary = mkdtempSync(join(root, "trace-safe-"));
+  const { path, root } = checkedArtifactPath(archive, ".zip");
+  let temporary: string | undefined;
   const quote = (value: string) => `'${value.replaceAll("'", "''")}'`;
-  let phase = "expand";
+  let phase = "prepare";
   try {
+    temporary = mkdtempSync(join(root, "trace-safe-"));
+    phase = "expand";
     execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `$ErrorActionPreference='Stop'; Expand-Archive -LiteralPath ${quote(path)} -DestinationPath ${quote(temporary)} -Force`], { stdio: "pipe", timeout: 30_000 });
     const files: string[] = [];
     const collect = (directory: string) => {
@@ -136,21 +149,36 @@ export function sanitizeTrace(archive: string): void {
     throw new Error(`Trace sanitization failed (${phase}); raw archive removed`);
   } finally {
     // The exact fresh directory was created in the checked evidence subtree above.
-    if (dirname(temporary) === root && temporary.startsWith(join(root, "trace-safe-"))) rmSync(temporary, { recursive: true, force: true });
+    if (temporary && dirname(temporary) === root && temporary.startsWith(join(root, "trace-safe-"))) rmSync(temporary, { recursive: true, force: true });
   }
 }
 
 export default class SafeTraceReporter implements Reporter {
   private failed = false;
-  onTestEnd(_test: TestCase, result: TestResult): void {
-    for (const attachment of result.attachments.filter((item) => item.contentType === "application/zip")) {
+  onTestEnd(test: TestCase, result: TestResult): void {
+    // Playwright attaches this full error/page snapshot before onTestEnd. Keep only safe failure identity.
+    for (const attachment of result.attachments.filter(item => item.name === "error-context" && item.contentType === "text/markdown")) {
+      const id = /^[\w@.-]+$/.test(test.id) ? test.id : "withheld";
+      const status = ["passed", "failed", "timedOut", "skipped", "interrupted"].includes(result.status) ? result.status : "withheld";
+      const safe = `# Failure context withheld\nTest: ${id}\nStatus: ${status}\nRetry: ${Number.isInteger(result.retry) ? result.retry : 0}\nApproved screenshot attachments are retained.\n`;
+      if (attachment.body) attachment.body = Buffer.from(safe);
+      try {
+        if (attachment.path) {
+          const { path } = checkedArtifactPath(attachment.path, ".md");
+          if (basename(path) !== "error-context.md") throw new Error("Unsafe error context artifact name");
+          try { writeFileSync(path, safe); } catch { rmSync(path, { force: true }); throw new Error("Error context write failed"); }
+        }
+      } catch { this.failed = true; process.stderr.write("Q01: error context artifact rejected; removal not confirmed\n"); }
+    }
+    for (const attachment of result.attachments.filter((item) => item.name === "trace" && item.contentType === "application/zip")) {
       if (!attachment.path) continue;
-      try { sanitizeTrace(attachment.path); } catch { this.failed = true; process.stderr.write("Q01: retained trace rejected; raw archive removed\n"); }
+      try { sanitizeTrace(attachment.path); } catch { this.failed = true; process.stderr.write("Q01: trace artifact rejected; removal not confirmed for unsafe paths\n"); }
     }
   }
   async onEnd(): Promise<{ status: "failed" } | undefined> { return this.failed ? { status: "failed" } : undefined; }
 }
 import { execFileSync } from "node:child_process";
-import { dirname, resolve, join, sep, relative } from "node:path";
-import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { dirname, resolve, join, sep, relative, isAbsolute, extname, basename } from "node:path";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync, rmSync, realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import type { Reporter, TestCase, TestResult } from "@playwright/test/reporter";
