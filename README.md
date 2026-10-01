@@ -7,6 +7,16 @@
 - [Biblioteka promptów](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/prompty.html) · [Ćwiczenia](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/cwiczenia.html) · [Checklisty](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/checklisty.html) · [Słownik AI](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/slownik-ai.html)
 - [Wyniki ankiety przed szkoleniem](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/raport-przed.html) · [Odpowiedzi na pytania z kursu](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/pytania.html) (uzupełniamy po każdym dniu)
 
+## UPDATES !!! (02.10.2026, ostatni dzień kursu)
+
+**Najświeższe odpowiedzi na pytania z kursu: [pytania.html](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/pytania.html)**
+
+- [Course Notes - AI in Programming](course-materials/Course%20Notes%20-%20AI%20in%20Programming.md): nowe sekcje - konfiguracja i uprawnienia w Claude Code / Codex / Copilot CLI (allow, deny), statusline w Claude Code, zarządzane ustawienia firmowe (managed settings) vs Twój CLAUDE.md/AGENTS.md, Auto Approve / Autopilot i Assisted permissions w VS Code, widok subagentów w Copilot CLI (`/tasks`), Agent Command Center vs `/subagents` w Codex, menedżery agentów (Herdr, Beads, Paseo, Orca, T3 Code i inne), delegowanie do agentów przez SSH i chmurę, token optimization (okna 5h i tygodniowe, resety), DeepSWE Bench i "harness vs model", modele System 1 (Jev), małe modele lokalne (LFM2.5 ~200 MB, Gemma 4, Qwen 3.6) oraz tańsze modele chińskie jako agenci CLI
+- Nowe badanie: [Context7 - aktualna dokumentacja dla agentów AI](course-materials/Research/context7-research.md) (jak działa, konfiguracja w każdym narzędziu, limity)
+- **Przykładowe obrazki do ćwiczeń z uploadem zdjęć**: [assets/example-images/](assets/example-images/) - 9 plików PNG (paragon gwarancyjny, zdjęcie produktu, zdjęcia usterek) z opisem w README; agenci nie muszą już generować białych kwadratów
+- Konfiguracja Codex: domyślny model zmieniony na `gpt-6.1-sol` (wcześniej Astra, a w przykładzie dla uczestników wycofany `gpt-5.4`), usunięte przestarzałe klucze (`network_access` top-level, `js_repl`, `untrusted` w komentarzach): [.codex/config.toml](.codex/config.toml), [przykład dla uczestników](course-materials/agent-configs/codex-java-spring/config.toml)
+- Porządki w brandingu: usunięte pozostałości innych klientów z [AGENTS.md](AGENTS.md)
+
 ---
 
 Repozytorium uczestnika szkolenia [JSystems](https://jsystems.pl) (28.09-02.10.2026, online, 09:00-16:00). Przez pięć dni przechodzimy pełny cykl wytwarzania oprogramowania z agentami AI: od pomysłu i wymagań (PRD), przez decyzje architektoniczne (ADR), plan, implementację i testy, po code review, bezpieczeństwo i CI/CD.
