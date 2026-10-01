@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppHeader } from "@/components/app-header";
+import { CaseShellProvider } from "@/features/case-shell/case-shell";
 
 export const metadata: Metadata = {
   title: "Asystent reklamacji i zwrotów",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pl">
-      <body><AppHeader />{children}</body>
+      <body><AppHeader /><CaseShellProvider>{children}</CaseShellProvider></body>
     </html>
   );
 }

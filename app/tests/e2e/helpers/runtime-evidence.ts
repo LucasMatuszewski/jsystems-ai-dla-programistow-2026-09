@@ -13,6 +13,14 @@ export async function captureDemoState(page: import("@playwright/test").Page, te
   await testInfo.attach(screen, { path, contentType: "image/png" });
 }
 export interface GenerationExpectation { caseId: string; operationId: string; stage: GenerationStage; modelId: string }
+export interface GenerationVerificationOptions { metadataWaitDeadlineMs?: number; attemptReportPath?: string }
+export type GenerationEvidenceErrorCode = "METADATA_UNAVAILABLE" | "GENERATION_HTTP_ERROR" | "INVALID_GENERATION_METADATA" | "MODEL_IDENTITY_UNVERIFIED" | "TRANSPORT_ERROR";
+export class GenerationEvidenceError extends Error {
+  constructor(public readonly code: GenerationEvidenceErrorCode, public readonly status?: number) {
+    super(`Generation evidence verification failed: ${code}`);
+    this.name = "GenerationEvidenceError";
+  }
+}
 export interface RuntimeEvidence extends GenerationExpectation {
   event: "generation.completed";
   provider: "openrouter";
@@ -44,41 +52,114 @@ export function assertRealGenerations(records: readonly RuntimeEvidence[], expec
   return matches;
 }
 
-async function verifyOfficialModelAlias(requestedModel: string, actualModel: string): Promise<boolean> {
+async function verifyOfficialModelAlias(requestedModel: string, actualModel: string, read: (url: string | URL, alias: boolean) => Promise<{ status: number; result: unknown }>): Promise<boolean> {
   const [author, slug] = requestedModel.split("/");
   const url = `https://openrouter.ai/api/v1/model/${encodeURIComponent(author)}/${encodeURIComponent(slug)}`;
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
-    if (response.status !== 200) { await response.body?.cancel(); return false; }
-    const result: unknown = await response.json();
+    const { status, result } = await read(url, true);
+    if (status !== 200) return false;
     if (!result || typeof result !== "object" || Array.isArray(result)) return false;
     const data = (result as { data?: unknown }).data;
     if (!data || typeof data !== "object" || Array.isArray(data)) return false;
     const metadata = data as Record<string, unknown>;
     return metadata.id === requestedModel && typeof metadata.canonical_slug === "string" && metadata.canonical_slug.trim().length > 0 && metadata.canonical_slug === actualModel;
-  } catch { return false; }
+  } catch (error) {
+    if (error instanceof GenerationEvidenceError && error.code === "METADATA_UNAVAILABLE") throw error;
+    return false;
+  }
 }
 
 /** Call only after a required actual AI journey. Catalog/key presence are not evidence. */
-export async function verifyRealGenerations(records: readonly RuntimeEvidence[], expected: GenerationExpectation): Promise<readonly RuntimeEvidence[]> {
+export async function verifyRealGenerations(records: readonly RuntimeEvidence[], expected: GenerationExpectation, options: GenerationVerificationOptions = {}): Promise<readonly RuntimeEvidence[]> {
   const matches = assertRealGenerations(records, expected);
+  const started = performance.now();
+  const deadline = options.metadataWaitDeadlineMs;
+  if (deadline !== undefined && (!Number.isFinite(deadline) || deadline <= started || deadline - started > 420_000)) throw new GenerationEvidenceError("METADATA_UNAVAILABLE");
+  const reportPath = options.attemptReportPath === undefined ? undefined : checkedNewReportPath(options.attemptReportPath);
   const key = process.env.OPENROUTER_API_KEY?.trim();
   if (!key) throw new Error("Generation evidence prerequisite failed: credential missing");
-  for (const record of matches) {
+  const attempts: { generationId: string; count: number; status?: number }[] = matches.map(record => ({ generationId: record.generationId, count: 0 }));
+  const remaining = () => {
+    const value = deadline === undefined ? 30_000 : deadline - performance.now();
+    if (value <= 0) throw new GenerationEvidenceError("METADATA_UNAVAILABLE");
+    return value;
+  };
+  const read = async (url: string | URL, alias: boolean): Promise<{ status: number; result: unknown }> => {
+    const timeout = Math.min(30_000, remaining());
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const operation = async () => {
+        const response = await fetch(url, { ...(alias ? {} : { headers: { Authorization: `Bearer ${key}` } }), signal: controller.signal });
+        if (response.status !== 200) { await response.body?.cancel(); return { status: response.status, result: null }; }
+        let result: unknown;
+        try { result = await response.json(); } catch { throw new GenerationEvidenceError(alias ? "MODEL_IDENTITY_UNVERIFIED" : "INVALID_GENERATION_METADATA"); }
+        return { status: response.status, result };
+      };
+      const result = await Promise.race([operation(), new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          reject(new GenerationEvidenceError(deadline !== undefined && performance.now() >= deadline ? "METADATA_UNAVAILABLE" : alias ? "MODEL_IDENTITY_UNVERIFIED" : "TRANSPORT_ERROR"));
+        }, timeout);
+      })]);
+      remaining();
+      return result;
+    } catch (error) {
+      if (deadline !== undefined && performance.now() >= deadline) throw new GenerationEvidenceError("METADATA_UNAVAILABLE");
+      if (error instanceof GenerationEvidenceError) throw error;
+      throw new GenerationEvidenceError(alias ? "MODEL_IDENTITY_UNVERIFIED" : "TRANSPORT_ERROR");
+    } finally { if (timer !== undefined) clearTimeout(timer); }
+  };
+  let verdict = "failed";
+  let failure: GenerationEvidenceErrorCode | undefined;
+  try {
+  for (const [index, record] of matches.entries()) {
     const url = new URL("https://openrouter.ai/api/v1/generation");
     url.searchParams.set("id", record.generationId);
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(30_000) });
-    if (!response.ok) { await response.body?.cancel(); throw new Error(`Actual generation evidence unavailable (HTTP ${response.status})`); }
-    const result = await response.json() as { data?: Record<string, unknown> };
-    const data = result.data;
+    let result: unknown;
+    for (;;) {
+      remaining();
+      attempts[index].count++;
+      const response = await read(url, false);
+      attempts[index].status = response.status;
+      if (response.status === 200) { result = response.result; break; }
+      if (response.status !== 404) throw new GenerationEvidenceError("GENERATION_HTTP_ERROR", response.status);
+      if (deadline === undefined) throw new GenerationEvidenceError("METADATA_UNAVAILABLE", 404);
+      await new Promise(resolve => setTimeout(resolve, Math.min(10_000, remaining())));
+    }
+    const data = result && typeof result === "object" && !Array.isArray(result) ? (result as { data?: Record<string, unknown> }).data : undefined;
     const completionTokens = data?.tokens_completion ?? data?.native_tokens_completion;
     const finishReason = data?.finish_reason ?? data?.native_finish_reason;
     // Nullable metadata is a legal provider response, but unknown completion facts cannot prove success.
-    if (!data || data.id !== record.generationId || typeof data.model !== "string" || !data.model.trim() || data.cancelled !== false || typeof completionTokens !== "number" || !Number.isFinite(completionTokens) || completionTokens <= 0 || !["stop", "length", "tool_calls"].includes(String(finishReason))) throw new Error("Actual generation evidence insufficient for expected completed model call");
+    if (!data || Array.isArray(data) || data.id !== record.generationId || typeof data.model !== "string" || !data.model.trim() || data.cancelled !== false || typeof completionTokens !== "number" || !Number.isFinite(completionTokens) || completionTokens <= 0 || !["stop", "length", "tool_calls"].includes(String(finishReason))) throw new GenerationEvidenceError("INVALID_GENERATION_METADATA");
     // Official alias identity cannot replace completed-generation facts above.
-    if (data.model !== expected.modelId && !await verifyOfficialModelAlias(expected.modelId, data.model)) throw new Error("Actual generation evidence insufficient for expected completed model call");
+    if (data.model !== expected.modelId && !await verifyOfficialModelAlias(expected.modelId, data.model, read)) throw new GenerationEvidenceError("MODEL_IDENTITY_UNVERIFIED");
+    remaining();
   }
+  verdict = "verified";
   return matches;
+  } catch (error) {
+    if (error instanceof GenerationEvidenceError) failure = error.code;
+    throw error;
+  } finally {
+    if (reportPath) {
+      // Recheck the real parent immediately before writing; no response bodies belong here.
+      const path = checkedNewReportPath(reportPath);
+      writeFileSync(path, JSON.stringify({ caseId: expected.caseId, operationId: expected.operationId, stage: expected.stage, configuredModel: expected.modelId, verdict, ...(failure ? { failure } : {}), elapsedMs: Math.max(0, performance.now() - started), attempts }) + "\n");
+    }
+  }
+}
+
+function checkedNewReportPath(file: string): string {
+  const root = realpathSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../..", "verification-output"));
+  const path = resolve(file);
+  const inside = (candidate: string) => {
+    const name = relative(root, candidate);
+    return name !== "" && name !== ".." && !name.startsWith(".." + sep) && !isAbsolute(name);
+  };
+  if (!inside(path) || extname(path).toLowerCase() !== ".json" || !inside(realpathSync(dirname(path)))) throw new Error("Unsafe evidence report path");
+  if (existsSync(path) && realpathSync(path) !== path) throw new Error("Unsafe evidence report path");
+  return path;
 }
 
 function checkedArtifactPath(file: string, extension: string): { path: string; root: string } {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SafeTraceReporter, { sanitizeTrace, verifyRealGenerations, type RuntimeEvidence } from "../../e2e/helpers/runtime-evidence";
+import SafeTraceReporter, { assertRealGenerations, GenerationEvidenceError, sanitizeTrace, verifyRealGenerations, type RuntimeEvidence } from "../../e2e/helpers/runtime-evidence";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -85,6 +85,131 @@ describe("actual failure artifact privacy", () => {
     expect(() => sanitizeTrace(file)).toThrow();
     expect(readFileSync(file, "utf8").includes(sentinel)).toBe(true);
     expect(() => sanitizeTrace(resolve("../outside-user-trace.zip"))).toThrow();
+  });
+});
+
+describe("opt-in bounded official metadata availability", () => {
+  const root = resolve("verification-output/Q01-metadata/run");
+  let directory: string;
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+    mkdirSync(root, { recursive: true }); directory = mkdtempSync(join(root, "unit-proof-"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    if (dirname(directory) === root && directory.startsWith(join(root, "unit-proof-"))) rmSync(directory, { recursive: true, force: true });
+  });
+  const observe = (proof: ReturnType<typeof verifyRealGenerations>) => proof.then(records => ({ records, error: null }), error => ({ records: null, error: error as Error }));
+
+  it("polls only404 of the same captured generation then requires actual valid200", async () => {
+    const calls: { url: string; time: number }[] = [];
+    fetchMock.mockImplementation(async input => {
+      calls.push({ url: String(input), time: performance.now() });
+      return calls.length < 3 ? response(null, 404) : response(completed());
+    });
+    const proof = observe(verifyRealGenerations([record], expected, { metadataWaitDeadlineMs: performance.now() + 420_000 }));
+    await vi.advanceTimersByTimeAsync(20_000);
+    const result = await proof;
+    expect(result.error === null).toBe(true);
+    expect(result.records).toEqual([record]);
+    expect(calls.map(call => call.time)).toEqual([0, 10_000, 20_000]);
+    expect(calls.every(call => call.url === `https://openrouter.ai/api/v1/generation?id=${record.generationId}`)).toBe(true);
+  });
+
+  it("preserves default singleGET404 failure without an opt-in budget", async () => {
+    fetchMock.mockResolvedValue(response(null, 404));
+    await expect(verifyRealGenerations([record], expected)).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  for (const status of [401, 403, 429, 500, 502]) {
+    it(`never retries HTTP${status} even with a metadata budget`, async () => {
+      fetchMock.mockResolvedValue(response(null, status));
+      const result = await observe(verifyRealGenerations([record], expected, { metadataWaitDeadlineMs: 420_000 }));
+      expect(result.error instanceof GenerationEvidenceError).toBe(true);
+      expect((result.error as GenerationEvidenceError).code).toBe("GENERATION_HTTP_ERROR");
+      expect(fetchMock).toHaveBeenCalledTimes(1); expect(vi.getTimerCount()).toBe(0);
+    });
+  }
+
+  it("never retries transport failure", async () => {
+    fetchMock.mockRejectedValue(new Error("synthetic-private-transport-detail"));
+    const result = await observe(verifyRealGenerations([record], expected, { metadataWaitDeadlineMs: 420_000 }));
+    expect(result.error instanceof GenerationEvidenceError).toBe(true);
+    expect((result.error as GenerationEvidenceError).code).toBe("TRANSPORT_ERROR");
+    expect(result.error?.message.includes("synthetic-private-transport-detail")).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  for (const invalid of [new Response("not-json"), response({ ...completed(), cancelled: true }), response({ ...completed(), tokens_completion: 0 })]) {
+    it("does not poll invalid actual200 completion facts", async () => {
+      fetchMock.mockResolvedValue(invalid.clone());
+      const result = await observe(verifyRealGenerations([record], expected, { metadataWaitDeadlineMs: 420_000 }));
+      expect(result.error instanceof GenerationEvidenceError).toBe(true);
+      expect((result.error as GenerationEvidenceError).code).toBe("INVALID_GENERATION_METADATA");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  }
+
+  it("never retries an official model-alias404 after valid generation metadata", async () => {
+    fetchMock.mockResolvedValueOnce(response(completed(canonical))).mockResolvedValueOnce(response(null, 404));
+    const result = await observe(verifyRealGenerations([record], expected, { metadataWaitDeadlineMs: 420_000 }));
+    expect(result.error instanceof GenerationEvidenceError).toBe(true);
+    expect((result.error as GenerationEvidenceError).code).toBe("MODEL_IDENTITY_UNVERIFIED");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("shares one deadline across all fixed matching generation IDs without resetting", async () => {
+    const second = { ...record, generationId: "gen-87654321-complete" };
+    fetchMock.mockResolvedValueOnce(response(null, 404)).mockResolvedValueOnce(response(completed())).mockResolvedValue(response(null, 404));
+    const proof = observe(verifyRealGenerations(assertRealGenerations([record, second], expected), expected, { metadataWaitDeadlineMs: 15_000 }));
+    await vi.advanceTimersByTimeAsync(30_000);
+    const result = await proof;
+    expect(result.error instanceof GenerationEvidenceError).toBe(true);
+    expect((result.error as GenerationEvidenceError).code).toBe("METADATA_UNAVAILABLE");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(String(fetchMock.mock.calls[2][0])).toBe(`https://openrouter.ai/api/v1/generation?id=${second.generationId}`);
+  });
+
+  it("cannot publish alias success after the shared metadata IO budget expires", async () => {
+    fetchMock.mockResolvedValueOnce(response(completed(canonical))).mockImplementationOnce(async () => {
+      await new Promise(resolve => setTimeout(resolve, 16_000)); return response({ id: expected.modelId, canonical_slug: canonical });
+    });
+    const proof = observe(verifyRealGenerations([record], expected, { metadataWaitDeadlineMs: 15_000 }));
+    await vi.advanceTimersByTimeAsync(16_000);
+    const result = await proof;
+    expect(result.error instanceof GenerationEvidenceError).toBe(true);
+    expect((result.error as GenerationEvidenceError).code).toBe("METADATA_UNAVAILABLE");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  for (const deadline of [NaN, Infinity, -1, 0, 420_001]) {
+    it("rejects invalid or already exhausted opt-in budget before external access", async () => {
+      fetchMock.mockResolvedValue(response(completed()));
+      await expect(verifyRealGenerations([record], expected, { metadataWaitDeadlineMs: deadline })).rejects.toThrow();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  }
+
+  it("persists only safe scalar proof-end identity/attempt facts in the checked evidence subtree", async () => {
+    const path = join(directory, "proof.json"); fetchMock.mockResolvedValue(response(completed()));
+    await verifyRealGenerations([record], expected, { metadataWaitDeadlineMs: 420_000, attemptReportPath: path });
+    expect(existsSync(path)).toBe(true);
+    if (!existsSync(path)) return;
+    const text = readFileSync(path, "utf8"), report = JSON.parse(text) as unknown;
+    const forbidden = /tokens_completion|finish_reason|cancelled|Authorization|unit-only-credential-placeholder|imageDataUrl|prompt|parts/;
+    expect(forbidden.test(text)).toBe(false);
+    expect(text.includes(record.generationId) && text.includes(expected.operationId) && text.includes(expected.modelId)).toBe(true);
+    expect(report !== null).toBe(true);
+  });
+
+  it("rejects outside or unsafe report destinations without modifying user files or fetching", async () => {
+    fetchMock.mockResolvedValue(response(completed()));
+    for (const path of [resolve("../outside-user-proof.json"), join(directory, "user-note.txt")]) {
+      await expect(verifyRealGenerations([record], expected, { metadataWaitDeadlineMs: 420_000, attemptReportPath: path })).rejects.toThrow();
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });

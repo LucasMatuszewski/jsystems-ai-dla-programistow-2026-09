@@ -57,10 +57,10 @@ export async function readCapturedRuntimeEvidence(): Promise<readonly import("./
   } catch { throw new Error("AI evidence capture missing or invalid for the live server"); }
 }
 
-export async function verifyCapturedGenerations(expected: import("./runtime-evidence").GenerationExpectation): Promise<readonly import("./runtime-evidence").RuntimeEvidence[]> {
+export async function verifyCapturedGenerations(expected: import("./runtime-evidence").GenerationExpectation, options: import("./runtime-evidence").GenerationVerificationOptions = {}): Promise<readonly import("./runtime-evidence").RuntimeEvidence[]> {
   const records = await readCapturedRuntimeEvidence();
   const evidence = await import(new URL("./runtime-evidence.ts", import.meta.url).href) as typeof import("./runtime-evidence");
-  return evidence.verifyRealGenerations(records, expected);
+  return evidence.verifyRealGenerations(records, expected, options);
 }
 
 async function startActualApp(): Promise<void> {
