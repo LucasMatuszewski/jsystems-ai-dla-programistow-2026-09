@@ -203,7 +203,7 @@ All routes use Node runtime and no-store responses. Enforce byte limits while re
 | 413 | PAYLOAD_LIMIT, IMAGE_PROCESSING_LIMIT | Explain the corresponding input/processing bound |
 | 409 | POLICY_VERSION_UNAVAILABLE | Preserve case; require matching resource restoration or new case |
 | 422 | CONTEXT_LIMIT | Preserve history; do not truncate to continue |
-| 500 | CONFIGURATION_ERROR, POLICY_CONFIGURATION_ERROR | Operational problem; never a preliminary refusal |
+| 500 | CONFIGURATION_ERROR, POLICY_CONFIGURATION_ERROR, IMAGE_PROCESSING_ERROR | Operational problem; never a preliminary refusal. Unexpected local image encoding/processing failure is retryable (PRD AC-20); invalid input and explicit processing bounds retain their separate correction errors |
 | 502 | PROVIDER_ERROR, PROVIDER_AUTH_ERROR, INVALID_AI_OUTPUT | Safe operational error; manual retry where meaningful |
 | 503 | PROVIDER_QUOTA_OR_RATE_LIMIT | Explain unavailable provider capacity; no automatic fallback |
 | 504 | OPERATION_TIMEOUT | Keep successful checkpoints; allow fresh retry |

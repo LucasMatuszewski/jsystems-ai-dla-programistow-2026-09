@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { ERROR_CODES, createErrorEnvelope, errorEnvelopeSchema, getErrorStatus } from "@/lib/contracts/errors";
+import { ERROR_CODES, ERROR_DEFINITIONS, createErrorEnvelope, errorEnvelopeSchema, getErrorStatus } from "@/lib/contracts/errors";
 
 const operationId = "129d4e48-1a61-4a99-b1ac-0d1ce4576c58";
 const statuses = {
   VALIDATION_ERROR: 422, INVALID_IMAGE: 422, STALE_ANALYSIS: 422,
-  PAYLOAD_LIMIT: 413, IMAGE_PROCESSING_LIMIT: 413, POLICY_VERSION_UNAVAILABLE: 409,
+  PAYLOAD_LIMIT: 413, IMAGE_PROCESSING_LIMIT: 413, IMAGE_PROCESSING_ERROR: 500, POLICY_VERSION_UNAVAILABLE: 409,
   CONTEXT_LIMIT: 422, CONFIGURATION_ERROR: 500, POLICY_CONFIGURATION_ERROR: 500,
   PROVIDER_ERROR: 502, PROVIDER_AUTH_ERROR: 502, INVALID_AI_OUTPUT: 502,
   PROVIDER_QUOTA_OR_RATE_LIMIT: 503, OPERATION_TIMEOUT: 504,
 } as const;
-const retryableCodes = ["CONFIGURATION_ERROR", "PROVIDER_ERROR", "PROVIDER_AUTH_ERROR", "INVALID_AI_OUTPUT", "PROVIDER_QUOTA_OR_RATE_LIMIT", "OPERATION_TIMEOUT"];
+const retryableCodes = ["IMAGE_PROCESSING_ERROR", "CONFIGURATION_ERROR", "PROVIDER_ERROR", "PROVIDER_AUTH_ERROR", "INVALID_AI_OUTPUT", "PROVIDER_QUOTA_OR_RATE_LIMIT", "OPERATION_TIMEOUT"];
 
 describe("operational error contract", () => {
   it("exports only the exact operational codes", () => {
@@ -58,5 +58,15 @@ describe("operational error contract", () => {
     expect(envelope.message).toMatch(/pełna historia pozostaje zachowana/i);
     expect(envelope.message).toContain("Rozpocznij nową sprawę.");
     expect(envelope.message).not.toMatch(/skróć|streszcz|usuń/i);
+  });
+});
+describe("unexpected image processing failure contract", () => {
+  it("represents a safe retryable local processing failure distinctly from corrupt input and limits", () => {
+    const parsed = errorEnvelopeSchema.safeParse({ code: "IMAGE_PROCESSING_ERROR", message: "Nie udało się przygotować obrazu. Spróbuj ponownie.", retryable: true, operationId });
+    expect(parsed.success).toBe(true);
+    expect(ERROR_CODES).toContain("IMAGE_PROCESSING_ERROR");
+    expect(ERROR_DEFINITIONS).toHaveProperty("IMAGE_PROCESSING_ERROR", { status: 500, retryable: true, message: "Nie udało się przygotować obrazu. Spróbuj ponownie." });
+    expect(ERROR_DEFINITIONS.INVALID_IMAGE.retryable).toBe(false);
+    expect(ERROR_DEFINITIONS.IMAGE_PROCESSING_LIMIT.status).toBe(413);
   });
 });
