@@ -9,7 +9,7 @@
 # ----------------------------
 # Basic model + behavior config
 # ----------------------------
-model = "gpt-6-astra"       # Default model. Cheaper and still very good: codex --model gpt-6-sol
+model = "gpt-6.1-sol"       # Default model. Even stronger (higher cost): codex --model gpt-6-astra
 model_provider = "openai"   # Can be set to provider from files: openrouter.config.toml
 model_reasoning_effort = "high" # How much LLM should think before providing an answer
 
@@ -25,7 +25,7 @@ oss_provider = "ollama"          # works with `codex --oss` flag (uses GPT OSS m
 
 personality = "pragmatic"          # Style/tone preset (e.g., pragmatic/friendly/none depending on build).
 sandbox_mode = "workspace-write"   # Command/file access policy: workspace-read, workspace-write, danger-full-access
-network_access = true              # Allow outbound network calls (when policy allows). Keep false in restricted environments.
+# Note: network access is configured per sandbox, see [sandbox_workspace_write] below.
 
 approvals_reviewer = "auto_review" # Who receives approval prompts. Could be "user" or "auto_review"
 approval_policy = "on-request"
@@ -33,7 +33,8 @@ approval_policy = "on-request"
 # CLI override example:
 #   codex --config 'approval_policy="on-request"'
 #
-# approval_policy = "never"      # never ask (allow all). Other options: on-request, untrusted, or { granular = { ... } }
+# approval_policy = "never"      # never ask (allow all). Other options: on-request or { granular = { ... } }
+# "untrusted" is no longer supported as an approval_policy value (use "on-request" or "never").
 #
 # Example granular approval policy:
 # approval_policy = { granular = {
@@ -69,12 +70,10 @@ approval_policy = "on-request"
 hooks = true      # Run hooks from hooks.json (see Codex hooks docs)
 apps = true
 multi_agent = true # Allow spawning/using multiple agents (if supported by your build).
-js_repl = false
+# js_repl was removed from Codex (retired feature flag); do not set it in [features].
 
 # Additional plugin marketplace from Anthropic
 [marketplaces.claude-plugins-official]
-last_updated = "2026-06-17T10:24:19Z"
-last_revision = "ccdc03c56532519760df6363a6eef87324470fc8"
 source_type = "git"
 source = "https://github.com/anthropics/claude-plugins-official.git"
 
@@ -136,7 +135,7 @@ enabled = false
 # Sandbox details for workspace-write mode
 # -----------------------------------------
 # sandbox_workspace_write config applies when sandbox_mode="workspace-write".
-# network_access here is the sandbox-level permission (separate from top-level network_access).
+# network_access here is the sandbox-level permission that controls outbound network calls.
 [sandbox_workspace_write]
 network_access = true            # Allow network when running inside the workspace-write sandbox.
 

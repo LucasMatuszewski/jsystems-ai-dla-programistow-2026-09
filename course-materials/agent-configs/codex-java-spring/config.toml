@@ -8,12 +8,12 @@
 # ----------------------------
 # Basic model + behavior config
 # ----------------------------
-model = "gpt-5.4"                # Default model for cloud runs. CLI: codex --model gpt-5.4
+model = "gpt-6.1-sol"            # Default model for cloud runs. CLI: codex --model gpt-6.1-sol
 approval_policy = "on-request"   # Route approval-worthy actions through the configured reviewer.
 approvals_reviewer = "auto_review" # Let Codex review eligible approval prompts automatically.
 personality = "pragmatic"        # Style/tone preset (e.g., pragmatic/friendly/none depending on build).
 sandbox_mode = "workspace-write" # Command/file access policy: workspace-read, workspace-write, danger-full-access
-network_access = true            # Allow outbound network calls (when policy allows). Keep false in restricted environments.
+# Note: network access is configured per sandbox, see [sandbox_workspace_write] below.
 oss_provider = "ollama"          # Default OSS (Open Source) models provider
 # profile = "openrouter"         # To use profile as default setting
 
@@ -21,7 +21,8 @@ oss_provider = "ollama"          # Default OSS (Open Source) models provider
 # CLI override example:
 #   codex --config 'approval_policy="on-request"'
 #
-# approval_policy = "never"      # never ask (allow all). Other options: on-request, untrusted, or { granular = { ... } }
+# approval_policy = "never"      # never ask (allow all). Other options: on-request or { granular = { ... } }
+# "untrusted" is no longer supported as an approval_policy value (use "on-request" or "never").
 #
 # Example granular approval policy:
 # approval_policy = { granular = {
@@ -49,7 +50,7 @@ trust_level = "trusted"
 # --------------------
 # Optional reminder layer: when a model name is deprecated, map it to a replacement.
 [notice.model_migrations]
-"gpt-5.3-codex" = "gpt-5.4"
+"gpt-5.4" = "gpt-6.1-sol"
 
 # ----------------
 # Windows sandboxing
@@ -101,7 +102,7 @@ enabled = true
 # Sandbox details for workspace-write mode
 # -----------------------------------------
 # sandbox_workspace_write config applies when sandbox_mode="workspace-write".
-# network_access here is the sandbox-level permission (separate from top-level network_access).
+# network_access here is the sandbox-level permission that controls outbound network calls.
 [sandbox_workspace_write]
 network_access = true            # Allow network when running inside the workspace-write sandbox.
 
