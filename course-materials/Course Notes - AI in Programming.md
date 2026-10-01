@@ -219,6 +219,7 @@ Notes from course for JSystem — AI dla programistów: od pomysłu do MVP
     - Batching / Scripting - run dozens to hundreds of sub-agents in parallel:
       - Claude Workflow scripts: [Dynamic Workflows](https://code.claude.com/docs/en/workflows)
       - Codex CSV file batching: [Codex CSV Batch with Subagents](https://developers.openai.com/codex/subagents#process-csv-batches-with-subagents-experimental)
+        - **UPDATE**: spawn CSV agents was REMOVED in July 2026 and replaced by Multi Agent v2 Mode - here is why: [ChatGPT Research on CSV Agent Spawning](https://chatgpt.com/s/t_6abe712058a48191835314697f61d570)
     - Hooks - trigger actions in deterministic way on events:
       - [Claude - Hooks](https://code.claude.com/docs/en/hooks-guide)
       - [Codex - Hooks](https://developers.openai.com/codex/hooks)
