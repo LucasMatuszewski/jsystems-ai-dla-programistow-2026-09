@@ -55,7 +55,11 @@ Stable registry metadata was checked on 30 September 2026. Exact versions are th
 | --- | --- | --- |
 | create-next-app / next | 16.3.7 | App Router generation |
 | react / react-dom | 19.3.0 | Accepted by Next.js, AI SDK React and component-test peers |
-| typescript | 7.0.2 | Stable registry release; strict mode required |
+| typescript | 6.0.3 | Stable parser-compatible release; strict mode required |
+| eslint | 10.11.0 | Supported CLI; direct official plugin composition |
+| @next/eslint-plugin-next | 16.3.7 | Next.js recommended and Core Web Vitals rules |
+| typescript-eslint | 8.71.0 | Recommended TypeScript rules; peer TypeScript >=4.8.4 <6.1.0 |
+| eslint-plugin-react-hooks | 7.1.1 | Recommended Hooks rules; accepts ESLint 10 |
 | ai | 7.0.123 | Current Core APIs; Node >=22 |
 | @ai-sdk/react | 4.0.126 | Compatible current React UI hook package |
 | @openrouter/ai-sdk-provider | 3.1.0 | Peer ai ^7.0.0; ESM; Node >=22 |
@@ -72,6 +76,8 @@ Stable registry metadata was checked on 30 September 2026. Exact versions are th
 | @playwright/cli | 0.1.22 | Manual QA tool, verified current CLI line |
 
 Allow the CLIs to select their compatible supporting dependencies, including React type packages, Tailwind's companion package, component internals and Vite. Lock the complete resolved tree. Engine/peer warnings must be resolved before verification; jsdom's latest tag is not automatically compatible with the currently installed Node patch.
+
+**Compatibility review — 1 October 2026 (S01):** The official scaffold was generated before adjustments. TypeScript 7.0.2 exists in the registry, but stable typescript-eslint 8.71.0 rejects its API at lint startup and requires TypeScript below 6.1.0; use 6.0.3. The generated eslint-config-next composition, including latest 16.3.8, requires React/import/accessibility plugins whose stable peers exclude ESLint 10. All published ESLint 9 patches are deprecated. Use supported ESLint 10 with the official Next.js plugin directly, retaining Next recommended/Core Web Vitals, TypeScript recommended and React Hooks recommended rules. General React, import and JSX accessibility plugin rules are unavailable in this composition until those plugins support ESLint 10; TypeScript checks, scoped tests and manual accessibility QA remain required. No forced peer overrides or warning suppression are permitted.
 
 ### Resource Placement
 
