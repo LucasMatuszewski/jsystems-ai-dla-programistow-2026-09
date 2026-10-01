@@ -14,7 +14,11 @@ export default defineConfig({
           name: "browser-unit",
           environment: "jsdom",
           environmentOptions: { jsdom: { url: "http://127.0.0.1:3000" } },
-          include: ["tests/unit/**/*.test.{ts,tsx}"],
+          include: [
+            "tests/unit/**/*.test.{ts,tsx}",
+            "src/components/**/*.test.{ts,tsx}",
+            "src/features/**/*.test.{ts,tsx}",
+          ],
           exclude: ["tests/unit/backend/**"],
           setupFiles: ["./tests/setup-unit.ts"],
         },
