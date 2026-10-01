@@ -92,6 +92,10 @@ Use fact-complete inputs when asserting a policy outcome. For ambiguous evidence
 
 Success evidence must show that each initial case performed an image generation request and a decision generation request, and that the exercised follow-up performed another actual generation. Observing only browser HTTP 200, the presence of a bubble or a public model-catalog lookup is insufficient evidence of real LLM use.
 
+Verify each captured generation against the authenticated official generation-metadata endpoint: exact generation ID, matching case/operation/stage/configured-model capture, positive completion tokens, a completed finish reason and no cancellation. An unavailable or insufficient metadata response fails verification; it does not justify another automatic model generation.
+
+OpenRouter distinguishes a routable model ID from its permanent canonical slug. If generation metadata reports a different model string, accept it only after the official single-model endpoint resolves the exact configured ID and returns that same routable ID with a canonical slug exactly equal to the generation's model. Preserve the configured ID in application/runtime identity. Reject missing fields, failed lookups and unrelated models; never infer aliases from prefixes or date suffixes. This metadata lookup supplements the successful generation proof and cannot replace it. See [OpenRouter model identifiers](https://openrouter.ai/docs/guides/overview/models).
+
 Keep generated reports, screenshots/traces and temporary server logs under ignored verification-output directories. Selected review screenshots may be shared as task artifacts. These are verification artifacts, not an application session database.
 
 ---

@@ -44,6 +44,21 @@ export function assertRealGenerations(records: readonly RuntimeEvidence[], expec
   return matches;
 }
 
+async function verifyOfficialModelAlias(requestedModel: string, actualModel: string): Promise<boolean> {
+  const [author, slug] = requestedModel.split("/");
+  const url = `https://openrouter.ai/api/v1/model/${encodeURIComponent(author)}/${encodeURIComponent(slug)}`;
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+    if (response.status !== 200) { await response.body?.cancel(); return false; }
+    const result: unknown = await response.json();
+    if (!result || typeof result !== "object" || Array.isArray(result)) return false;
+    const data = (result as { data?: unknown }).data;
+    if (!data || typeof data !== "object" || Array.isArray(data)) return false;
+    const metadata = data as Record<string, unknown>;
+    return metadata.id === requestedModel && typeof metadata.canonical_slug === "string" && metadata.canonical_slug.trim().length > 0 && metadata.canonical_slug === actualModel;
+  } catch { return false; }
+}
+
 /** Call only after a required actual AI journey. Catalog/key presence are not evidence. */
 export async function verifyRealGenerations(records: readonly RuntimeEvidence[], expected: GenerationExpectation): Promise<readonly RuntimeEvidence[]> {
   const matches = assertRealGenerations(records, expected);
@@ -59,7 +74,9 @@ export async function verifyRealGenerations(records: readonly RuntimeEvidence[],
     const completionTokens = data?.tokens_completion ?? data?.native_tokens_completion;
     const finishReason = data?.finish_reason ?? data?.native_finish_reason;
     // Nullable metadata is a legal provider response, but unknown completion facts cannot prove success.
-    if (!data || data.id !== record.generationId || data.model !== expected.modelId || data.cancelled === true || typeof completionTokens !== "number" || completionTokens <= 0 || !["stop", "length", "tool_calls"].includes(String(finishReason))) throw new Error("Actual generation evidence insufficient for expected completed model call");
+    if (!data || data.id !== record.generationId || typeof data.model !== "string" || !data.model.trim() || data.cancelled !== false || typeof completionTokens !== "number" || !Number.isFinite(completionTokens) || completionTokens <= 0 || !["stop", "length", "tool_calls"].includes(String(finishReason))) throw new Error("Actual generation evidence insufficient for expected completed model call");
+    // Official alias identity cannot replace completed-generation facts above.
+    if (data.model !== expected.modelId && !await verifyOfficialModelAlias(expected.modelId, data.model)) throw new Error("Actual generation evidence insufficient for expected completed model call");
   }
   return matches;
 }
