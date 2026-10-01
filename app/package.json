@@ -7,23 +7,39 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
+    "@ai-sdk/react": "4.0.126",
+    "@openrouter/ai-sdk-provider": "3.1.0",
+    "ai": "7.0.123",
     "next": "16.3.7",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "0.0.1",
+    "sharp": "0.35.5",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "16.3.7",
+    "@playwright/cli": "0.1.22",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "4.3.3",
-    "@types/node": "^20",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "^24.19.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "10.11.0",
     "eslint-plugin-react-hooks": "7.1.1",
+    "jsdom": "29.1.1",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.71.0"
-  }
+    "typescript-eslint": "8.71.0",
+    "vitest": "5.0.2"
+  },
+  "type": "module"
 }
