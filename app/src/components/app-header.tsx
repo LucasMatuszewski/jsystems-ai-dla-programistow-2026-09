@@ -8,7 +8,7 @@ export function AppHeader() {
         <a href="#main-content">Przejdź do treści</a>
       </Button>
       <div className="app-header-content">
-        <Image src="/brand/logo.svg" alt="Allegro" width={128} height={43} unoptimized className="app-logo" />
+        <Image src="/brand/logo.svg" alt="Allegro" width={128} height={43} loading="eager" unoptimized className="app-logo" />
         <span className="app-identity">Asystent reklamacji i zwrotów</span>
       </div>
     </header>

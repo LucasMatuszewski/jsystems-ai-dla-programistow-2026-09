@@ -15,6 +15,8 @@ vi.mock("@/components/ui/button", () => ({
   Button: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
+vi.mock("@/features/case-form/case-form", () => ({ CaseForm: () => null }));
+
 describe("Polish application header", () => {
   it("explains the preliminary employee assessment and personal-information boundary", () => {
     render(<Home />);
