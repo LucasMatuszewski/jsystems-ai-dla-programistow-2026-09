@@ -16,4 +16,4 @@ To są **materiały do skopiowania i dostosowania podczas zajęć**, nie instruk
 3. Zachowaj tylko reguły, które grupa akceptuje i może sprawdzić: gdzie są wymagania, jak uruchomić aplikację, jak testować, jak przeglądać zmiany i kiedy wolno commitować lub wysyłać kod.
 4. Poproś agenta o wskazanie, **które instrukcje faktycznie odczytał**. Po zmianie architektury lub poleceń aktualizuj `AGENTS.md` razem z kodem.
 
-Przykład z lipca zachowano bez zmian, aby można było zobaczyć rzeczywiste źródło i świadomie je zrefaktorować. Jego opis JSystems, maszyn Windows Server, narzędzi Claude, biblioteki Context7 i skryptu publikacji slajdów **nie dotyczy automatycznie** obecnego kursu SII.
+Przykład z lipca zachowano bez zmian, aby można było zobaczyć rzeczywiste źródło i świadomie je zrefaktorować. Jego opis JSystems, maszyn Windows Server, narzędzi Claude, biblioteki Context7 i skryptu publikacji slajdów **nie dotyczy automatycznie** obecnego kursu.

@@ -83,5 +83,5 @@ A task is complete only when:
 - Implementation matches the relevant PRD, ADR, and design guidance
 - Tests were written first and pass honestly
 - Verification for the changed scope passed with no errors or warnings
-- Manual QA was performed on the running app (Playwright MCP/CLI, screenshots, flow exercised, Play-brand visual check)
+- Manual QA was performed on the running app (Playwright MCP/CLI, screenshots, flow exercised, brand visual check against the app's own brand reference)
 - The commit message is focused and the repository is in a consistent, reviewable state
