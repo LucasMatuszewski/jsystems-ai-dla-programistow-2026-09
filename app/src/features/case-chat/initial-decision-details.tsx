@@ -17,7 +17,7 @@ export function InitialDecisionDetails({ decision }: { decision: InitialDecision
     </>}
     <DecisionList heading="Uzasadnienie" items={decision.justification} />
     <DecisionList heading="Ustalenia i zgłoszone fakty" items={decision.evidence} />
-    <section className="grid gap-2"><h2 className="text-lg font-medium">Podstawa procedury</h2><ul className="list-disc space-y-2 pl-5">{decision.policy.references.map(reference => <li key={reference.headingId}><a className="text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-3" href={reference.url} target="_blank" rel="noopener noreferrer">{reference.title}</a></li>)}</ul></section>
+    <section className="grid gap-2"><h2 className="text-lg font-medium">Podstawa procedury</h2><ul className="list-disc space-y-2 pl-5">{decision.policy.references.map(reference => <li key={reference.headingId}><a className="text-accent underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-3" href={reference.url} target="_blank" rel="noopener noreferrer">{reference.title}</a></li>)}</ul></section>
     <DecisionList heading="Ograniczenia oceny" items={decision.limitations} />
     <DecisionList heading="Pytania uzupełniające" items={decision.questions} />
     <DecisionList heading="Dalsze kroki pracownika" items={decision.nextSteps} />
