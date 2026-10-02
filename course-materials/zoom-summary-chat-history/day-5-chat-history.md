@@ -1,0 +1,118 @@
+# Historia czatu — dzień 5
+
+**Data:** 2 października 2026
+
+- **08:03:45 — Łukasz:** https://x.com/thsottiaux/status/2105843926221660585 — Global Reset Codex, 19:00.
+- **08:04:41 — Łukasz:** https://x.com/rybinfx/status/2105700296760688790 — web crawler.
+- **08:07:42 — Łukasz:** OpenAI Dots — agenci dla biznesu: https://x.com/OpenAI/status/2104984504133918973
+- **08:07:53 — Łukasz:** https://manus.im/
+- **08:08:44 — Łukasz:** Grok Bot: https://x.ai/bot
+- **08:11:25 — Łukasz:** Dodane przykładowe grafiki do testów aplikacji i dużo aktualizacji materiałów: https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/pull/1/changes#diff-f32a51ab0e49c380ad5e0cfea774308e9720411df829fa54269505e70b58e039
+- **08:15:30 — Łukasz:** Lepszy benchmark dla SWE: https://deepswe.datacurve.ai/
+- **08:16:42 — Łukasz:** Dużo aktualizacji: https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Course%20Notes%20-%20AI%20in%20Programming.md
+- **08:22:12 — Łukasz:** Zdjęcia uszkodzonych urządzeń do testów: https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/assets/example-images
+- **08:31:31 — Artur:** Ale działa to tylko, jak nie ma limitów 5 h.
+- **08:34:43 — Łukasz:** https://chatgpt.com/#pricing
+- **08:54:52 — Konrad:** Chyba zły mikrofon włączony.
+- **08:54:59 — Patryk:** Nie słychać cię.
+- **09:06:26 — Łukasz:** `btop`
+- **09:10:55 — Łukasz:** Claude z dowolnymi modelami / providerami: https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/.bashrc
+- **09:12:02 — Łukasz:** https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/.codex
+- **09:17:16 — Łukasz:** Tryb headless w różnych agentach: https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Research/Headless%20agents%20-%20CLI%20automation%2C%20JSON%20streaming%2C%20subscriptions%20and%20CI-CD.md
+- **09:49:19 — Patryk:** Jak nazywa się narzędzie do screenshotów, którego używasz?
+- **09:52:26 — Łukasz:** Do screenshotów: https://flameshot.org/
+- **09:56:43 — Łukasz:** https://www.atlassian.com/platform/rovo-mcp — MCP dla Jira, Cloudflare i Bitbucket.
+- **10:05:02 — Łukasz:** GitLab CLI, MCP i REST API:
+  - https://docs.gitlab.com/cli/
+  - https://docs.gitlab.com/user/model_context_protocol/mcp_server/
+  - https://docs.gitlab.com/api/rest/
+- **10:10:17 — Norbert:** Będzie okej.
+- **10:10:30 — Łukasz:** Koniec przerwy 11:30.
+- **10:40:41 — Łukasz:** https://chatgpt.com/codex/cloud/settings/code-review
+- **10:52:20 — Łukasz:** https://learn.chatgpt.com/docs/security/cli/ci/gitlab
+- **10:53:01 — Łukasz:** https://learn.chatgpt.com/docs/third-party/gitlab
+- **10:58:02 — Łukasz:** https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/cicd-headless
+- **11:09:08 — Łukasz:** „I want you to create a new pull request for the work that is already done and tested. You can keep working on the parts that are not ready yet, but I want you to create pull requests as soon as possible for what's already working and request that it be merged into the main branch. Use the skill I provide you here to handle the code review comments. $respond-to-code-review”
+- **11:21:15 — Łukasz:** Program partnerski Microsoft — Core Benefits za około 800 USD:
+  - 2400 USD kredytów na Azure;
+  - 15 licencji Office 365;
+  - VM Windows 365, 8 vCPU + 32 GB RAM;
+  - dużo więcej.
+  - https://learn.microsoft.com/en-us/partner-center/membership/partner-success-core-benefits
+- **11:35:09 — Łukasz:** Lokalne modele prywatnie / na workstation: https://ollama.com/ i https://lmstudio.ai/
+- **11:37:12 — Łukasz:** Lokalne modele do testów na telefonach: https://play.google.com/store/apps/details?id=com.google.ai.edge.gallery&hl=en
+- **11:45:13 — Łukasz:** https://ollama.com/library/lfm2
+- **11:48:44 — Łukasz:** https://www.amd.com/en/products/graphics/workstations/radeon-ai-pro/ai-9000-series/amd-radeon-ai-pro-r9700.html
+- **12:12:35 — Łukasz:** Małe modele: https://ollama.com/library/lfm2.5-thinking
+- **12:12:40 — Łukasz:** https://ollama.com/library/gemma4
+- **12:15:45 — Łukasz:** Serwery z dobrą obsługą współbieżności dla LLM-ów: https://vllm.ai/
+- **12:18:19 — Łukasz:** Hosting dla większej liczby użytkowników zamiast Ollama, oparty o llama.cpp: https://github.com/ggml-org/llama.cpp/tree/master/tools/server
+- **12:20:12 — Łukasz:** Hosting, trenowanie i fine-tuning / adaptery: https://unsloth.ai/
+- **12:20:37 — Łukasz:** LoRA.
+- **12:25:00 — Łukasz:** Wypożyczanie GPU: https://cerebrium.ai/pricing i https://modal.com/pricing
+- **12:31:03 — Łukasz:** Alternatywne urządzenia do inference LLM / AI: https://minisforumpc.eu/products/minisforum-um890-pro-mini-pc
+- **12:31:10 — Łukasz:** https://www.reddit.com/r/LocalLLaMA/comments/1rcrzbn/strix_halo_128gb_what_models_which_quants_are/?tl=pt-pt
+- **12:31:20 — Łukasz:** https://www.amd.com/en/products/processors/desktops/ryzen/ryzen-ai-halo.html
+- **12:31:53 — Łukasz:** https://www.nvidia.com/en-eu/products/workstations/dgx-spark/
+- **12:35:24 — Łukasz:** Najlepsze modele do programowania lokalnie: https://ollama.com/library/qwen3.8
+- **12:37:06 — Łukasz:** Minimum 32 GB VRAM / pamięci współdzielonej.
+- **12:38:56 — Łukasz:** Arena AI — rankingi open source: https://arena.ai/leaderboard/agent?license=open-source
+- **12:40:32 — Łukasz:** https://huggingface.co/Qwen/Qwen3.8-27B
+- **12:43:23 — Łukasz:** https://arena.ai/leaderboard/code/webdev?license=open-source
+- **12:46:38 — Łukasz:** Koniec przerwy 14:20.
+- **12:47:58 — Łukasz:** Ollama z podglądem prędkości (verbose): `ollama run gemma4:e2b --verbose`
+- **12:48:21 — Hubert:** Mam czasem taką sytuację, że gdzieś w opisie trafia się słowo kluczowe dla AI i agent je realizuje. Przykład: w PRD był nagłówek z tekstem „Implementation…”, przez co AI zamiast wykonać tylko PRD zaczęło implementować. Zapytane o powód, wprost powiedziało, że zobaczyło słowo „Implement” i zaczęło działać.
+- **12:49:03 — Łukasz:** `ollama ps` — podgląd, gdzie model jest załadowany i jaki procent obliczeń przypada na CPU, a jaki na GPU.
+- **12:50:06 — Hubert:** Da się temu jakoś zaradzić, czy to kwestia dopracowywania promptów?
+- **12:53:16 — Łukasz:** Prompty były optymalizowane pod modele sprzed około dwóch miesięcy, więc trzeba je poprawić pod najnowsze GPT-6 i Claude 5.5. Po premierze nowych modeli warto poświęcić dzień na doszlifowanie promptów. Można też poprawić skills i instrukcje projektu oraz używać skryptu, który flaguje problematyczne słowa.
+- **12:54:03 — Łukasz:** Niestety moim zawodem stało się optymalizowanie harnessów przez to… Przyjemne programowanie zabrały agenty, a ja je niańczę :D :P
+- **12:55:21 — Łukasz:** Mam małą kartę GPU z 4 GB VRAM, więc mieści się na niej niewiele. Model 8,4 GB z kontekstem 4096 GB wygląda tak: 83% CPU / 17% GPU. [zrzut ekranu]
+- **12:55:50 — Łukasz:** Prędkość na `gemma4:e2b`:
+  - całkowity czas: 6,567373352 s;
+  - ładowanie: 605,550965 ms;
+  - ewaluacja promptu: 25 tokenów, 271,376 ms, 92,12 tokena/s;
+  - ewaluacja: 231 tokenów, 5,676722 s, 40,69 tokena/s.
+- **12:56:15 — Łukasz:** Koniec przerwy 14:20.
+- **12:57:50 — Łukasz:** Prośba o wypełnienie ankiety po szkoleniu: https://ankiety.jsystems.pl/ (wymagany indywidualny identyfikator uczestnika — szczegóły pominięte).
+- **12:58:10 — Łukasz:** Koniec przerwy 14:20.
+- **13:20:46 — Łukasz:** https://ankiety.jsystems.pl/
+- **13:21:29 — Łukasz:** `ollama run gemma4:e2b --verbose`
+- **13:23:46 — Łukasz:** `ollama ps`
+- **13:57:36 — Łukasz:** Agenci do code review: https://www.coderabbit.ai/
+- **13:58:41 — Łukasz:** Code review (wcześniej open source, teraz coraz mniej): https://www.qodo.ai/
+- **14:00:33 — Łukasz:** https://www.qodo.ai/solutions/open-source/
+- **14:01:42 — Łukasz:** https://docs.qodo.ai/install-qodo/gitlab
+- **14:07:48 — Łukasz:** Chmura Codex: https://chatgpt.com/codex/cloud/settings/environment/create
+- **14:10:58 — Łukasz:** GitHub code review: https://github.com/settings/copilot/code_review
+- **14:10:58 — Łukasz:** GitHub Environments w chmurze dla agentów: https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/settings/environments
+- **14:18:13 — Łukasz:** Vibe coding do FE: https://v0.app/ i https://v0.app/templates/dashboards
+- **14:20:13 — Łukasz:** https://lovable.dev/
+- **14:20:58 — Łukasz:** https://bolt.new/
+- **14:21:36 — Łukasz:** https://replit.com/
+- **14:29:19 — Łukasz:** Emulacja Androida w AI Studio: https://ai.google.dev/gemini-api/docs/aistudio-android?hl=pl i https://aistudio.google.com/apps
+- **14:38:10 — Łukasz:** „Create clone of this website: https://allegro.pl/ Make it as close to the original as possible. Make a screenshot of the home page to see visually how it looks like.”
+- **14:44:35 — Łukasz:** https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Prompt%20examples/Legacy-Code-JFTP-modernization.md
+- **14:45:59 — Łukasz:** https://github.com/sai-pullabhotla/jftp/tree/master
+- **14:48:48 — Łukasz:** Kompresja obrazów — mniej tokenów niż tekst: https://arxiv.org/abs/2510.18234
+- **14:49:07 — Łukasz:** https://x.com/karpathy/status/1980397031542989305?lang=en
+- **14:51:11 — Łukasz:** https://pharaoh.so/blog/how-to-give-ai-full-codebase-context/
+- **14:52:14 — Łukasz:** Kompresja dużego kodu, aby zmieścił się w pamięci agenta: https://github.com/yamadashy/repomix
+- **14:59:00 — Łukasz:** Computer use z większym dostępem (ryzykowne): https://chatgpt.com/plugins/remote-desktop-commander?open_in_app i https://github.com/mcp/app.desktopcommander/remote-desktop-commander
+- **14:59:21 — Łukasz:** `mcp.desktopcommander.app`
+- **15:05:05 — Artur:** Pytanie poza szkoleniem — widziałem, że korzystasz z Omarchy. Jak się sprawdza?
+- **15:06:50 — Łukasz:** https://omarchy.org/
+- **15:07:01 — Artur:** Nigdy nie korzystałem z Archa, zawsze z systemów Debian-like. Zastanawiam się nad wypróbowaniem Omarchy.
+- **15:09:56 — Łukasz:** Ubuntu w stylu Omarchy: https://omarchy.org/omakub/
+- **15:11:44 — Konrad:** Dzięki, na razie.
+- **15:11:50 — Hubert:** Dziękuję i miłego weekendu 🙂
+- **15:11:51 — Norbert:** Dzięki za szkolenie! Cześć.
+- **15:12:06 — Jakub:** Dzięki!
+- **15:12:17 — Artur:** Dzięki.
+- **15:12:17 — Bartosz:** Dzięki wielkie, miłego weekendu ;)
+- **15:12:21 — Robert:** Dzięki.
+- **15:12:26 — Daniel:** Dzięki. Cześć.
+- **15:12:28 — Maciej:** Dzięki, super szkolenie. Miłego!
+- **15:12:31 — Patryk:** Dzięki za szkolenie.
+- **15:18:08 — Łukasz:** https://chromewebstore.google.com/detail/onetab/chphlpgkkbolifaimnlloiipkdnihall?hl=en
+- **15:32:09 — Łukasz:** w365 CLI.
+- **15:32:40 — Łukasz:** az CLI.
