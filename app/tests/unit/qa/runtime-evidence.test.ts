@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SafeTraceReporter, { assertRealGenerations, GenerationEvidenceError, sanitizeTrace, verifyRealGenerations, type RuntimeEvidence } from "../../e2e/helpers/runtime-evidence";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { execFileSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
+import { execFileSync, spawnSync } from "node:child_process";
 import type { TestCase, TestResult } from "@playwright/test/reporter";
 
 const expected = { caseId: "11111111-1111-4111-8111-111111111111", operationId: "22222222-2222-4222-8222-222222222222", stage: "analysis" as const, modelId: "openai/gpt-6-luna" };
@@ -11,6 +12,16 @@ const canonical = "openai/gpt-6-luna-20260922";
 const completed = (model = expected.modelId) => ({ id: record.generationId, model, cancelled: false, tokens_completion: 12, finish_reason: "stop" });
 const response = (data: unknown, status = 200) => new Response(JSON.stringify({ data }), { status, headers: { "Content-Type": "application/json" } });
 const fetchMock = vi.fn<typeof fetch>();
+
+it("imports the evidence helper with native Node strip-only TypeScript without starting the app", () => {
+  const url = pathToFileURL(resolve("tests/e2e/helpers/runtime-evidence.ts")).href;
+  const script = `const module = await import(${JSON.stringify(url)}); const error = new module.GenerationEvidenceError('METADATA_UNAVAILABLE',404); if(error.code !== 'METADATA_UNAVAILABLE' || error.status !== 404 || !(error instanceof Error) || typeof module.verifyRealGenerations !== 'function') process.exit(2);`;
+  const child = spawnSync(process.execPath, ["--input-type=module", "--eval", script], { encoding: "utf8", timeout: 30_000, windowsHide: true });
+  const evidence = resolve("verification-output/Q01/20261002-native-import");
+  mkdirSync(evidence, { recursive: true });
+  writeFileSync(join(evidence, "native-import-result.json"), JSON.stringify({ exitCode: child.status, unsupportedTypeScriptSyntax: child.stderr?.includes("ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX") ?? false, passed: child.status === 0 }) + "\n");
+  expect(child.status === 0, "the actual native Node import must support the QA helper without transforms or server startup").toBe(true);
+}, 35_000);
 
 beforeEach(() => {
   vi.stubEnv("OPENROUTER_API_KEY", "unit-only-credential-placeholder");

@@ -16,9 +16,13 @@ export interface GenerationExpectation { caseId: string; operationId: string; st
 export interface GenerationVerificationOptions { metadataWaitDeadlineMs?: number; attemptReportPath?: string }
 export type GenerationEvidenceErrorCode = "METADATA_UNAVAILABLE" | "GENERATION_HTTP_ERROR" | "INVALID_GENERATION_METADATA" | "MODEL_IDENTITY_UNVERIFIED" | "TRANSPORT_ERROR";
 export class GenerationEvidenceError extends Error {
-  constructor(public readonly code: GenerationEvidenceErrorCode, public readonly status?: number) {
+  public readonly code: GenerationEvidenceErrorCode;
+  public readonly status?: number;
+  constructor(code: GenerationEvidenceErrorCode, status?: number) {
     super(`Generation evidence verification failed: ${code}`);
     this.name = "GenerationEvidenceError";
+    this.code = code;
+    this.status = status;
   }
 }
 export interface RuntimeEvidence extends GenerationExpectation {
