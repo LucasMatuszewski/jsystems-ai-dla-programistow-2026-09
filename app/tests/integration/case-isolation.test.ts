@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST as analyze } from "@/app/api/analysis/route";
@@ -19,7 +19,7 @@ const realFetch = globalThis.fetch;
 const operation = (index: number) => `22222222-2222-4222-8222-${String(index).padStart(12, "0")}`;
 type Key = "A" | "B";
 type Stage = "analysis" | "decision" | "chat";
-interface Fixture { key: Key; caseId: string; tag: string; base: number; scenario: "complaint" | "return"; preparedImage: AnalysisRequest["preparedImage"]; form: AnalysisRequest["form"]; policy: LoadedPolicy }
+interface Fixture { key: string; caseId: string; tag: string; base: number; scenario: "complaint" | "return"; preparedImage: AnalysisRequest["preparedImage"]; form: AnalysisRequest["form"]; policy: LoadedPolicy }
 interface State { fixture: Fixture; report: ImageAnalysis; decision: InitialDecision; history: CaseMessage[] }
 interface Chunk { type: string; messageId?: string; delta?: string; messageMetadata?: unknown }
 let fixtures: Record<Key, Fixture>;
@@ -101,7 +101,7 @@ describe("independent cases with real SDK/Sharp/contracts/policy and only extern
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
   it("finishes one whole case while another analysis is pending without mixing images, facts, policies, history or identities", async () => {
-    const heldA = deferred<Response>(); const bothStarted = deferred<void>(); const started = new Set<Key>();
+    const heldA = deferred<Response>(); const bothStarted = deferred<void>(); const started = new Set<string>();
     remote = async (fixture, stage) => {
       if (stage === "analysis") { started.add(fixture.key); if (started.size === 2) bothStarted.release(); if (fixture.key === "A") return heldA.promise; }
       return completion(fixture, stage);
@@ -120,6 +120,85 @@ describe("independent cases with real SDK/Sharp/contracts/policy and only extern
       expect(calls).toHaveLength(6); expectPrivateContexts();
     } finally { heldA.release(completion(fixtures.A, "analysis")); await Promise.allSettled([a, b]); }
   }, 10000);
+  it("overlaps five complete cases at every AI stage without mixing images, facts, policies or full chronological history", async () => {
+    const names = ["laptop-1.png", "laptop-2.webp", "phone-1.jpg", "phone-2.jpeg", "phone-3.jpeg"];
+    const five: Fixture[] = await Promise.all(names.map(async (name, index) => {
+      const preparedImage = await prepareImage(await readFile(resolve("tests/fixtures/images/example-images", name)));
+      const scenario = index % 2 === 0 ? "complaint" : "return";
+      const tag = `PRZYKLAD-PIEC-SPRAWA-${index + 1}`;
+      const common = { category: "smartphones-tablets" as const, equipmentName: tag, purchaseDate: "2026-01-01", deliveryDate: null, buyerStatus: "unknown" as const, sellerStatus: "business" as const };
+      return { key: `five-${index + 1}`, caseId: `11111111-1111-4111-8111-${String(index + 10).padStart(12, "0")}`, tag, base: 3000 + index * 100, scenario, preparedImage,
+        form: scenario === "complaint" ? { ...common, scenario, reason: `Zgłoszony objaw ${tag}`, requestedRemedy: "repair" } : { ...common, scenario, reason: "", requestedRemedy: null },
+        policy: await loadPolicy(scenario) };
+    }));
+    expect(new Set(five.map(fixture => fixture.preparedImage.sha256)).size).toBe(5);
+    const stages: Stage[] = ["analysis", "decision", "chat"];
+    const barriers = Object.fromEntries(stages.map(stage => [stage, { arrived: new Set<string>(), allArrived: deferred<void>(), release: deferred<void>() }])) as Record<Stage, { arrived: Set<string>; allArrived: ReturnType<typeof deferred<void>>; release: ReturnType<typeof deferred<void>> }>;
+    const fiveCalls: { fixture: Fixture; stage: Stage; text: string; body: Record<string, unknown> }[] = [];
+    vi.stubGlobal("fetch", async (url: string | URL | Request, init?: RequestInit) => {
+      if (String(url) !== upstream) return realFetch(url, init);
+      const body = JSON.parse(String(init?.body)); const text = modelText(body);
+      const matching = five.filter(fixture => text.includes(fixture.tag)); expect(matching).toHaveLength(1);
+      const fixture = matching[0]; const stage: Stage = body.stream ? "chat" : body.max_tokens === 12288 ? "decision" : "analysis";
+      fiveCalls.push({ fixture, stage, text, body });
+      const barrier = barriers[stage]; expect(barrier.arrived.has(fixture.key)).toBe(false); barrier.arrived.add(fixture.key);
+      if (barrier.arrived.size === 5) barrier.allArrived.release();
+      await barrier.release.promise;
+      return completion(fixture, stage);
+    });
+    const pending = five.map(async fixture => {
+      const state = await startCase(fixture);
+      state.history = [state.history[0],
+        { id: `prior-user-${fixture.key}`, role: "user", parts: [{ type: "text", text: `Wcześniejszy fakt ${fixture.tag}.` }] },
+        { id: `prior-reply-${fixture.key}`, role: "assistant", parts: [{ type: "text", text: `Wcześniejsza wstępna odpowiedź ${fixture.tag}.` }] }, state.history[1]];
+      const input = chatInput(state);
+      return { state, input, parts: await chunks(await followUp(request("chat", input))) };
+    });
+    pending.forEach(promise => { void promise.catch(() => undefined); });
+    try {
+      for (const [index, stage] of stages.entries()) {
+        await within(barriers[stage].allArrived.promise);
+        expect(barriers[stage].arrived.size).toBe(5);
+        expect(fiveCalls.filter(call => call.stage === stage)).toHaveLength(5);
+        expect(fiveCalls).toHaveLength((index + 1) * 5);
+        if (index < stages.length - 1) expect(barriers[stages[index + 1]].arrived.size).toBe(0);
+        barriers[stage].release.release();
+      }
+      const results = await within(Promise.all(pending));
+      expect(fiveCalls).toHaveLength(15);
+      expect(new Set(results.map(({ state }) => state.report.analysisId)).size).toBe(5);
+      expect(new Set(results.map(({ state }) => state.decision.decisionId)).size).toBe(5);
+      expect(new Set(results.map(({ input }) => input.replyMessageId)).size).toBe(5);
+      expect(new Set(five.flatMap(fixture => stages.map((_stage, index) => operation(fixture.base + index + 1)))).size).toBe(15);
+      for (const { state, input, parts } of results) {
+        const own = state.fixture; expectComplete(parts, input);
+        expect(state.report.scenario).toBe(own.scenario); expect(state.report.imageDigest).toBe(own.preparedImage.sha256);
+        expect(state.report.formFingerprint).toBe(createFormFingerprint(own.form)); expect(state.decision.caseId).toBe(own.caseId);
+        expect(state.decision.scenario).toBe(own.scenario); expect(state.decision.policy.digest).toBe(own.policy.provenance.digest);
+        const ownCalls = fiveCalls.filter(call => call.fixture.key === own.key); expect(ownCalls.map(call => call.stage)).toEqual(stages);
+        for (const call of ownCalls) {
+          for (const other of five.filter(fixture => fixture.key !== own.key)) {
+            expect(call.text.includes(other.tag)).toBe(false);
+            expect(JSON.stringify(call.body).includes(other.preparedImage.imageDataUrl)).toBe(false);
+            if (call.stage !== "analysis" && other.scenario !== own.scenario) expect(call.text.includes(other.policy.html)).toBe(false);
+          }
+          if (call.stage === "analysis") expect(JSON.stringify(call.body).includes(own.preparedImage.imageDataUrl)).toBe(true);
+          else expect(call.text.includes(own.policy.html)).toBe(true);
+          if (call.stage === "chat") {
+            const sent = call.body.messages as { role: string; content: string | { type: string; text?: string }[] }[];
+            const chronological = sent.slice(-state.history.length).map(message => ({ role: message.role, text: typeof message.content === "string" ? message.content : message.content.map(part => part.text ?? "").join("") }));
+            expect(chronological).toEqual(state.history.map(message => ({ role: message.role, text: message.parts.map(part => part.text).join("") })));
+          }
+        }
+        for (const other of five.filter(fixture => fixture.key !== own.key)) expect(JSON.stringify({ report: state.report, decision: state.decision, parts }).includes(other.tag)).toBe(false);
+      }
+      const proofRoot = resolve("verification-output/B09/five-case-coverage"); await mkdir(proofRoot, { recursive: true });
+      await writeFile(resolve(proofRoot, "proof.json"), JSON.stringify({ realProviderAccessClaim: false, caseCount: results.length, upstreamCalls: fiveCalls.length, overlappingPerStage: Object.fromEntries(stages.map(stage => [stage, barriers[stage].arrived.size])), uniqueImageDigests: new Set(five.map(fixture => fixture.preparedImage.sha256)).size, fullHistoryPreserved: true, crossCaseLeakage: false, completedReplies: results.length }) + "\n");
+    } finally {
+      stages.forEach(stage => barriers[stage].release.release());
+      await Promise.allSettled(pending);
+    }
+  }, 20000);
   it("cancels one case before a late ignored-abort response while the other completes and explicit retry keeps the same employee turn", async () => {
     const [stateA, stateB] = await Promise.all([startCase(fixtures.A), startCase(fixtures.B)]);
     const beforeA = JSON.stringify(stateA); const beforeB = JSON.stringify(stateB); const lateA = deferred<Response>(); const readyA = deferred<void>(); const lateSettled = deferred<void>();
