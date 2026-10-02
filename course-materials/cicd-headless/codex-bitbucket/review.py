@@ -123,7 +123,10 @@ def require_shared_ticket_audience(key, env):
         raise ReviewFailure("Jira audience is not confirmed for this Bitbucket repository")
 
 
-def require_ticket_visibility(fields):
+def require_ticket_visibility(issue, expected_key):
+    if issue.get("key") != expected_key:
+        raise ReviewFailure("Jira ticket identity changed; authorize its current key")
+    fields = issue["fields"]
     # Missing security metadata is unknown, not evidence of unrestricted visibility.
     if "security" not in fields or fields["security"] is not None:
         raise ReviewFailure("Jira ticket visibility is restricted or unknown")
@@ -176,7 +179,7 @@ def collect(env, bb, jira):
             raise ReviewFailure("Jira client required for the linked ticket")
         issue = jira("GET", f"/rest/api/3/issue/{key}?fields=summary,description,status,security")
         fields = issue["fields"]
-        require_ticket_visibility(fields)
+        require_ticket_visibility(issue, key)
         ticket = {"summary": fields.get("summary", ""), "description": adf_text(fields.get("description")),
                   "status": fields.get("status", {}).get("name", "")}
     return {"workspace": env["BITBUCKET_WORKSPACE"], "repo": env["BITBUCKET_REPO_SLUG"],
@@ -355,7 +358,7 @@ def publish(context, report, env, bb, jira):
         raise ReviewFailure("Artifact ticket does not match the current PR ticket")
     if key:
         require_shared_ticket_audience(key, env)
-        require_ticket_visibility(jira("GET", f"/rest/api/3/issue/{key}?fields=security")["fields"])
+        require_ticket_visibility(jira("GET", f"/rest/api/3/issue/{key}?fields=security"), key)
     body = render(context, report)
     existing = next((comment for comment in bb_pages(bb, path + "/comments?pagelen=100")
                      if not comment.get("deleted") and comment.get("user", {}).get("uuid") == bot_uuid

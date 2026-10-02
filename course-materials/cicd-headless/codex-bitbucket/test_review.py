@@ -117,7 +117,7 @@ class ReviewContracts(unittest.TestCase):
             if method != "GET":
                 writes.append(("jira", method, path, payload))
                 return {"id": "12"}
-            return {"fields": {"security": None}, "comments": [{"id": "12", "author": {"accountId": "jira-bot"}, "body": {
+            return {"key": "COURSE-42", "fields": {"security": None}, "comments": [{"id": "12", "author": {"accountId": "jira-bot"}, "body": {
                 "type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text",
                 "text": "codex-cr:training/demo#7"}]}]}}], "startAt": 0, "maxResults": 100, "total": 1}
         self.review.publish(self.context, self.report, self.env, bb, jira)
@@ -160,7 +160,7 @@ class ReviewContracts(unittest.TestCase):
         def jira(method, path, payload=None):
             if method != "GET":
                 writes.append(path)
-            return {"fields": {"security": None}, "comments": [], "total": 0}
+            return {"key": "COURSE-42", "fields": {"security": None}, "comments": [], "total": 0}
         with self.assertRaisesRegex(ValueError, "ticket"):
             self.review.publish(self.context, self.report, self.env, bb, jira)
         self.assertEqual(writes, [])
@@ -178,7 +178,7 @@ class ReviewContracts(unittest.TestCase):
         def jira(method, path, payload=None):
             nonlocal fail_jira
             if method == "GET":
-                return {"fields": {"security": None}, "comments": jira_comments, "total": len(jira_comments)}
+                return {"key": "COURSE-42", "fields": {"security": None}, "comments": jira_comments, "total": len(jira_comments)}
             if fail_jira:
                 fail_jira = False
                 raise RuntimeError("Synthetic Jira failure")
@@ -212,7 +212,7 @@ class ReviewContracts(unittest.TestCase):
         def jira(method, path, payload=None):
             if method != "GET":
                 writes.append(("jira", method))
-            return {"fields": {"security": None}, "comments": [], "total": 0}
+            return {"key": "COURSE-42", "fields": {"security": None}, "comments": [], "total": 0}
         with self.assertRaisesRegex(ValueError, "changed"):
             self.review.publish(self.context, self.report, self.env, bb, jira)
         self.assertEqual(writes, [("bb", "POST")])
@@ -228,7 +228,7 @@ class ReviewContracts(unittest.TestCase):
         def jira(method, path, payload=None):
             if method != "GET":
                 writes.append("jira")
-            return {"fields": {"security": None}, "comments": [], "total": 0}
+            return {"key": "COURSE-42", "fields": {"security": None}, "comments": [], "total": 0}
         self.review.publish(self.context, self.report, self.env, bb, jira)
         self.assertEqual(writes, ["bb", "jira"])
 
@@ -240,7 +240,7 @@ class ReviewContracts(unittest.TestCase):
             if method != "GET":
                 writes.append((method, path))
                 return {"id": "71"}
-            return {"fields": {"security": None}, "comments": [{"id": "70", "author": {"accountId": "jira-bot"}, "body": {
+            return {"key": "COURSE-42", "fields": {"security": None}, "comments": [{"id": "70", "author": {"accountId": "jira-bot"}, "body": {
                 "type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text",
                 "text": "codex-cr:training/demo#70"}]}]}}], "total": 1}
         self.review.publish(self.context, self.report, self.env, bb, jira)
@@ -336,6 +336,22 @@ class ReviewContracts(unittest.TestCase):
                 {"type": "text", "text": "Second"}]}]}]}]}
         self.assertEqual(self.review.adf_text(node), "First\ncontinued\nSecond")
 
+    def test_moved_issue_alias_cannot_bypass_the_shared_project_audience(self):
+        def bb(method, path, payload=None, text=False):
+            if method != "GET":
+                self.fail("Moved ticket text must never be published")
+            if path.endswith("/diff"):
+                return self.context["diff"]
+            if "/diffstat" in path:
+                return {"values": [{"new": {"path": "app.py"}}]}
+            return self.pr
+        def jira(*args):
+            return {"key": "SECRET-1", "fields": {"security": None, "summary": "Restricted"}}
+        with self.assertRaisesRegex(ValueError, "identity"):
+            self.review.collect(self.env, bb, jira)
+        with self.assertRaisesRegex(ValueError, "identity"):
+            self.review.publish(self.context, self.report, self.env, bb, jira)
+
     def test_restricted_or_unconfirmed_jira_ticket_never_reaches_publication(self):
         def bb(method, path, payload=None, text=False):
             if method != "GET":
@@ -348,7 +364,7 @@ class ReviewContracts(unittest.TestCase):
         for security in ({"id": "restricted"}, "missing"):
             with self.subTest(security=security):
                 def jira(method, path, payload=None):
-                    return {"fields": {} if security == "missing" else {"security": security}}
+                    return {"key": "COURSE-42", "fields": {} if security == "missing" else {"security": security}}
                 with self.assertRaisesRegex(ValueError, "visibility"):
                     self.review.collect(self.env, bb, jira)
                 with self.assertRaisesRegex(ValueError, "visibility"):

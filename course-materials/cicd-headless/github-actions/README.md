@@ -43,7 +43,13 @@ python3 -m unittest discover -s course-materials/cicd-headless/github-actions -p
 actionlint course-materials/cicd-headless/github-actions/pr-agent-azure-review.yml
 ```
 
-Offline contracts execute the actual preflight with a fake GitHub CLI and synthetic key. They verify missing credentials/variables, invalid endpoints/PR numbers, and rejection of closed/draft/fork PRs. Live Azure/model/publication evidence is recorded after the pilot succeeds; offline checks alone do not establish Azure compatibility.
+Offline contracts execute the actual preflight with a fake GitHub CLI and synthetic key. They verify missing credentials/variables, invalid endpoints/PR numbers, and rejection of closed/draft/fork PRs. Live pilot on **2 October 2026**, using an existing `gpt-6-luna` Azure deployment:
+
+- [Automatic PR-open run](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/actions/runs/37046964407) succeeded. The model identified the intentionally inverted owner check in a synthetic authorization fixture (1,634 input / 242 output tokens; one model call).
+- [Manual dispatch](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/actions/runs/37046972152) succeeded against the course-material PR. Its 32,000-token budget excluded the long research handbook, and the published review explicitly reported that coverage limit.
+- [Maintainer `/review` run](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/actions/runs/37047399598) succeeded after checking the caller's repository permission. The [same review comment](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/pull/5#issuecomment-5958663244) was updated after fixing the defect, and the earlier finding moved to resolved history.
+
+The synthetic validation PR is disposable and is not merged. No authenticated Bitbucket/Jira pilot is implied by these GitHub/Azure results. Missing-key failure and read/triage rejection are exercised offline with synthetic inputs; no real secret was removed to run those checks.
 
 ## Primary sources
 
