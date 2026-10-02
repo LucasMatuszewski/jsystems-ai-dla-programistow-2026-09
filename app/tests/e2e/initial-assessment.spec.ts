@@ -13,3 +13,7 @@ test("complete timely used return separates withdrawal eligibility from resale c
   // Ordinary use alone is not a refusal. Clarification or human verification may still be justified.
   expect(decision.outcome).not.toBe("preliminary_refusal");
 });
+
+test("user-provided phone-1.jpg supports a preliminary case without preclassified image findings", async ({ page }, info) => {
+  await assessActualCase(page, info, "example-phone");
+});

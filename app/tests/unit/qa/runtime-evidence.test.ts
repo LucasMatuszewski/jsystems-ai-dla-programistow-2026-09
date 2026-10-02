@@ -63,16 +63,23 @@ describe("actual failure artifact privacy", () => {
     writeFileSync(join(input, "screencast/frame.png"), safePixel);
     writeFileSync(join(input, "unreferenced.txt"), sentinel);
     const archive = join(directory, "trace.zip");
-    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `Compress-Archive -Path ${powershellQuote(join(input, "*"))} -DestinationPath ${powershellQuote(archive)}`], { stdio: "pipe" });
+    const started = performance.now();
+    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `Compress-Archive -Path ${powershellQuote(join(input, "*"))} -DestinationPath ${powershellQuote(archive)}`], { stdio: "pipe", timeout: 30_000 });
+    const setupFinished = performance.now();
     expect(() => sanitizeTrace(archive)).not.toThrow();
+    const sanitizerFinished = performance.now();
     const output = join(directory, "trace-output");
-    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `Expand-Archive -LiteralPath ${powershellQuote(archive)} -DestinationPath ${powershellQuote(output)}`], { stdio: "pipe" });
+    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `Expand-Archive -LiteralPath ${powershellQuote(archive)} -DestinationPath ${powershellQuote(output)}`], { stdio: "pipe", timeout: 30_000 });
+    const auditFinished = performance.now();
+    const timingRoot = resolve("verification-output/Q01-metadata/run");
+    mkdirSync(timingRoot, { recursive: true });
+    writeFileSync(join(timingRoot, "native-zip-phase-timings.json"), JSON.stringify({ setupCompressMs: setupFinished - started, sanitizerExpandAndCompressMs: sanitizerFinished - setupFinished, auditExpandMs: auditFinished - sanitizerFinished, totalMs: auditFinished - started, nativePhaseLimitMs: 30_000, composedTestLimitMs: 125_000 }) + "\n");
     const text = readFileSync(join(output, "test.trace"), "utf8");
     expect(text.includes(sentinel)).toBe(false); expect(text.includes("call@1")).toBe(true);
     expect(readFileSync(join(output, "test.network"), "utf8")).toBe("");
     expect(existsSync(join(output, "unreferenced.txt"))).toBe(false);
     expect(readFileSync(join(output, "screencast/frame.png")).equals(safePixel)).toBe(true);
-  }, 30_000);
+  }, 125_000); // Four separately bounded native ZIP operations, plus assertion/FS margin.
 
   it("removes a checked feature raw archive when sanitization fails", () => {
     const archive = join(directory, "trace.zip"); writeFileSync(archive, sentinel);

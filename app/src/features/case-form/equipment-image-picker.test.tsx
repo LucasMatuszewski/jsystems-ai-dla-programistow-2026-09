@@ -5,7 +5,16 @@ import type { EquipmentImagePickerProps } from "./equipment-image-picker";
 import type { PreparedImage } from "../../lib/contracts/image";
 import type { ActiveCaseSnapshot } from "../../lib/contracts/session";
 import Home from "../../app/page";
-const mocks = vi.hoisted(() => ({ prepare: vi.fn(), screenFiles: vi.fn(), restore: vi.fn(), checkpoint: vi.fn(), dispose: vi.fn(), warning: vi.fn(), adapter: vi.fn() }));
+import { CaseShellProvider } from "@/features/case-shell/case-shell";
+const mocks = vi.hoisted(() => ({ prepare: vi.fn(), screenFiles: vi.fn(), restore: vi.fn(), checkpoint: vi.fn(), dispose: vi.fn(), warning: vi.fn(), adapter: vi.fn(), start: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
+vi.mock("@/features/case-workflow/initial-api-client", () => ({ analyzeInitialCase: vi.fn(), decideInitialCase: vi.fn() }));
+vi.mock("@/features/case-workflow/initial-workflow-controller", () => ({ createInitialWorkflowController: () => ({ start: mocks.start, retry: vi.fn(), invalidate: vi.fn(), returnToForm: vi.fn(), dispose: vi.fn() }) }));
+vi.mock("@/features/case-workflow/processing-steps", () => ({ ProcessingSteps: () => null }));
+vi.mock("@/features/case-chat/initial-decision-details", () => ({ InitialDecisionDetails: () => null }));
+vi.mock("@/features/case-chat/case-summary", () => ({ CaseSummary: () => null }));
+vi.mock("@/components/ai-elements/conversation", () => ({ Conversation: () => null, ConversationContent: () => null }));
+vi.mock("@/components/ai-elements/message", () => ({ Message: () => null, MessageContent: () => null }));
 vi.mock("@/components/ui/button", () => ({ Button: (props: ComponentProps<"button">) => createElement("button", props) }));
 vi.mock("@/components/ui/input", () => ({ Input: (props: ComponentProps<"input">) => createElement("input", props) }));
 vi.mock("@/components/ui/label", () => ({ Label: (props: ComponentProps<"label">) => createElement("label", props) }));
@@ -34,12 +43,13 @@ function stored(): ActiveCaseSnapshot {
 }
 beforeEach(() => {
   mocks.checkpoint.mockReset();
+  mocks.start.mockResolvedValue(undefined);
   mocks.restore.mockReturnValue({ status: "missing" }); mocks.warning.mockReturnValue(null);
   mocks.adapter.mockReturnValue({ restore: mocks.restore, checkpoint: mocks.checkpoint, dispose: mocks.dispose, getWarning: mocks.warning });
   mocks.screenFiles.mockImplementation(files => ({ status: "valid", file: files[0] }));
   mocks.prepare.mockResolvedValue({ status: "prepared", preparedImage: prepared });
 });
-async function mountHome() { render(<Home />); await act(async () => {}); }
+async function mountHome() { render(<CaseShellProvider><Home /></CaseShellProvider>); await act(async () => {}); }
 describe("accessible controlled photo picker", () => {
   it("shows a Polish chooser while retaining the labeled native keyboard control", () => {
     render(<ActualPicker {...props()} />);
@@ -132,6 +142,8 @@ describe("page owns current preparation and persistence", () => {
     mocks.checkpoint.mockImplementation(() => mocks.adapter.mock.calls.at(-1)?.[0].onWriteResult({ status: "failed", warning: "quota-exceeded", notice: "Problem" }));
     await mountHome(); fireEvent.click(screen.getByRole("button", { name: "Wybierz pierwszy" }));
     expect(await screen.findByText(`Gotowe: ${prepared.sha256}`)).toBeVisible(); expect(screen.getByText("Problem z zapisem: quota-exceeded")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Dalej" })); expect(screen.getByText("Dane formularza są poprawne.")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Dalej" }));
+    expect(mocks.start).toHaveBeenCalledTimes(1);
+    expect(mocks.start).toHaveBeenCalledWith(expect.objectContaining({ equipmentName: "", scenario: "", reason: "" }));
   });
 });

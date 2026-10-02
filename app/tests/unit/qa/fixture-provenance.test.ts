@@ -27,7 +27,10 @@ describe("Q02 licensed real hardware photos and genuine image boundaries", () =>
   it("records all required fixture files, explicit rights, attribution and exact bytes", async () => {
     const { fixtures } = await provenance();
     expect(fixtures.map((f) => f.file).sort()).toEqual([...names].sort());
-    expect((await readdir(new URL("images/", root))).sort()).toEqual([...names].sort());
+    const entries = await readdir(new URL("images/", root), { withFileTypes: true });
+    expect(entries.filter(entry => entry.isFile()).map(entry => entry.name).sort()).toEqual([...names].sort());
+    expect(entries.filter(entry => entry.isDirectory()).map(entry => entry.name)).toEqual(["example-images"]);
+    expect(entries.length).toBe(names.length + 1);
     for (const f of fixtures) {
       const bytes = await readFile(path(f.file));
       expect(createHash("sha256").update(bytes).digest("hex"), f.file).toBe(f.sha256);

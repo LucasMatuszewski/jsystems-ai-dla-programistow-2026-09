@@ -18,3 +18,7 @@ test("material unknown return requires clarification or employee verification in
   else expect(decision.nextSteps.length).toBeGreaterThan(0);
   // Exact grounding, questions and factual limits require independent human review of the actual card.
 });
+
+test("user-provided laptop-1.png supports a preliminary case without preclassified image findings", async ({ page }, info) => {
+  await assessActualCase(page, info, "example-laptop");
+});

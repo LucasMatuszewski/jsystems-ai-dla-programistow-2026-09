@@ -5,6 +5,16 @@ import { createElement, type ComponentProps, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { AppHeader } from "./app-header";
 import Home from "../app/page";
+import { CaseShellProvider } from "@/features/case-shell/case-shell";
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }));
+vi.mock("@/features/case-workflow/initial-api-client", () => ({ analyzeInitialCase: vi.fn(), decideInitialCase: vi.fn() }));
+vi.mock("@/features/case-workflow/initial-workflow-controller", () => ({ createInitialWorkflowController: () => ({ start: vi.fn(), retry: vi.fn(), invalidate: vi.fn(), returnToForm: vi.fn(), dispose: vi.fn() }) }));
+vi.mock("@/features/case-workflow/processing-steps", () => ({ ProcessingSteps: () => null }));
+vi.mock("@/features/case-chat/initial-decision-details", () => ({ InitialDecisionDetails: () => null }));
+vi.mock("@/features/case-chat/case-summary", () => ({ CaseSummary: () => null }));
+vi.mock("@/components/ai-elements/conversation", () => ({ Conversation: () => null, ConversationContent: () => null }));
+vi.mock("@/components/ai-elements/message", () => ({ Message: () => null, MessageContent: () => null }));
 
 vi.mock("next/image", () => ({
   default: ({ src, alt, width, height, className }: ComponentProps<"img">) =>
@@ -23,7 +33,7 @@ vi.mock("@/features/session/session-adapter", () => ({ createSessionAdapter: () 
 
 describe("Polish application header", () => {
   it("explains the preliminary employee assessment and personal-information boundary", () => {
-    render(<Home />);
+    render(<CaseShellProvider><Home /></CaseShellProvider>);
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
     expect(screen.getByRole("heading", { name: "Wstępna ocena sprawy", level: 1 })).toBeVisible();
     expect(screen.getByText(/pomaga pracownikowi/)).toHaveTextContent("nie jest ostateczną decyzją");
@@ -31,7 +41,7 @@ describe("Polish application header", () => {
   });
 
   it("warns employees to exclude personal information from descriptions and photographs", () => {
-    render(<Home />);
+    render(<CaseShellProvider><Home /></CaseShellProvider>);
     expect(screen.getByText(/Nie umieszczaj danych osobowych w opisach ani na zdjęciach/)).toBeVisible();
   });
   it("identifies the employee assistant with the original local Allegro logo", () => {

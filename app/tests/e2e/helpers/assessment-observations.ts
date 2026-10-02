@@ -16,7 +16,7 @@ export const assessmentLabels = {
   card: "Wstępna ocena początkowa", summary: "Dane sprawy",
   sections: ["Wstępny wynik", "Podsumowanie", "Uzasadnienie", "Ustalenia i zgłoszone fakty", "Podstawa procedury", "Ograniczenia oceny", "Pytania uzupełniające", "Dalsze kroki pracownika"],
 } as const;
-export type AssessmentCase = "damaged-complaint" | "used-return" | "functional-complaint" | "unknown-return";
+export type AssessmentCase = "damaged-complaint" | "used-return" | "functional-complaint" | "unknown-return" | "example-phone" | "example-laptop";
 const configuredModel = "openai/gpt-6-luna";
 const sourceManifest = JSON.parse(readFileSync(resolve("../assets/policy-sources/manifest.json"), "utf8")) as { source_url: string; files: { file: string; sha256: string }[] };
 
@@ -29,18 +29,27 @@ async function captureApprovedCase(page: Page, info: TestInfo, state: string, wi
 async function fillAssessmentCase(page: Page, name: AssessmentCase) {
   const scenario = name.endsWith("return") ? "return" : "complaint";
   await fillCase(page, scenario);
+  const example = name === "example-phone" || name === "example-laptop";
+  if (example) {
+    await choose(page, labels.category, name === "example-laptop" ? "Komputery" : "Smartfony i tablety");
+    await page.getByLabel(labels.name, { exact: true }).fill(name === "example-laptop" ? "Laptop demonstracyjny" : "Telefon demonstracyjny");
+  }
   if (name !== "unknown-return") {
     await page.getByRole("checkbox", { name: labels.unknownDelivery, exact: true }).uncheck();
     await page.getByLabel(labels.delivery, { exact: true }).fill(await localDate(page, -8));
   }
-  const reason = name === "used-return"
+  const reason = example
+    ? "Klient zgłasza, że urządzenie nie włącza się, i prosi o naprawę. Pracownik nie ustalił przyczyny ani nie przeprowadził badania technicznego. Jest to zgłoszenie klienta, nie wynik weryfikacji zdjęcia."
+    : name === "used-return"
     ? `Zakup na odległość przez internet przez konsumenta od przedsiębiorcy. Zwykły seryjny telefon, nie wykonany na indywidualne zamówienie; według informacji pracownika nie zachodzi wyjątek od odstąpienia. Klient zgłasza odstąpienie od umowy dzisiaj, ${await localDate(page)}. Telefon był krótko zwyczajnie używany. Pracownik potwierdza komplet dołączonych akcesoriów i brak dodatkowych uszkodzeń. Są to informacje pracownika, nie ustalenia ze zdjęcia.`
     : name === "unknown-return" ? "Klient chce odstąpić od umowy. Pracownik nie zna statusu kupującego ani daty dostarczenia. Brak potwierdzenia daty zgłoszenia odstąpienia i kompletu akcesoriów. Zdjęcie pokazuje tylko tył telefonu."
     : name === "functional-complaint" ? "Według zgłoszenia klienta telefon nie włącza się. Pracownik nie ustalił przyczyny ani sprawności w badaniu technicznym. Brak informacji o upadku, zalaniu lub działaniu klienta. Zdjęcie nie potwierdza działania urządzenia."
     : "Klient zgłasza niedziałający ekran i widoczne pęknięcia. Pracownik nie ustalił przyczyny ani chwili uszkodzenia. Brak potwierdzenia, że klient spowodował uszkodzenie. Klient prosi o naprawę.";
   await page.getByLabel(labels.reason, { exact: true }).fill(reason);
   if (name === "unknown-return") await choose(page, labels.buyer, "Nie wiem");
-  await preparePhoto(page, name === "damaged-complaint" ? "damaged-smartphone.jpg" : name === "unknown-return" ? "ambiguous-smartphone.jpg" : "intact-smartphone.jpg");
+  const fixture = example ? `example-images/${name === "example-laptop" ? "laptop-1.png" : "phone-1.jpg"}`
+    : name === "damaged-complaint" ? "damaged-smartphone.jpg" : name === "unknown-return" ? "ambiguous-smartphone.jpg" : "intact-smartphone.jpg";
+  await preparePhoto(page, fixture);
   return scenario;
 }
 
