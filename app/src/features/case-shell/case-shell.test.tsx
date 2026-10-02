@@ -5,7 +5,7 @@ import type { InitialWorkflowDependencies } from "@/features/case-workflow/initi
 import { CaseShell, CaseShellProvider } from "./case-shell";
 import type { CaseChatProps } from "@/features/case-chat/case-chat";
 
-const mocks = vi.hoisted(() => ({ restore: vi.fn(), checkpoint: vi.fn(), newCase: vi.fn(), dispose: vi.fn(), warning: vi.fn(), push: vi.fn(), replace: vi.fn(), start: vi.fn(), retry: vi.fn(), cancel: vi.fn(), invalidate: vi.fn(), controllerDispose: vi.fn(), controllerFactory: vi.fn(), adapterFactory: vi.fn(), processing: vi.fn(), prepare: vi.fn(), screenFiles: vi.fn(), picker: vi.fn(), chatProps: null as CaseChatProps | null, chatCancel: vi.fn(), chatSeeds: [] as string[] }));
+const mocks = vi.hoisted(() => ({ restore: vi.fn(), discard: vi.fn(), save: vi.fn(), checkpoint: vi.fn(), newCase: vi.fn(), dispose: vi.fn(), warning: vi.fn(), push: vi.fn(), replace: vi.fn(), start: vi.fn(), retry: vi.fn(), cancel: vi.fn(), invalidate: vi.fn(), controllerDispose: vi.fn(), controllerFactory: vi.fn(), adapterFactory: vi.fn(), processing: vi.fn(), prepare: vi.fn(), screenFiles: vi.fn(), picker: vi.fn(), chatProps: null as CaseChatProps | null, chatCancel: vi.fn(), chatSeeds: [] as string[] }));
 vi.mock("@/features/case-chat/case-chat", async () => {
   const { useEffect, useState } = await import("react");
   return { CaseChat: (props: CaseChatProps) => {
@@ -44,8 +44,8 @@ let dependencies: InitialWorkflowDependencies;
 beforeEach(() => {
   mocks.chatProps = null; mocks.chatSeeds = [];
   mocks.restore.mockReturnValue({ status: "restored", snapshot: formCase() }); mocks.warning.mockReturnValue(null);
-  mocks.newCase.mockReturnValue({ status: "saved" });
-  mocks.adapterFactory.mockImplementation(() => ({ restore: mocks.restore, checkpoint: mocks.checkpoint, startNewCase: mocks.newCase, dispose: mocks.dispose, getWarning: mocks.warning, flush: vi.fn() }));
+  mocks.newCase.mockReturnValue({ status: "saved" }); mocks.discard.mockReturnValue({ status: "removed" }); mocks.save.mockReturnValue({ status: "saved" });
+  mocks.adapterFactory.mockImplementation(() => ({ restore: mocks.restore, discard: mocks.discard, save: mocks.save, checkpoint: mocks.checkpoint, startNewCase: mocks.newCase, dispose: mocks.dispose, getWarning: mocks.warning, flush: vi.fn() }));
   mocks.controllerFactory.mockImplementation((options: InitialWorkflowDependencies) => { dependencies = options; return { start: mocks.start, retry: mocks.retry, returnToForm: mocks.cancel, invalidate: mocks.invalidate, dispose: mocks.controllerDispose }; });
   mocks.start.mockImplementation(async (form: object) => { dependencies.checkpoint({ ...completed(), caseId: dependencies.readCase().caseId, submittedForm: form as ActiveCaseSnapshot["submittedForm"] }); dependencies.onView({ pending: false, error: null }); dependencies.onComplete(); });
 });
@@ -252,5 +252,105 @@ describe("one hydrated live case across form and chat", () => {
     render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>); fireEvent.click(await screen.findByRole("button", { name: "Zmień dane" }));
     expect(mocks.invalidate).toHaveBeenCalledTimes(1); expect(mocks.checkpoint).toHaveBeenCalled();
     const calls = mocks.checkpoint.mock.calls; const saved = calls.at(-1)?.[0]; expect(saved.draftForm.equipmentName).toBe("Zmienione fakty"); expect(saved.imageAnalysis).toBeNull(); expect(saved.initialDecision).toBeNull(); expect(saved.submittedForm).toBeNull();
+  });
+});
+
+
+describe("explicit recovery of unreadable local data", () => {
+  const label = "Wyczyść zapis i rozpocznij nową sprawę";
+  const preservingLabel = "Rozpocznij nową sprawę, zachowując zapis";
+  it.each(["form", "chat"] as const)("offers recovery on %s without automatic writes or deletion", async mode => {
+    mocks.restore.mockReturnValue({ status: "unreadable" });
+    render(<CaseShellProvider><CaseShell screen={mode} /></CaseShellProvider>);
+    expect(await screen.findByRole("button", { name: label })).toBeVisible();
+    expect(mocks.discard).not.toHaveBeenCalled(); expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.checkpoint).not.toHaveBeenCalled(); expect(mocks.start).not.toHaveBeenCalled();
+  });
+  it("offers recovery for an unsupported checkpoint without rendering its contents", async () => {
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: { ...completed(), initialDecision: null } });
+    render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    expect(await screen.findByRole("button", { name: preservingLabel })).toBeVisible(); expect(screen.queryByRole("article")).not.toBeInTheDocument();
+  });
+  it("opens confirmation with safe cancel focus and preserves data on cancellation and Escape", async () => {
+    mocks.restore.mockReturnValue({ status: "unreadable" });
+    render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    const trigger = await screen.findByRole("button", { name: label }); fireEvent.click(trigger);
+    expect(await screen.findByRole("dialog", { name: "Usunąć nieczytelny zapis?" })).toHaveTextContent("Wszystkie zapisane sprawy tej aplikacji");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Anuluj" })).toHaveFocus());
+    fireEvent.click(screen.getByRole("button", { name: "Anuluj" })); await waitFor(() => expect(trigger).toHaveFocus());
+    fireEvent.click(trigger); fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(mocks.discard).not.toHaveBeenCalled(); expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.push).not.toHaveBeenCalled();
+  });
+  it("removes only on confirmation, invalidates old work before publishing a blank new UUID and routes to form", async () => {
+    mocks.restore.mockReturnValue({ status: "unreadable" });
+    render(<CaseShellProvider><CaseShell screen="chat" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: label })); fireEvent.click(screen.getByRole("button", { name: "Usuń zapis i rozpocznij nową sprawę" }));
+    expect(mocks.discard).toHaveBeenCalledTimes(1); expect(mocks.newCase).not.toHaveBeenCalled();
+    expect(mocks.save).toHaveBeenCalledTimes(1); const next = mocks.save.mock.calls[0][0] as ActiveCaseSnapshot;
+    expect(next.caseId).not.toBe(caseId); expect(next.caseId).toMatch(/^[0-9a-f-]{36}$/); expect(next).toMatchObject({ screen: "form", stage: "form", preparedImage: null, imageAnalysis: null, initialDecision: null, submittedForm: null, messages: [], replyStates: {}, pendingOperation: null });
+    expect(next.draftForm.equipmentName).toBe(""); expect(mocks.dispose.mock.invocationCallOrder.at(-1)).toBeLessThan(mocks.save.mock.invocationCallOrder[0]); expect(mocks.push).toHaveBeenCalledWith("/"); expect(mocks.start).not.toHaveBeenCalled();
+  });
+  it.each(["failed", "changed"])("keeps blocked state after %s discard and allows an explicit retry", async status => {
+    mocks.restore.mockReturnValue({ status: "unreadable" }); mocks.discard.mockReturnValue({ status, warning: "unavailable", notice: "Zapis zmienił się. Odśwież stronę." });
+    render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: label })); fireEvent.click(screen.getByRole("button", { name: "Usuń zapis i rozpocznij nową sprawę" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Odśwież stronę"); expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.push).not.toHaveBeenCalled(); expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: label })); expect(screen.getByRole("dialog")).toBeVisible();
+  });
+  it("retains a live empty form and Polish warning when saving after successful removal fails", async () => {
+    mocks.restore.mockReturnValue({ status: "unreadable" }); mocks.save.mockReturnValue({ status: "failed", warning: "unavailable", notice: "Nie można zapisać sprawy." });
+    render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: label })); fireEvent.click(screen.getByRole("button", { name: "Usuń zapis i rozpocznij nową sprawę" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Nie można zapisać"); expect(screen.queryByRole("button", { name: label })).not.toBeInTheDocument(); expect(mocks.push).toHaveBeenCalledWith("/");
+  });
+  it("does not offer destructive recovery for a valid case or a persistence warning", async () => {
+    mocks.warning.mockReturnValue("quota-exceeded"); render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    await screen.findByRole("button", { name: "Nowa sprawa" }); expect(screen.queryByRole("button", { name: label })).not.toBeInTheDocument();
+  });
+  it("focuses the new form after recovery instead of leaving focus on the removed dialog", async () => {
+    mocks.restore.mockReturnValue({ status: "unreadable" });
+    render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: label })); fireEvent.click(screen.getByRole("button", { name: "Usuń zapis i rozpocznij nową sprawę" }));
+    await waitFor(() => expect(screen.getByRole("main")).toHaveFocus());
+  });
+  it("invalidates callbacks of an unsupported selected checkpoint before recovering", async () => {
+    const selectedId = "7b40b034-5e7b-49dc-bb47-e8d8d2d5fc76";
+    const unsupported = { ...completed(), caseId: selectedId, initialDecision: null };
+    mocks.restore.mockImplementation((id?: string) => ({ status: "restored", snapshot: id ? unsupported : formCase() }));
+    render(<CaseShellProvider><CaseShell screen="chat" caseId={selectedId} /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: preservingLabel })); const old = dependencies;
+    fireEvent.click(screen.getByRole("button", { name: "Zachowaj zapis i rozpocznij nową sprawę" }));
+    const saved = mocks.save.mock.calls[0][0]; mocks.checkpoint.mockClear(); mocks.push.mockClear();
+    act(() => { old.checkpoint(unsupported); old.onComplete(); });
+    expect(mocks.checkpoint).not.toHaveBeenCalled(); expect(mocks.push).not.toHaveBeenCalled(); expect(dependencies.readCase().caseId).toBe(saved.caseId);
+  });
+  it("publishes the blank UUID only after a successful atomic preserving append, without saving twice", async () => {
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: { ...completed(), initialDecision: null } }); mocks.discard.mockReturnValue({ status: "preserved" });
+    render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: preservingLabel }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("zostaną zachowane"); fireEvent.click(screen.getByRole("button", { name: "Zachowaj zapis i rozpocznij nową sprawę" }));
+    expect(mocks.discard).toHaveBeenCalledWith(expect.objectContaining({ replacement: expect.objectContaining({ stage: "form", messages: [] }) })); expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.push).toHaveBeenCalledWith("/"); expect(screen.queryByRole("button", { name: preservingLabel })).not.toBeInTheDocument();
+  });
+  it("keeps unsupported state blocked when preserving append fails", async () => {
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: { ...completed(), initialDecision: null } }); mocks.discard.mockReturnValue({ status: "failed", warning: "quota-exceeded", notice: "Zachowano zapis. Nie rozpoczęto nowej sprawy." });
+    render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: preservingLabel })); fireEvent.click(screen.getByRole("button", { name: "Zachowaj zapis i rozpocznij nową sprawę" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Nie rozpoczęto nowej sprawy"); expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.push).not.toHaveBeenCalled(); expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+  it.each(["removed", "preserved"])("invalidates old owners before the %s recovery storage mutation", async status => {
+    mocks.restore.mockReturnValue({ status: "unreadable" }); mocks.discard.mockReturnValue({ status });
+    render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: label })); fireEvent.click(screen.getByRole("button", { name: "Usuń zapis i rozpocznij nową sprawę" }));
+    expect(mocks.dispose.mock.invocationCallOrder.at(-1)).toBeLessThan(mocks.discard.mock.invocationCallOrder[0]);
+  });
+  it.each(["form", "chat"] as const)("does not claim a live current case after failed preserving append on %s", async mode => {
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: { ...completed(), initialDecision: null } });
+    mocks.adapterFactory.mockImplementation((options: { onWriteResult: (result: unknown) => void }) => ({ restore: mocks.restore, discard: () => {
+      const failed = { status: "failed", warning: "quota-exceeded", notice: "Zachowano zapis. Nie rozpoczęto nowej sprawy." };
+      options.onWriteResult(failed); return failed;
+    }, save: mocks.save, checkpoint: mocks.checkpoint, startNewCase: mocks.newCase, dispose: mocks.dispose, getWarning: mocks.warning, flush: vi.fn() }));
+    render(<CaseShellProvider><CaseShell screen={mode} /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: preservingLabel })); fireEvent.click(screen.getByRole("button", { name: "Zachowaj zapis i rozpocznij nową sprawę" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Nie rozpoczęto nowej sprawy"); expect(screen.queryByRole("status")).not.toBeInTheDocument(); expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.push).not.toHaveBeenCalled();
   });
 });

@@ -2,7 +2,7 @@ import { activeCaseSnapshotSchema, localCaseRegistrySchema, ACTIVE_CASE_STORAGE_
 export type StorageWarning = NonNullable<ActiveCaseSnapshot["storageWarning"]>;
 export type WriteResult = { status: "saved" } | { status: "failed"; warning: StorageWarning; notice: string };
 export type RestoreResult = { status: "restored"; snapshot: ActiveCaseSnapshot } | { status: "missing" | "unreadable" } | { status: "unavailable"; warning: StorageWarning; notice: string };
-export type DiscardResult = { status: "removed" } | Extract<WriteResult, { status: "failed" }>;
+export type DiscardResult = { status: "removed" | "preserved" } | { status: "changed"; notice: string } | Extract<WriteResult, { status: "failed" }>;
 export type CheckpointKind = "draft" | "stream" | "immediate";
 export type SessionStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 export const STORAGE_NOTICES: Readonly<Record<StorageWarning, string>> = {
@@ -21,6 +21,7 @@ export function createSessionAdapter(options: { storage: () => SessionStorage; o
   let registry: LocalCaseRegistry | null = null;
   let loaded = false;
   let unreadable = false;
+  let originalRaw: string | null | undefined;
 
   function load(): RestoreResult | null {
     if (loaded) return unreadable ? { status: "unreadable" } : null;
@@ -28,6 +29,7 @@ export function createSessionAdapter(options: { storage: () => SessionStorage; o
     try { json = options.storage().getItem(ACTIVE_CASE_STORAGE_KEY); }
     catch (error) { const failure = fail(ioWarning(error)); return { ...failure, status: "unavailable" }; }
     loaded = true;
+    originalRaw = json;
     if (json === null) return null;
     try {
       const data: unknown = JSON.parse(json);
@@ -114,12 +116,34 @@ export function createSessionAdapter(options: { storage: () => SessionStorage; o
     },
     flush,
     getWarning: (): StorageWarning | null => warning,
-    discard(): DiscardResult {
+    discard(recovery?: { recovery: true; isSupported: (snapshot: ActiveCaseSnapshot) => boolean; replacement?: ActiveCaseSnapshot }): DiscardResult {
       try {
+        if (recovery) {
+          const fresh = options.storage().getItem(ACTIVE_CASE_STORAGE_KEY);
+          const changed = () => ({ status: "changed" as const, notice: "Zapis zmienił się lub zawiera sprawę, którą można odczytać. Nie usunięto danych. Odśwież stronę, aby sprawdzić aktualny zapis." });
+          if (originalRaw === undefined || fresh === null || fresh !== originalRaw) return changed();
+          let data: unknown;
+          try { data = JSON.parse(fresh); } catch { /* Unchanged malformed JSON is explicitly removable. */ }
+          const current = localCaseRegistrySchema.safeParse(data);
+          const legacy = activeCaseSnapshotSchema.safeParse(data);
+          if (current.success || legacy.success) {
+            const readable = current.success ? current.data : legacy.success ? { schemaVersion: 2 as const, activeCaseId: legacy.data.caseId, cases: { [legacy.data.caseId]: legacy.data } } : null;
+            if (!readable || recovery.isSupported(readable.cases[readable.activeCaseId]) || !recovery.replacement || readable.cases[recovery.replacement.caseId]) return changed();
+            const next = activeCaseSnapshotSchema.safeParse(recovery.replacement);
+            if (!next.success || next.data.stage !== "form" || next.data.messages.length || next.data.submittedForm || next.data.preparedImage || next.data.imageAnalysis || next.data.initialDecision || next.data.pendingOperation) return changed();
+            cancel();
+            registry = readable;
+            const saved = write(next.data);
+            return saved.status === "saved" ? { status: "preserved" } : { ...saved, notice: `${STORAGE_NOTICES[saved.warning]} Zachowano zapis. Nie rozpoczęto nowej sprawy. Spróbuj ponownie.` };
+          }
+        }
         options.storage().removeItem(ACTIVE_CASE_STORAGE_KEY);
-        cancel(); warning = null; registry = null; loaded = true; unreadable = false;
+        cancel(); warning = null; registry = null; loaded = true; unreadable = false; originalRaw = null;
         return { status: "removed" };
-      } catch (error) { return fail(ioWarning(error)); }
+      } catch (error) {
+        const failure = fail(ioWarning(error));
+        return recovery ? { ...failure, notice: "Nie można wyczyścić zapisu w tej przeglądarce. Nie rozpoczęto nowej sprawy. Spróbuj ponownie lub odśwież stronę." } : failure;
+      }
     },
     dispose: cancel,
   };

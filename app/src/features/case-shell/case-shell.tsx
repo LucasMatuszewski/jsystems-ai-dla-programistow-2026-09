@@ -12,6 +12,7 @@ import { createInitialWorkflowController, type InitialWorkflowView } from "@/fea
 import { ProcessingSteps } from "@/features/case-workflow/processing-steps";
 import { createSessionAdapter, type CheckpointKind, type StorageWarning } from "@/features/session/session-adapter";
 import { StorageNotice } from "@/features/session/storage-notice";
+import { SessionRecovery } from "@/features/session/session-recovery";
 import { CaseChat, type CaseChatProps } from "@/features/case-chat/case-chat";
 import { CaseSummary } from "@/features/case-chat/case-summary";
 import type { CaseForm as SubmittedForm } from "@/lib/contracts/form";
@@ -41,6 +42,7 @@ type ShellState = {
   requireImage: () => void; retry: () => void; returnToForm: () => void; showCompletedCase: () => void;
   startNewCase: () => boolean; openCase: (caseId: string) => void; selectForm: () => void; requestedCaseId: string | null; routeFailure: "missing" | "invalid" | null;
   chatGeneration: number;
+  recoverSession: () => void; recoveryError: string | null; preserveRecovery: boolean;
   bindChat: (caseId: string, generation: number) => Omit<CaseChatProps, "initialSnapshot">;
 };
 const ShellContext = createContext<ShellState | null>(null);
@@ -52,6 +54,8 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false);
   const [snapshot, setSnapshot] = useState<ActiveCaseSnapshot | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [preserveRecovery, setPreserveRecovery] = useState(false);
   const [warning, setWarning] = useState<StorageWarning | null>(null);
   const [image, setImage] = useState<ImagePickerState>({ status: "empty" });
   const [missingImage, setMissingImage] = useState(false);
@@ -150,6 +154,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     queueMicrotask(() => {
       if (!active) return;
       setSnapshot(current); setBlocked(notice); setWarning(adapter.getWarning()); setInitialized(true);
+      setPreserveRecovery(Boolean(notice && restored.status === "restored"));
       if (current?.preparedImage) setImage({ status: "ready", preparedImage: current.preparedImage });
       else if (current?.stage === "preparation" && current.stageStatus === "interrupted") setImage({ status: "interrupted", message: "Przygotowywanie zdjęcia zostało przerwane. Wybierz zdjęcie ponownie, aby kontynuować." });
     });
@@ -189,6 +194,22 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     setWarning(null); setBlocked(null); setRouteFailure(null); completionNavigationRef.current = false; installWorkflow(next.caseId);
     routerRef.current.push("/"); return true;
   }
+  function recoverSession() {
+    const adapter = adapterRef.current;
+    if (!mountedRef.current || !blocked || !adapter) return;
+    stopOldWork();
+    const next = blankCase();
+    const removed = adapter.discard({ recovery: true, isSupported: supportedCheckpoint, replacement: next });
+    if (removed.status === "failed" || removed.status === "changed") { setRecoveryError(removed.notice); return; }
+    snapshotRef.current = next; setSnapshot(next); originalFile.current = null;
+    setImage({ status: "empty" }); setMissingImage(false); setView({ pending: false, error: null });
+    setBlocked(null); setRecoveryError(null); setRouteFailure(null); completionNavigationRef.current = false;
+    installWorkflow(next.caseId);
+    const saved = removed.status === "preserved" ? { status: "saved" as const } : adapter.save(next);
+    const nextWarning = saved.status === "failed" ? saved.warning : null;
+    snapshotRef.current = { ...next, storageWarning: nextWarning }; setSnapshot(snapshotRef.current); setWarning(nextWarning);
+    routerRef.current.push("/");
+  }
   function openCase(id: string) {
     completionNavigationRef.current = false;
     setRequestedCaseId(id);
@@ -199,6 +220,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     stopOldWork();
     const next = restored.snapshot;
     snapshotRef.current = next; setSnapshot(next); setBlocked(supportedCheckpoint(next) ? null : unreadableNotice); setRouteFailure(null);
+    setPreserveRecovery(!supportedCheckpoint(next)); setRecoveryError(null);
     originalFile.current = null; setImage(next.preparedImage ? { status: "ready", preparedImage: next.preparedImage } : { status: "empty" });
     setView({ pending: false, error: null }); completionNavigationRef.current = false; installWorkflow(next.caseId);
   }
@@ -255,7 +277,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     requireImage: () => setMissingImage(true), retry: () => { void workflowRef.current?.retry(); }, returnToForm,
     showCompletedCase,
     startNewCase, openCase, selectForm, requestedCaseId, routeFailure,
-    chatGeneration: workflowOwnerRef.current, bindChat,
+    chatGeneration: workflowOwnerRef.current, bindChat, recoverSession, recoveryError, preserveRecovery,
   };
   return <ShellContext.Provider value={state}>{children}</ShellContext.Provider>;
 }
@@ -263,10 +285,15 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
 export function CaseShell({ screen, caseId }: { screen: "form" | "chat"; caseId?: string }) {
   const state = useContext(ShellContext);
   const mainRef = useRef<HTMLElement>(null);
+  const wasBlocked = useRef(false);
   const newCaseTrigger = useRef<HTMLButtonElement>(null);
   const [newCaseOpen, setNewCaseOpen] = useState(false);
   if (!state) throw new Error("CaseShell requires its persistent provider.");
   const { initialized, snapshot, blocked, warning, view } = state;
+  useEffect(() => {
+    if (wasBlocked.current && !blocked) mainRef.current?.focus();
+    wasBlocked.current = Boolean(blocked);
+  }, [blocked]);
   const complete = hasCompleteCase(snapshot);
   const showCompletedCase = state.showCompletedCase;
   const openCase = state.openCase;
@@ -286,11 +313,12 @@ export function CaseShell({ screen, caseId }: { screen: "form" | "chat"; caseId?
   if (screen === "chat") {
     return <main ref={mainRef} id="main-content" tabIndex={-1} className="app-main">
       {continuityControls}
+      {initialized && blocked && <SessionRecovery onConfirm={state.recoverSession} error={state.recoveryError} preserve={state.preserveRecovery} />}
       {!initialized || (caseId && state.requestedCaseId !== caseId) ? <p>Wczytywanie zapisanej sprawy.</p> : !exactCase || state.routeFailure || !complete || !snapshot?.submittedForm || !snapshot.preparedImage || !snapshot.initialDecision ? <section className="max-w-[800px] rounded-[16px] border bg-card p-4 sm:p-6"><h1 className="text-2xl">{routeHeading}</h1><p className="my-4">{blocked ?? "Ta sprawa nie ma dostępnej pełnej oceny początkowej w tej przeglądarce. Wróć do formularza, aby kontynuować."}</p><Link href="/" className="text-accent underline underline-offset-4">Wróć do formularza</Link></section> : <div className="grid min-w-0 items-start gap-6 md:grid-cols-[minmax(240px,320px)_minmax(0,1fr)]">
         <CaseSummary form={snapshot.submittedForm} preparedImage={snapshot.preparedImage} />
         {chatBindings && <CaseChat key={snapshot.caseId} initialSnapshot={snapshot} {...chatBindings} />}
       </div>}
-      <div className="mt-4"><StorageNotice warning={warning} /></div>
+      {!blocked && <div className="mt-4"><StorageNotice warning={warning} /></div>}
     </main>;
   }
   const processing = snapshot?.submittedForm !== null && snapshot?.submittedForm !== undefined && snapshot.stage !== "form";
@@ -301,9 +329,9 @@ export function CaseShell({ screen, caseId }: { screen: "form" | "chat"; caseId?
       <p>Asystent pomaga pracownikowi przygotować wstępną ocenę reklamacji lub zwrotu. Wynik wymaga sprawdzenia i nie jest ostateczną decyzją w sprawie klienta.</p>
       <div className="privacy-notice"><h2>Bez danych osobowych</h2><p>Nie wprowadzaj danych osobowych klientów ani informacji pozwalających ich zidentyfikować. Nie umieszczaj danych osobowych w opisach ani na zdjęciach. Aplikacja nie służy do prowadzenia kartoteki klientów.</p></div>
     </section>
-    {!initialized ? <p className="mt-6">Wczytywanie zapisanej sprawy.</p> : blocked || !snapshot ? <p className="mt-6 max-w-[800px] border bg-card p-4">{blocked ?? unreadableNotice}</p> : complete ? <p role="status" className="mt-6">Otwieranie zapisanej oceny sprawy.</p> : processing ? <ProcessingSteps snapshot={snapshot} view={view} onReturnToForm={state.returnToForm} onRetry={state.retry} /> : <CaseForm value={snapshot.draftForm}
+    {!initialized ? <p className="mt-6">Wczytywanie zapisanej sprawy.</p> : blocked || !snapshot ? <div className="mt-6 max-w-[800px]"><p className="border bg-card p-4">{blocked ?? unreadableNotice}</p>{blocked && <SessionRecovery onConfirm={state.recoverSession} error={state.recoveryError} preserve={state.preserveRecovery} />}</div> : complete ? <p role="status" className="mt-6">Otwieranie zapisanej oceny sprawy.</p> : processing ? <ProcessingSteps snapshot={snapshot} view={view} onReturnToForm={state.returnToForm} onRetry={state.retry} /> : <CaseForm value={snapshot.draftForm}
       onChange={state.changeDraft} onValidSubmit={state.submit} imageReady={state.image.status === "ready"} imageInputRef={state.imageInputRef} onImageRequired={state.requireImage}
       imageSlot={<EquipmentImagePicker state={state.image} inputRef={state.imageInputRef} validationError={state.missingImage ? "Dodaj zdjęcie sprzętu." : undefined} onSelect={files => { void state.selectImage(files); }} onRemove={state.removeImage} onRetry={state.retryImage} />} />}
-    <div className="mt-4 max-w-[800px]"><StorageNotice warning={warning} /></div>
+    {!blocked && <div className="mt-4 max-w-[800px]"><StorageNotice warning={warning} /></div>}
   </main>;
 }

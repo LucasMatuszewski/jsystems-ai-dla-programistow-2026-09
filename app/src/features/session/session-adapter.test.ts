@@ -21,11 +21,11 @@ function snapshot(revision = 0): ActiveCaseSnapshot {
 }
 function harness() {
   let blob: string | null = null;
-  const storage = { getItem: vi.fn(() => blob), setItem: vi.fn((_key: string, value: string) => { blob = value; }), removeItem: vi.fn(() => { blob = null; }) };
+  const storage = { getItem: vi.fn((_key: string) => { void _key; return blob; }), setItem: vi.fn((_key: string, value: string) => { blob = value; }), removeItem: vi.fn((_key: string) => { void _key; blob = null; }) };
   const onWriteResult = vi.fn();
   return { storage, onWriteResult, adapter: createSessionAdapter({ storage: () => storage, onWriteResult }), blob: () => blob };
 }
-beforeEach(() => { vi.useFakeTimers(); safeParse.mockImplementation(data => ({ success: true, data: structuredClone(data) })); });
+beforeEach(() => { vi.useFakeTimers(); safeParse.mockImplementation(data => data && data.schemaVersion === 1 ? ({ success: true, data: structuredClone(data) }) : ({ success: false })); });
 afterEach(() => vi.useRealTimers());
 
 describe("validated active case checkpoints", () => {
@@ -186,5 +186,57 @@ describe("validated active case checkpoints", () => {
     const h = harness(); expect(h.adapter.flush()).toBeNull(); h.adapter.checkpoint(snapshot(), "draft");
     expect(h.adapter.flush()).toEqual({ status: "saved" }); h.adapter.checkpoint(snapshot(1), "draft");
     h.adapter.dispose(); vi.runAllTimers(); expect(h.storage.setItem).toHaveBeenCalledTimes(1);
+  });
+});
+
+
+describe("confirmed recovery discard with fresh storage guard", () => {
+  const replacement = () => ({ ...snapshot(), caseId: "3552ca85-9d6c-46f5-a5a7-f3fef63e681c" });
+  const recover = (adapter: ReturnType<typeof createSessionAdapter>, next = replacement()) => adapter.discard({ recovery: true, isSupported: value => value.stage === "form", replacement: next });
+  it.each(["valid", "invalid", "missing"])("preserves a %s replacement instead of deleting stale approved bytes", kind => {
+    const h = harness(); h.storage.setItem(key, "{"); expect(h.adapter.restore()).toEqual({ status: "unreadable" });
+    if (kind === "valid") h.storage.setItem(key, JSON.stringify(snapshot()));
+    else if (kind === "invalid") h.storage.setItem(key, "{different");
+    else h.storage.removeItem(key);
+    const replacement = h.blob(); h.storage.removeItem.mockClear();
+    expect(recover(h.adapter)).toMatchObject({ status: "changed" }); expect(h.blob()).toBe(replacement); expect(h.storage.removeItem).not.toHaveBeenCalled();
+  });
+  it("rechecks the product value synchronously at confirmation and removes only unchanged unreadable bytes", () => {
+    const h = harness(); h.storage.setItem(key, "{"); h.adapter.restore(); h.storage.getItem.mockClear();
+    expect(recover(h.adapter)).toEqual({ status: "removed" }); expect(h.storage.getItem).toHaveBeenCalledWith(key); expect(h.storage.removeItem).toHaveBeenCalledExactlyOnceWith(key); expect(h.adapter.restore()).toEqual({ status: "missing" });
+  });
+  it("preserves raw bytes when fresh storage read fails and allows retry after access returns", () => {
+    const h = harness(); h.storage.setItem(key, "{"); h.adapter.restore(); h.storage.getItem.mockImplementationOnce(() => { throw new Error("private storage failure"); });
+    expect(recover(h.adapter)).toMatchObject({ status: "failed", warning: "unavailable" }); expect(h.blob()).toBe("{"); expect(h.storage.removeItem).not.toHaveBeenCalled();
+    expect(recover(h.adapter)).toEqual({ status: "removed" });
+  });
+  it("keeps unchanged bytes and guard after failed removal, then removes on explicit retry", () => {
+    const h = harness(); h.storage.setItem(key, "{"); h.adapter.restore(); h.storage.removeItem.mockImplementationOnce(() => { throw new Error("private removal failure"); });
+    expect(recover(h.adapter)).toMatchObject({ status: "failed", warning: "unavailable" }); expect(h.blob()).toBe("{"); expect(h.adapter.restore()).toEqual({ status: "unreadable" }); expect(recover(h.adapter)).toEqual({ status: "removed" });
+  });
+  it("preserves an unchanged supported registry instead of exposing a destructive recovery path", () => {
+    const h = harness(); h.adapter.save(snapshot()); h.adapter.restore(); const raw = h.blob();
+    expect(recover(h.adapter)).toMatchObject({ status: "changed" }); expect(h.blob()).toBe(raw); expect(h.storage.removeItem).not.toHaveBeenCalled();
+  });
+  it("atomically preserves the original schema-valid unsupported legacy checkpoint with a new active UUID", () => {
+    const h = harness(); const unsupported = { ...snapshot(), stage: "chat" as const }; h.storage.setItem(key, JSON.stringify(unsupported)); h.adapter.restore();
+    expect(recover(h.adapter)).toEqual({ status: "preserved" });
+    expect(JSON.parse(h.blob()!)).toMatchObject({ activeCaseId: replacement().caseId, cases: { [unsupported.caseId]: unsupported, [replacement().caseId]: replacement() } }); expect(h.storage.removeItem).not.toHaveBeenCalled();
+  });
+  it("preserves readable earlier cases in a registry with an unsupported active checkpoint", () => {
+    const h = harness(); const valid = snapshot(); const invalid = { ...snapshot(), caseId: "7b40b034-5e7b-49dc-bb47-e8d8d2d5fc76", stage: "chat" as const };
+    h.storage.setItem(key, JSON.stringify({ schemaVersion: 2, activeCaseId: invalid.caseId, cases: { [valid.caseId]: valid, [invalid.caseId]: invalid } })); h.adapter.restore(); const raw = h.blob();
+    h.storage.setItem.mockClear(); expect(recover(h.adapter)).toEqual({ status: "preserved" });
+    expect(JSON.parse(h.blob()!)).toMatchObject({ activeCaseId: replacement().caseId, cases: { [valid.caseId]: valid, [invalid.caseId]: invalid, [replacement().caseId]: replacement() } });
+    expect(h.storage.setItem).toHaveBeenCalledTimes(1); expect(h.storage.removeItem).not.toHaveBeenCalled(); expect(h.blob()).not.toBe(raw);
+  });
+  it("keeps exact original registry bytes when atomic preserving append fails", () => {
+    const h = harness(); const unsupported = { ...snapshot(), stage: "chat" as const }; h.storage.setItem(key, JSON.stringify(unsupported)); h.adapter.restore(); const raw = h.blob();
+    h.storage.setItem.mockImplementationOnce(() => { throw new DOMException("full", "QuotaExceededError"); });
+    expect(recover(h.adapter)).toMatchObject({ status: "failed", warning: "quota-exceeded" }); expect(h.blob()).toBe(raw); expect(h.storage.removeItem).not.toHaveBeenCalled(); expect(h.adapter.restore()).toMatchObject({ snapshot: unsupported });
+  });
+  it("rejects a new UUID collision instead of overwriting any preserved case", () => {
+    const h = harness(); const unsupported = { ...snapshot(), stage: "chat" as const }; h.storage.setItem(key, JSON.stringify(unsupported)); h.adapter.restore(); const raw = h.blob(); h.storage.setItem.mockClear();
+    expect(recover(h.adapter, snapshot())).toMatchObject({ status: "changed" }); expect(h.blob()).toBe(raw); expect(h.storage.setItem).not.toHaveBeenCalled(); expect(h.storage.removeItem).not.toHaveBeenCalled();
   });
 });
