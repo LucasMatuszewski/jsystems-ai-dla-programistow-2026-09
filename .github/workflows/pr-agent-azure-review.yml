@@ -75,6 +75,7 @@ jobs:
         env:
           OPENAI__KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT_LOGIN: ${{ github.event.comment.user.login }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
         run: |
           set -euo pipefail
@@ -87,6 +88,10 @@ jobs:
           [[ "$OPENAI__DEPLOYMENT_ID" =~ ^[a-zA-Z0-9_.-]+$ ]] || fail 'Invalid AZURE_OPENAI_DEPLOYMENT.'
           [[ "$CONFIG__MODEL" =~ ^[a-zA-Z0-9_.-]+$ ]] || fail 'PR_AGENT_MODEL must be the underlying model ID, not a deployment or provider prefix.'
           [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || fail 'Invalid PR number.'
+          if [[ "$GITHUB_EVENT_NAME" == issue_comment ]]; then
+            permission=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$COMMENT_LOGIN/permission" --jq '.permission')
+            [[ "$permission" == write || "$permission" == maintain || "$permission" == admin ]] || fail 'Comment commands require current write, maintain or admin repository permission.'
+          fi
           metadata=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '[.state,.head.repo.full_name,.draft]|@tsv')
           IFS=$'\t' read -r state head_repo draft <<< "$metadata"
           [[ "$state" == open && "$head_repo" == "$GITHUB_REPOSITORY" && "$draft" == false ]] || fail 'Choose an open, non-draft PR from this repository; fork PRs are skipped.'
