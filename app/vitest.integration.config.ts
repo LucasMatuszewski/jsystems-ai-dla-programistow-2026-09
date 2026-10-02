@@ -8,6 +8,7 @@ export default defineConfig({
     name: "integration",
     environment: "node",
     pool: "forks",
+    fileParallelism: false,
     include: ["tests/integration/**/*.test.{ts,tsx}"],
     setupFiles: ["./tests/setup-integration.ts"],
     restoreMocks: true,
