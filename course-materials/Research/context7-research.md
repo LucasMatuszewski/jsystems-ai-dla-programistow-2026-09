@@ -20,7 +20,7 @@ Quickest path for all tools: `npx ctx7 setup` (auto-detects the environment, han
 | :-- | :-- | :-- |
 | **Claude Code** | `npx ctx7 setup --claude` | `claude mcp add --scope user --header "Authorization: Bearer YOUR_API_KEY" --transport http context7 https://mcp.context7.com/mcp` ([MCP docs](https://code.claude.com/docs/en/mcp)) |
 | **Codex CLI** | `npx ctx7 setup --codex` | `codex mcp add context7 -- npx -y @upstash/context7-mcp`; or remote server in `config.toml` with `url = "https://mcp.context7.com/mcp"`; also available as a Codex plugin: `codex plugin marketplace add upstash/context7` |
-| **GitHub Copilot CLI** | not covered by `ctx7 setup` | edit `~/.copilot/mcp-config.json` and add an `mcpServers.context7` entry with `"type": "http"`, the URL above and an `Authorization` header |
+| **GitHub Copilot CLI** | `npx ctx7 setup --copilot` | edit `~/.copilot/mcp-config.json` and add an `mcpServers.context7` entry with `"type": "http"`, the URL above and an `Authorization` header |
 | **Cursor** | `npx ctx7 setup --cursor` | edit `~/.cursor/mcp.json` (or per-project `.cursor/mcp.json`), add `mcpServers.context7` with the URL above |
 
 - **Anonymous access**: the remote MCP server works without any API key, at a **lower shared rate limit**; long agent sessions may hit 429 errors. Exact anonymous quota is not officially documented (community reports ~200 requests; UNCONFIRMED).
@@ -29,7 +29,7 @@ Quickest path for all tools: `npx ctx7 setup` (auto-detects the environment, han
 
 ## The ctx7 CLI
 
-- `npx ctx7 setup` - one-command configuration for the supported agents (Claude, Cursor, Codex, OpenCode, Antigravity).
+- `npx ctx7 setup` - one-command configuration for the supported agents; per-agent flags (npm README, checked 2026-10-02): `--claude`, `--cursor`, `--opencode`, `--codex`, `--copilot`, `--vscode`, `--devin`.
 - `ctx7 library <name> <query>` - search, the CLI equivalent of `resolve-library-id`.
 - `ctx7 docs <libraryId> <query>` - fetch docs, the equivalent of `query-docs`.
 - Useful when a tool has no MCP support yet, or when you want docs fetched by a script instead of a live MCP connection.
@@ -42,9 +42,9 @@ From [context7.com/plans](https://context7.com/plans), verified 2026-10-01:
 | :-- | :-- | :-- |
 | **Free** | $0 | 1,000 per month |
 | **Pro** | $10 per seat / month | 2,000 per seat / month |
-| **Enterprise** | custom | 2,000 per seat / month |
+| **Enterprise** | custom | custom - defined per contract, re-check the plans page before quoting |
 
-- On Free you are **blocked at the monthly cap** (plus 20 bonus calls per day while blocked); Pro and Enterprise are never blocked and pay **$5 per 1,000 calls** overage.
+- On Free you are **blocked at the monthly cap** (plus 20 bonus calls per day while blocked). Paid-plan overage terms (e.g. per-1,000-call pricing) are set by the current plans page and contracts - do not assume fixed numbers across plans; Enterprise in particular negotiates its own included volume and overage.
 - **Private repository parsing** (adding private docs to the index) costs $5 per 1M tokens.
 - Quotas are per seat, not pooled; search API calls count the same as doc calls.
 
