@@ -1,0 +1,83 @@
+# Historia czatu — dzień 4
+
+**Data:** 1 października 2026
+
+Nazwy uczestników zastąpiono numerami (Uczestnik 1, 2, ...), zachowując spójność w całej rozmowie.
+
+- **08:07:56 — Łukasz:** https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/zoom-summary-chat-history — podsumowania z Zoom, linki z czatu.
+- **08:11:42 — Uczestnik 1:** Mam plan, nie uruchamiałem.
+- **08:11:58 — Uczestnik 2:** U mnie 3 × limit 5 h wypalony już.
+- **08:12:03 — Uczestnik 2:** I dalej będzie mielił, jak się odnowi.
+- **08:27:45 — Uczestnik 1:** Połowa tego, mimo v2.6 Pro.
+- **08:27:53 — Uczestnik 2:** Sol 6.1, 372 linie.
+- **08:28:01 — Uczestnik 3:** Sol 6.1, 190.
+- **08:28:05 — Uczestnik 4:** 180 linii, 6.1 SOL — low.
+- **08:28:08 — Uczestnik 5:** 240 linii na 6.1 — SOL.
+- **08:28:13 — Uczestnik 2:** U mnie medium.
+- **08:28:13 — Uczestnik 5:** Medium.
+- **08:28:18 — Uczestnik 6:** Sol 6, 160 linii na medium.
+- **08:28:27 — Uczestnik 2:** Tylko ja robię trochę inny projekt.
+- **09:54:35 — Łukasz:** Subagent Codex — włączanie i wyłączanie skills na poziomie subagenta oraz konfiguracja MCP: https://learn.chatgpt.com/docs/agent-configuration/subagents?surface=app#app-example-2-frontend-integration-debugging
+- **10:21:45 — Uczestnik 2:** Czy Claude na subskrypcji za 20 USD można odpalać z Herdr? Jakiś czas temu Hermes nie mógł odpalać Claude w tej najniższej subskrypcji; Codex nie miał ograniczeń.
+- **10:22:11 — Łukasz:** https://herdr.dev/ — Herdr, tmux dla agentów AI.
+- **10:22:20 — Uczestnik 2:** Bardziej chodzi mi o tryb headless Claude Code. Jakiś czas temu działał wtedy za dodatkowe tokeny, nie wykorzystywał podstawowej subskrypcji.
+- **10:26:53 — Uczestnik 2:** Zróbmy może przerwę na kawę i sprawdźmy po przerwie.
+- **10:27:09 — Łukasz:** Koniec przerwy 11:45.
+- **10:27:10 — Uczestnik 2:** OK.
+- **10:42:19 — Łukasz:** Claude Code działa w trybie headless w ramach subskrypcji. Research: https://chatgpt.com/share/6abe2adc-bfdc-83ed-8352-1175fcd54396
+- **10:42:26 — Łukasz:** `claude -p "Fix the failing tests"`
+- **10:42:43 — Łukasz:** `unset ANTHROPIC_API_KEY`
+- **10:44:00 — Łukasz:** `claude --bare -p ...` — API / PAYG, nie korzysta z subskrypcji OAuth.
+- **10:48:35 — Łukasz:** `claude --continue`
+- **10:49:38 — Łukasz:** `claude --resume <id-sesji>`
+- **10:49:45 — Łukasz:** `codex resume`
+- **10:49:57 — Łukasz:** `codex exec`
+- **11:13:43 — Łukasz:** https://restic.net/ — backup inkrementacyjny.
+- **11:14:53 — Łukasz:** https://herdr.dev/
+- **11:15:10 — Łukasz:** https://www.onorca.dev/
+- **11:15:45 — Łukasz:** https://paseo.sh/
+- **11:16:22 — Łukasz:** https://t3.codes/
+- **11:25:31 — Łukasz:** https://zed.dev/blog/introducing-delta — nowość.
+- **11:28:47 — Łukasz:** https://zed.dev/
+- **11:56:03 — Łukasz:** Hooks. https://learn.chatgpt.com/docs/hooks
+- **12:03:35 — Uczestnik 2:** Dlatego Hermes zbiera takie dobre opinie. Ma oddzielny proces analizatora, który wyciąga z konwersacji to, co może się przydać, i tworzy skills. W pełni automatycznie.
+- **12:07:53 — Łukasz:** https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/use-hooks — Copilot hooks.
+- **12:09:32 — Łukasz:** https://docs.github.com/en/copilot/concepts/agents/hooks
+- **12:12:39 — Łukasz:** https://code.claude.com/docs/en/agent-view
+- **12:13:35 — Uczestnik 2:** OK.
+- **12:13:45 — Łukasz:** Koniec przerwy 13:45.
+- **12:22:15 — Łukasz:** `codex agents` pobiera daemon i serwer do zarządzania agentami — Codex Agent Command Center, odpowiednik Claude Agent View.
+- **12:22:44 — Łukasz:** Wynik researchu o trybie headless dla różnych agentów: https://chatgpt.com/s/t_6abe4223049481918e985b5ba7a14188
+- **12:26:27 — Łukasz:** `/subagents`, aby wejść w subagentów w danej sesji Codex.
+- **12:57:08 — Łukasz:** tmux.
+- **12:57:25 — Łukasz:** cmux na macOS.
+- **12:57:41 — Łukasz:** Termux — aplikacja na Androida, open source.
+- **13:00:36 — Łukasz:** Termius — komercyjny klient SSH dla agentów na komórkę.
+- **13:06:06 — Łukasz:** Tryb headless z różnymi agentami / harnessami: https://chatgpt.com/s/t_6abe4223049481918e985b5ba7a14188
+- **13:16:30 — Łukasz:** Claude Agent Teams: https://code.claude.com/docs/en/agent-teams
+- **13:23:04 — Łukasz:** Beads — Jira dla agentów: https://github.com/gastownhall/beads
+- **13:26:09 — Łukasz:** Prywatny VPN dla swoich urządzeń / wewnątrz organizacji: https://tailscale.com/
+- **13:31:07 — Łukasz:** Bezpieczne otwarcie serwera / agenta na świat zewnętrzny, np. hooks / events z MS Teams przez tunel: https://developers.cloudflare.com/tunnel/
+- **13:36:05 — Łukasz:** https://copilotstudio.microsoft.com/ — zaawansowani agenci Enterprise oparci na Power Automate.
+- **13:38:53 — Łukasz:** https://github.com/dolthub/dolt — baza MySQL z funkcjami Gita: fork, merge itd. na danych.
+- **13:44:18 — Łukasz:** https://code.claude.com/docs/en/workflows
+- **13:44:28 — Łukasz:** Porównanie trybów pracy wielu agentów.
+- **13:51:52 — Łukasz:** https://x.com/steipete/status/2025591780595429385 — 50 agentów naraz do sprawdzania pull requestów.
+- **13:52:51 — Łukasz:** https://steipete.me/posts/2025/essential-reading-august-2025
+- **14:43:45 — Łukasz:** Ćwiczenie na 15:50:
+  - dodajcie hook;
+  - dodajcie jeden zagnieżdżony `AGENTS.md`;
+  - zastanówcie się, jaki skill mógłby powstać na bazie całej historii sesji — skill dla całego workflow albo dla elementu, z którym agenci mieli problem.
+- **15:07:06 — Uczestnik 2:** U mnie niestety coś zawiesiło się z QA i kręciło się dłuższy czas w kółko. Spaliło masę tokenów i niewiele zrobiło póki co.
+- **15:07:35 — Uczestnik 2:** Zrobiło około 20%.
+- **15:09:11 — Uczestnik 4:** Na planie za 20 USD limit 5 h kończy się niestety po 50 minutach pracy.
+- **15:09:29 — Uczestnik 2:** Zmieniłem workery na Lunę, to leci lepiej teraz.
+- **15:09:49 — Uczestnik 2:** Wcześniej wszystko leciało na 6.1 Sol low.
+- **15:10:09 — Uczestnik 2:** A jednak Luna jest o 50% tańsza.
+- **15:12:15 — Uczestnik 7:** Dzięki, do jutra.
+- **15:13:05 — Uczestnik 6:** Dzięki za dzisiaj 🙂 Cześć.
+- **15:13:07 — Uczestnik 5:** Dzięki, do jutra.
+- **15:13:08 — Uczestnik 1:** Dzięki, do jutra!
+- **15:13:10 — Uczestnik 8:** Dzięki, cześć.
+- **15:13:13 — Uczestnik 2:** Dzięki, do jutra.
+- **15:13:15 — Uczestnik 4:** Dzięki, na razie.
