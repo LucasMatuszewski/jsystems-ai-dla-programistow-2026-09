@@ -6,15 +6,32 @@ vi.mock("ai", () => {
     static isInstance(value: unknown) { return value instanceof APICallError; }
   }
   class InvalidOutput extends Error { static isInstance(value: unknown) { return value instanceof InvalidOutput; } }
-  return { APICallError, NoObjectGeneratedError: InvalidOutput, NoOutputGeneratedError: InvalidOutput, TypeValidationError: InvalidOutput };
+  class StreamProviderError extends Error {
+    constructor(public options: { message: string; statusCode?: number; data?: unknown }) { super(options.message); }
+    get statusCode() { return this.options.statusCode; }
+    static isInstance(value: unknown) { return value instanceof StreamProviderError; }
+  }
+  return { APICallError, StreamProviderError, NoObjectGeneratedError: InvalidOutput, NoOutputGeneratedError: InvalidOutput, TypeValidationError: InvalidOutput };
 });
-import { APICallError } from "ai";
+import { APICallError, StreamProviderError } from "ai";
 import { OperationError, CallerCancelledError, classifyOperationError, createOperationErrorResponse } from "@/server/http/errors";
 import { recordCompletedGeneration, recordOperationDiagnostic } from "@/server/ai/diagnostics";
 const caseId = "7b40b034-5e7b-49dc-bb47-e8d8d2d5fc76";
 const operationId = "129d4e48-1a61-4a99-b1ac-0d1ce4576c58";
 const identity = { caseId, operationId, stage: "analysis" as const, modelId: "openai/gpt-6-luna" };
 describe("safe operational errors and diagnostics", () => {
+  it.each([[401, "PROVIDER_AUTH_ERROR", 502], [403, "PROVIDER_AUTH_ERROR", 502], [402, "PROVIDER_QUOTA_OR_RATE_LIMIT", 503], [429, "PROVIDER_QUOTA_OR_RATE_LIMIT", 503], [500, "PROVIDER_ERROR", 502]])("classifies embedded SDK stream status %s without exposing provider data", async (statusCode, code, status) => {
+    const error = new StreamProviderError({ message: "private stream body", statusCode: Number(statusCode), data: { secret: "private" } });
+    expect(classifyOperationError(error)).toEqual({ kind: "error", code });
+    const response = createOperationErrorResponse(error, operationId)!;
+    expect(response.status).toBe(status);
+    const envelope = await response.json();
+    expect(envelope.code).toBe(code); expect(JSON.stringify(envelope)).not.toContain("private");
+    const deadline = new AbortController(); deadline.abort(new OperationError("OPERATION_TIMEOUT"));
+    expect(classifyOperationError(error, { deadlineSignal: deadline.signal })).toEqual({ kind: "error", code: "OPERATION_TIMEOUT" });
+    const caller = new AbortController(); caller.abort();
+    expect(classifyOperationError(error, { callerSignal: caller.signal })).toEqual({ kind: "cancelled" });
+  });
   it.each([[401, "PROVIDER_AUTH_ERROR"], [403, "PROVIDER_AUTH_ERROR"], [402, "PROVIDER_QUOTA_OR_RATE_LIMIT"], [429, "PROVIDER_QUOTA_OR_RATE_LIMIT"], [500, "PROVIDER_ERROR"]])("classifies SDK upstream HTTP %s safely", (statusCode, code) => {
     const error = new APICallError({ message: "private", url: "https://example.test", requestBodyValues: {}, statusCode: Number(statusCode) });
     expect(classifyOperationError(error)).toEqual({ kind: "error", code });

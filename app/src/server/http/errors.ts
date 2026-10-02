@@ -1,5 +1,5 @@
 import "server-only";
-import { APICallError, NoObjectGeneratedError, NoOutputGeneratedError, TypeValidationError } from "ai";
+import { APICallError, StreamProviderError, NoObjectGeneratedError, NoOutputGeneratedError, TypeValidationError } from "ai";
 import { z } from "zod";
 import { createErrorEnvelope, getErrorStatus, type ErrorCode, type FieldErrors } from "../../lib/contracts/errors";
 import { isContextLimitError } from "../../lib/contracts/messages";
@@ -41,7 +41,7 @@ export function classifyOperationError(error: unknown, context: ErrorContext = {
   if (error instanceof PolicyResourceError) return { kind: "error", code: error.code };
   if (error instanceof z.ZodError) return { kind: "error", code: context.generatedInitialOutput ? "INVALID_AI_OUTPUT" : isContextLimitError(error) ? "CONTEXT_LIMIT" : "VALIDATION_ERROR" };
   if (NoObjectGeneratedError.isInstance(error) || NoOutputGeneratedError.isInstance(error) || TypeValidationError.isInstance(error)) return { kind: "error", code: "INVALID_AI_OUTPUT" };
-  if (APICallError.isInstance(error)) {
+  if (APICallError.isInstance(error) || StreamProviderError.isInstance(error)) {
     const code = error.statusCode === 401 || error.statusCode === 403 ? "PROVIDER_AUTH_ERROR" : error.statusCode === 402 || error.statusCode === 429 ? "PROVIDER_QUOTA_OR_RATE_LIMIT" : "PROVIDER_ERROR";
     return { kind: "error", code };
   }
