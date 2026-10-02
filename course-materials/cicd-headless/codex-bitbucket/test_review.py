@@ -34,7 +34,8 @@ class ReviewContracts(unittest.TestCase):
         }
         self.env = {"BITBUCKET_WORKSPACE": "training", "BITBUCKET_REPO_SLUG": "demo",
                     "BITBUCKET_PR_ID": "7", "JIRA_PROJECT_KEYS": "COURSE",
-                    "BITBUCKET_BOT_UUID": "{bot}", "JIRA_BOT_ACCOUNT_ID": "jira-bot", "JIRA_SHARED_AUDIENCE_PROJECT_KEYS": "COURSE"}
+                    "BITBUCKET_BOT_UUID": "{bot}", "JIRA_BOT_ACCOUNT_ID": "jira-bot", 'JIRA_SHARED_AUDIENCE_PROJECT_KEYS': 'COURSE',
+                    'JIRA_PR_ISSUE_MAP': '{"training/demo#7":"COURSE-42"}'}
         self.context = {"workspace": "training", "repo": "demo", "pr_id": "7",
                         "head": "a" * 40, "base": "b" * 40, "issue_key": "COURSE-42",
                         "files": ["app.py"], "diff": "diff --git a/app.py b/app.py\n--- a/app.py\n+++ b/app.py\n@@ -0,0 +1 @@\n+deny()\n",
@@ -317,6 +318,23 @@ class ReviewContracts(unittest.TestCase):
                          "Codex analysis timed out")
         self.assertEqual(self.review.failure_reason(ValueError("private-content")),
                          "Invalid API response or review artifact")
+
+    def test_pr_title_cannot_authorize_an_unmapped_jira_issue(self):
+        self.env["JIRA_PR_ISSUE_MAP"] = '{}'
+        with self.assertRaisesRegex(ValueError, "association"):
+            self.review.issue_key(self.pr, self.env)
+        self.env["JIRA_PR_ISSUE_MAP"] = '{"training/demo#7":"COURSE-999"}'
+        with self.assertRaisesRegex(ValueError, "association"):
+            self.review.issue_key(self.pr, self.env)
+
+    def test_adf_preserves_list_and_hard_break_boundaries(self):
+        node = {"type": "doc", "content": [{"type": "bulletList", "content": [
+            {"type": "listItem", "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": "First"}, {"type": "hardBreak"},
+                {"type": "text", "text": "continued"}]}]},
+            {"type": "listItem", "content": [{"type": "paragraph", "content": [
+                {"type": "text", "text": "Second"}]}]}]}]}
+        self.assertEqual(self.review.adf_text(node), "First\ncontinued\nSecond")
 
     def test_restricted_or_unconfirmed_jira_ticket_never_reaches_publication(self):
         def bb(method, path, payload=None, text=False):

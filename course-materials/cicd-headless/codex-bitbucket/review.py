@@ -102,6 +102,13 @@ def issue_key(pr, env):
     key = keys.pop()
     if key.split("-")[0] not in allowed_projects(env):
         raise ReviewFailure("Jira project is outside JIRA_PROJECT_KEYS")
+    identity = f"{required(env, 'BITBUCKET_WORKSPACE')}/{required(env, 'BITBUCKET_REPO_SLUG')}#{required(env, 'BITBUCKET_PR_ID')}"
+    try:
+        mapping = json.loads(env.get("JIRA_PR_ISSUE_MAP", "{}"))
+    except (ValueError, TypeError):
+        raise ReviewFailure("Invalid trusted Jira association map") from None
+    if not isinstance(mapping, dict) or mapping.get(identity) != key:
+        raise ReviewFailure("PR ticket lacks a trusted Jira association")
     return key
 
 
@@ -129,7 +136,9 @@ def adf_text(node):
         return ""
     if node.get("type") == "text":
         return node.get("text", "")
-    separator = "\n" if node.get("type") == "doc" else ""
+    if node.get("type") == "hardBreak":
+        return "\n"
+    separator = "\n" if node.get("type") in ("doc", "bulletList", "orderedList", "listItem", "blockquote", "table", "tableRow", "tableCell", "tableHeader") else ""
     return separator.join(adf_text(child) for child in node.get("content", []))
 
 
