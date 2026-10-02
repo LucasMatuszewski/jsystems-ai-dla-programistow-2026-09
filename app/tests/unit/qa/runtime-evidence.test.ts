@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SafeTraceReporter, { assertRealGenerations, GenerationEvidenceError, sanitizeTrace, verifyRealGenerations, type RuntimeEvidence } from "../../e2e/helpers/runtime-evidence";
+import SafeTraceReporter, { assertRealGenerations, powerShellExecutable, GenerationEvidenceError, sanitizeTrace, verifyRealGenerations, type RuntimeEvidence } from "../../e2e/helpers/runtime-evidence";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -75,12 +75,12 @@ describe("actual failure artifact privacy", () => {
     writeFileSync(join(input, "unreferenced.txt"), sentinel);
     const archive = join(directory, "trace.zip");
     const started = performance.now();
-    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `Compress-Archive -Path ${powershellQuote(join(input, "*"))} -DestinationPath ${powershellQuote(archive)}`], { stdio: "pipe", timeout: 30_000 });
+    execFileSync(powerShellExecutable, ["-NoProfile", "-NonInteractive", "-Command", `Compress-Archive -Path ${powershellQuote(join(input, "*"))} -DestinationPath ${powershellQuote(archive)}`], { stdio: "pipe", timeout: 30_000 });
     const setupFinished = performance.now();
     expect(() => sanitizeTrace(archive)).not.toThrow();
     const sanitizerFinished = performance.now();
     const output = join(directory, "trace-output");
-    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `Expand-Archive -LiteralPath ${powershellQuote(archive)} -DestinationPath ${powershellQuote(output)}`], { stdio: "pipe", timeout: 30_000 });
+    execFileSync(powerShellExecutable, ["-NoProfile", "-NonInteractive", "-Command", `Expand-Archive -LiteralPath ${powershellQuote(archive)} -DestinationPath ${powershellQuote(output)}`], { stdio: "pipe", timeout: 30_000 });
     const auditFinished = performance.now();
     const timingRoot = resolve("verification-output/Q01-metadata/run");
     mkdirSync(timingRoot, { recursive: true });

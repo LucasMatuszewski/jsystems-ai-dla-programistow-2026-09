@@ -1,3 +1,5 @@
+export const powerShellExecutable = process.platform === "win32" ? "powershell.exe" : "pwsh";
+
 export type GenerationStage = "analysis" | "decision" | "chat";
 export type EvidenceScreen = "form" | "processing" | "decision" | "chat" | "restored" | "error";
 
@@ -188,7 +190,7 @@ export function sanitizeTrace(archive: string): void {
   try {
     temporary = mkdtempSync(join(root, "trace-safe-"));
     phase = "expand";
-    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `$ErrorActionPreference='Stop'; Expand-Archive -LiteralPath ${quote(path)} -DestinationPath ${quote(temporary)} -Force`], { stdio: "pipe", timeout: 30_000 });
+    execFileSync(powerShellExecutable, ["-NoProfile", "-NonInteractive", "-Command", `$ErrorActionPreference='Stop'; Expand-Archive -LiteralPath ${quote(path)} -DestinationPath ${quote(temporary)} -Force`], { stdio: "pipe", timeout: 30_000 });
     const files: string[] = [];
     const collect = (directory: string) => {
       for (const item of readdirSync(directory, { withFileTypes: true })) {
@@ -228,7 +230,7 @@ export function sanitizeTrace(archive: string): void {
     // Delete raw archive before replacement; a failed sanitizer must never retain it.
     rmSync(path);
     phase = "compress";
-    execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `$ErrorActionPreference='Stop'; Compress-Archive -Path ${quote(join(temporary, "*"))} -DestinationPath ${quote(path)} -Force`], { stdio: "pipe", timeout: 30_000 });
+    execFileSync(powerShellExecutable, ["-NoProfile", "-NonInteractive", "-Command", `$ErrorActionPreference='Stop'; Compress-Archive -Path ${quote(join(temporary, "*"))} -DestinationPath ${quote(path)} -Force`], { stdio: "pipe", timeout: 30_000 });
   } catch {
     if (existsSync(path)) rmSync(path);
     throw new Error(`Trace sanitization failed (${phase}); raw archive removed`);
