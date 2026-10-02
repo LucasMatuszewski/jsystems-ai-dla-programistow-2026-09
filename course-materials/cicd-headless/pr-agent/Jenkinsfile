@@ -1,0 +1,31 @@
+// Trusted pipeline for Bitbucket Server/Data Center. Runner: bash, python3, Docker.
+// Install reviewed review-pr.sh at /opt/course-ci/pr-agent/review-pr.sh.
+// A multibranch integration or authenticated webhook supplies CHANGE_URL.
+pipeline {
+  agent any
+  options { skipDefaultCheckout(true); timeout(time: 15, unit: 'MINUTES'); disableConcurrentBuilds() }
+  parameters {
+    string(name: 'REVIEW_MODEL', defaultValue: '', description: 'Approved Anthropic provider/model ID')
+    string(name: 'BITBUCKET_URL', defaultValue: 'https://bitbucket.example.com', description: 'Trusted Server/DC URL')
+  }
+  stages {
+    stage('Review PR') {
+      when { expression { env.CHANGE_URL?.trim() } }
+      steps {
+        withCredentials([
+          string(credentialsId: 'pr-agent-anthropic-key', variable: 'ANTHROPIC__KEY'),
+          string(credentialsId: 'bitbucket-review-token', variable: 'BITBUCKET_SERVER__BEARER_TOKEN')
+        ]) {
+          sh '''#!/usr/bin/env bash
+            set -euo pipefail
+            export GIT_PLATFORM=bitbucket_server
+            export PR_URL="$CHANGE_URL"
+            export BITBUCKET_SERVER__URL="$BITBUCKET_URL"
+            export PR_AGENT_IMAGE='pragent/pr-agent:0.47.0@sha256:7d98954c29289846a08faf00aaea0f1f1375b1676cd8a2ed303e0af07010af7a'
+            bash /opt/course-ci/pr-agent/review-pr.sh review
+          '''
+        }
+      }
+    }
+  }
+}

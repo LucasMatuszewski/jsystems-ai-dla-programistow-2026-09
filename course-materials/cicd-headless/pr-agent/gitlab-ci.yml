@@ -1,0 +1,33 @@
+# Merge into .gitlab-ci.yml. GitLab 15.7+; see README.md for credentials/trust.
+# Set masked ANTHROPIC__KEY and GITLAB__PERSONAL_ACCESS_TOKEN; set REVIEW_MODEL.
+stages: [review]
+
+pr_agent_review:
+  stage: review
+  image:
+    name: pragent/pr-agent:0.47.0@sha256:7d98954c29289846a08faf00aaea0f1f1375b1676cd8a2ed303e0af07010af7a
+    entrypoint: [""]
+  variables:
+    GIT_STRATEGY: none
+    CONFIG__GIT_PROVIDER: gitlab
+    CONFIG__FALLBACK_MODELS: '[]'
+    CONFIG__RESTRICTED_MODE: 'true'
+    CONFIG__PROPAGATE_TOOL_ERRORS: 'true'
+    PR_REVIEWER__PERSISTENT_COMMENT: 'true'
+    PR_REVIEWER__INLINE_KEY_ISSUES: 'false'
+  script:
+    - |
+      set -eu
+      : "${REVIEW_MODEL:?Set an approved Anthropic model identifier}"
+      : "${ANTHROPIC__KEY:?Inject a model API key}"
+      : "${GITLAB__PERSONAL_ACCESS_TOKEN:?Inject a GitLab bot token}"
+      export CONFIG__MODEL="$REVIEW_MODEL"
+      export GITLAB__URL="$CI_SERVER_URL"
+      PR_URL="$CI_MERGE_REQUEST_PROJECT_URL/-/merge_requests/$CI_MERGE_REQUEST_IID"
+      cd /app
+      python -m pr_agent.cli --pr_url "$PR_URL" review
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_PROJECT_ID == $CI_PROJECT_ID'
+      when: manual
+    - when: never
+  allow_failure: true # Advisory; errors remain visible in this job's log.

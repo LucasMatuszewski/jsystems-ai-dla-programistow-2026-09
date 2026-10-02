@@ -1,5 +1,12 @@
 # CI/CD, Headless Mode, Jenkins, Jira, Confluence
 
+## Updated review examples (2 October 2026)
+
+- [Community PR-Agent across platforms](pr-agent/README.md): Qodo's commercial product and community PR-Agent are separate; version 0.47.0 examples for GitHub Actions, GitLab CI, Bitbucket Cloud, Bitbucket Server/DC through Jenkins, and Azure Repos.
+- [Updated historical Qodo workflow](github-actions/qodo-pr-agent-review.yml): digest-pinned community runtime, automatic PR/comment handling and an explicit CLI path for manual PR-number dispatch.
+- [Codex + Bitbucket Cloud + Jira Cloud](codex-bitbucket/README.md): three pipeline stages and a custom Python REST adapter for ticket context, schema-validated review and persistent bot comments.
+- [Complete research handbook](../Research/ai-assisted-pull-requests-course-handbook.md): cross-platform PR automation, alternative reviewers, security, compatibility and rollout.
+
 > **Azure Pipelines, GitLab CI, Bitbucket Pipelines i cztery agenty (Copilot, Claude Code, Codex, OpenCode):** gotowy zestaw do code review i security review z komentarzem w PR i Jira jest w [agent-review/](agent-review/README.md).
 
 Ten folder jest dodatkiem do dnia 4 i dnia 5. Zawiera:

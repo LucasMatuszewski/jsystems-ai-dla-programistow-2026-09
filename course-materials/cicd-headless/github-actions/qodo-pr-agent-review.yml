@@ -1,89 +1,117 @@
-name: Qodo PR Agent Review
+# Community PR-Agent, checked against v0.47.0 on 2026-10-02.
+# Qodo is a separate commercial product. Historical filename retained for course links.
+# Copy to .github/workflows/pr-agent-review.yml; set ANTHROPIC_API_KEY (secret)
+# and PR_AGENT_MODEL (repository variable, an available anthropic/<model> ID).
+# The upstream action The-PR-Agent/pr-agent@v0.47.0 uses a rolling Docker tag;
+# this example pins the published action image itself instead.
+name: Community PR-Agent Review
 
 on:
-  # pull_request:
-  #   types: [opened, synchronize, reopened, ready_for_review, review_requested] # synchronize = new commits. edited = title, description.
-  # issue_comment:
-  #   types: [created]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, review_requested]
+  issue_comment:
+    types: [created]
   workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Existing PR number in this repository
+        required: true
+        type: string
+
+concurrency:
+  group: pr-agent-${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+env:
+  CONFIG__MODEL: ${{ vars.PR_AGENT_MODEL }}
+  CONFIG__FALLBACK_MODELS: '[]'
+  CONFIG__RESTRICTED_MODE: 'true'
+  CONFIG__PROPAGATE_TOOL_ERRORS: 'true'
+  PR_REVIEWER__EXTRA_INSTRUCTIONS: |
+    Focus on new security, correctness, performance, tests and error-handling defects.
+    Give a concrete failing scenario, evidence and an actionable fix.
+    Prioritize high-impact issues; explain missing context and never invent test results.
+  PR_REVIEWER__REQUIRE_TESTS_REVIEW: 'true'
+  PR_REVIEWER__REQUIRE_SECURITY_REVIEW: 'true'
+  PR_REVIEWER__REQUIRE_ESTIMATE_EFFORT_TO_REVIEW: 'false'
+  PR_REVIEWER__REQUIRE_SCORE_REVIEW: 'false'
+  PR_REVIEWER__NUM_MAX_FINDINGS: '10'
+  PR_REVIEWER__ENABLE_REVIEW_LABELS_SECURITY: 'true'
+  PR_REVIEWER__ENABLE_REVIEW_LABELS_EFFORT: 'false'
+  PR_REVIEWER__PERSISTENT_COMMENT: 'true'
+  PR_CODE_SUGGESTIONS__EXTRA_INSTRUCTIONS: |
+    Focus on demonstrated security, performance, test and error-handling problems.
+    Explain the failing scenario and propose a concrete fix based on the original code.
+  PR_CODE_SUGGESTIONS__NUM_CODE_SUGGESTIONS_PER_CHUNK: '5'
+  PR_CODE_SUGGESTIONS__FOCUS_ONLY_ON_PROBLEMS: 'true'
+  PR_CODE_SUGGESTIONS__PERSISTENT_COMMENT: 'true'
+  PR_CODE_SUGGESTIONS__COMMITTABLE_CODE_SUGGESTIONS: 'true'
+  PR_CODE_SUGGESTIONS__PUBLISH_OUTPUT_NO_SUGGESTIONS: 'false'
+  PR_DESCRIPTION__ADD_ORIGINAL_USER_DESCRIPTION: 'true'
+  PR_DESCRIPTION__GENERATE_AI_TITLE: 'false'
+  PR_DESCRIPTION__PUBLISH_DESCRIPTION_AS_COMMENT: 'true'
+  PR_DESCRIPTION__ENABLE_PR_DIAGRAM: 'true'
+  PR_DESCRIPTION__ENABLE_SEMANTIC_FILES_TYPES: 'false'
+  PR_DESCRIPTION__EXTRA_INSTRUCTIONS: Be concise and focus on the most important changes.
 
 jobs:
-  qodo_pr_agent_review:
-    if: ${{ github.event.sender.type != 'Bot' }}
+  automatic_review:
+    if: >-
+      github.event.sender.type != 'Bot' &&
+      ((github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        !github.event.pull_request.draft) ||
+       (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+        (startsWith(github.event.comment.body, '/review') ||
+         startsWith(github.event.comment.body, '/describe') ||
+         startsWith(github.event.comment.body, '/improve') ||
+         startsWith(github.event.comment.body, '/ask'))))
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
-      contents: write
-      actions: read
-
+    timeout-minutes: 15
     steps:
-      - name: Qodo PR Agent Review
-        uses: qodo-ai/pr-agent@main
+      # API-only review: no checkout or execution of PR code.
+      - name: Community PR-Agent action
+        uses: docker://pragent/pr-agent:0.47.0-github_action@sha256:31b9aac6ab067bada9a0c1b001d30ebc500ea4487e00a93c18c59b9ef5fa66db
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC__KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_ACTION_CONFIG__AUTO_REVIEW: 'true'
+          GITHUB_ACTION_CONFIG__AUTO_DESCRIBE: 'true'
+          GITHUB_ACTION_CONFIG__AUTO_IMPROVE: 'true'
+          GITHUB_ACTION_CONFIG__PR_ACTIONS: '["opened","reopened","ready_for_review","review_requested"]'
+          # synchronize has a separate push-trigger path in current releases.
+          GITHUB_ACTION_CONFIG__HANDLE_PUSH_TRIGGER: 'true'
+          GITHUB_ACTION_CONFIG__PUSH_COMMANDS: '["/describe","/review","/improve"]'
 
-          # Model configuration (Opus is expensive - keep it as the last fallback;
-          # current model IDs: https://docs.claude.com/en/docs/about-claude/models)
-          config.model: "anthropic/claude-sonnet-5"
-          config.fallback_models: '["anthropic/claude-haiku-4-5", "anthropic/claude-opus-4-8"]'
-          ANTHROPIC.KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-
-          # GitHub Action Configuration
-          github_action_config.auto_review: "true"
-          github_action_config.auto_describe: "true"
-          github_action_config.auto_improve: "true"
-          github_action_config.pr_actions: '["opened", "synchronize", "reopened", "ready_for_review", "review_requested"]'
-
-          # PR Reviewer Configuration (Review Tool)
-          pr_reviewer.extra_instructions: |
-            Please provide concise, actionable code reviews focusing on:
-
-            1. **Security vulnerabilities**: Identify potential security issues like SQL injection, XSS, authentication bypasses, or exposed secrets
-            2. **Performance issues**: Flag inefficient algorithms, unnecessary database queries, memory leaks, or blocking operations
-            3. **Error handling**: Ensure proper try-catch blocks, meaningful error messages, and graceful failure handling
-            4. **Code quality**: Check for maintainability, readability, typos, and adherence to best practices
-
-            For each issue found:
-            - Provide specific code examples showing the problem
-            - Suggest concrete fixes with production-ready code snippets
-            - Explain WHY the change is needed (security risk, performance impact, etc.)
-            - Keep explanations concise but informative
-
-            Focus on critical and high-impact issues first.
-
-          pr_reviewer.require_tests_review: "true"
-          pr_reviewer.require_security_review: "true"
-          pr_reviewer.require_estimate_effort_to_review: "false"
-          pr_reviewer.require_score_review: "false"
-          pr_reviewer.num_max_findings: "10" # default 3
-          pr_reviewer.enable_review_labels_security: "true"
-          pr_reviewer.enable_review_labels_effort: "false"
-          pr_reviewer.persistent_comment: "true"
-
-          # PR Code Suggestions Configuration (Improve Tool)
-          pr_code_suggestions.extra_instructions: |
-            Focus on security, performance, tests, and error handling improvements.
-            Provide production-ready code snippets based on original code and explain the reasoning behind each suggestion.
-            Prioritize critical issues that could cause bugs or security vulnerabilities.
-
-          pr_code_suggestions.num_code_suggestions_per_chunk: "5" # default 3
-          pr_code_suggestions.suggestions_depth: "regular" # Can be set to 'selective', 'regular', or 'exhaustive'. Default is 'regular'.
-          pr_code_suggestions.focus_only_on_problems: "false" # Omit style, best practices, mainteinability, readability
-          pr_code_suggestions.persistent_comment: "true" # Update the same comment on new CR
-          pr_code_suggestions.commitable_code_suggestions: "true" # Add in-code comments with commitable suggestions
-          pr_code_suggestions.apply_suggestions_checkbox: "true"
-          pr_code_suggestions.enable_more_suggestions_checkbox: "true"
-          pr_code_suggestions.wiki_page_accepted_suggestions: "true" # Track in .pr_agent_accepted_suggestions Wiki Page
-          pr_code_suggestions.publish_output_no_suggestions: "false" # Skip comment if no suggestions
-
-          # PR Description Settings
-          pr_description.add_original_user_description: "true"
-          pr_description.generate_ai_title: "false"
-          pr_description.enable_pr_diagram: "true" # Mermaid Diagram
-          pr_description.enable_semantic_files_types: "false" # File Walkthrough
-          pr_description.extra_instructions: |
-            Be concise and focus on the most important changes.
-
-          # Add Docs with `/add_docs` comment or command: https://qodo-merge-docs.qodo.ai/tools/documentation/
-          # Generate Tests with `/test component_name` comment: https://qodo-merge-docs.qodo.ai/tools/test/
+  manual_review:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # The action runner has no workflow_dispatch handler; use the CLI explicitly.
+      - name: Review the requested PR
+        shell: bash
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          GITHUB__USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC__KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -euo pipefail
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || { echo 'Invalid PR number' >&2; exit 2; }
+          : "${CONFIG__MODEL:?Set repository variable PR_AGENT_MODEL}"
+          PR_URL="https://github.com/$GITHUB_REPOSITORY/pull/$PR_NUMBER"
+          docker run --rm --cap-drop ALL --security-opt no-new-privileges \
+            --env GITHUB__USER_TOKEN --env ANTHROPIC__KEY \
+            --env CONFIG__MODEL --env CONFIG__FALLBACK_MODELS \
+            --env CONFIG__RESTRICTED_MODE --env CONFIG__PROPAGATE_TOOL_ERRORS \
+            --env PR_REVIEWER__EXTRA_INSTRUCTIONS --env PR_REVIEWER__PERSISTENT_COMMENT \
+            --env PR_REVIEWER__NUM_MAX_FINDINGS --env PR_REVIEWER__REQUIRE_SECURITY_REVIEW \
+            --entrypoint python \
+            pragent/pr-agent:0.47.0@sha256:7d98954c29289846a08faf00aaea0f1f1375b1676cd8a2ed303e0af07010af7a \
+            -m pr_agent.cli --pr_url "$PR_URL" review

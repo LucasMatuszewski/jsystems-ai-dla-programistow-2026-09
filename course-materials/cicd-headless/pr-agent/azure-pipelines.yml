@@ -1,0 +1,39 @@
+# Azure REPOS Git: configure target-branch Build Validation, not YAML pr:.
+# Variable group pr-agent: secured ANTHROPIC__KEY / AZURE_DEVOPS__PAT, REVIEW_MODEL.
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: pr-agent
+
+steps:
+  - checkout: none
+  - bash: |
+      set -euo pipefail
+      : "${SYSTEM_PULLREQUEST_PULLREQUESTID:?Run as a PR Build Validation}"
+      : "${REVIEW_MODEL:?Set an approved Anthropic model identifier}"
+      export CONFIG__GIT_PROVIDER=azure
+      export CONFIG__MODEL="$REVIEW_MODEL"
+      export CONFIG__FALLBACK_MODELS='[]'
+      export CONFIG__RESTRICTED_MODE=true
+      export CONFIG__PROPAGATE_TOOL_ERRORS=true
+      export PR_REVIEWER__PERSISTENT_COMMENT=true
+      export PR_REVIEWER__INLINE_KEY_ISSUES=false
+      export AZURE_DEVOPS__ORG="${SYSTEM_COLLECTIONURI%/}"
+      # Repository URI handles projects/repository names already URL encoded by Azure.
+      PR_URL="${BUILD_REPOSITORY_URI%/}/pullrequest/$SYSTEM_PULLREQUEST_PULLREQUESTID"
+      docker run --rm --cap-drop ALL --security-opt no-new-privileges \
+        --env AZURE_DEVOPS__ORG --env AZURE_DEVOPS__PAT --env ANTHROPIC__KEY \
+        --env CONFIG__GIT_PROVIDER --env CONFIG__MODEL --env CONFIG__FALLBACK_MODELS \
+        --env CONFIG__RESTRICTED_MODE --env CONFIG__PROPAGATE_TOOL_ERRORS \
+        --env PR_REVIEWER__PERSISTENT_COMMENT --env PR_REVIEWER__INLINE_KEY_ISSUES \
+        --entrypoint python \
+        pragent/pr-agent:0.47.0@sha256:7d98954c29289846a08faf00aaea0f1f1375b1676cd8a2ed303e0af07010af7a \
+        -m pr_agent.cli --pr_url "$PR_URL" review
+    displayName: Community PR-Agent review
+    env:
+      ANTHROPIC__KEY: $(ANTHROPIC__KEY)
+      AZURE_DEVOPS__PAT: $(AZURE_DEVOPS__PAT)
+      REVIEW_MODEL: $(REVIEW_MODEL)
