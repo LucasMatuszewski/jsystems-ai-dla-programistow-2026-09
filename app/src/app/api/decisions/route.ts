@@ -8,7 +8,8 @@ import { createOperationErrorResponse, OperationError } from "@/server/http/erro
 import { BODY_LIMITS, readBoundedJson } from "@/server/http/request-reader";
 export const runtime = "nodejs";
 export async function POST(request: Request): Promise<Response> {
-  let operationId: string = randomUUID();
+  const headerIdentity = z.uuid().safeParse(request.headers.get("X-Operation-Id"));
+  let operationId: string = headerIdentity.success ? headerIdentity.data : randomUUID();
   const started = performance.now();
   const deadline = createOperationDeadline("decision", undefined, request.signal);
   let abortRead: (() => void) | undefined;
@@ -30,7 +31,10 @@ export async function POST(request: Request): Promise<Response> {
     checkpoint();
     if (raw && typeof raw === "object" && "operationId" in raw) {
       const identity = z.uuid().safeParse(raw.operationId);
-      if (identity.success) operationId = identity.data;
+      if (identity.success) {
+        if (headerIdentity.success && headerIdentity.data !== identity.data) throw new OperationError("VALIDATION_ERROR");
+        operationId = identity.data;
+      }
     }
     const parsed = createDecisionRequestSchema().safeParse(raw);
     if (!parsed.success) {

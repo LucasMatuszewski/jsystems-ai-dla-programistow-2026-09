@@ -23,6 +23,17 @@ beforeEach(() => {
 });
 
 describe("initial same-origin API boundaries", () => {
+  it("correlates early body errors through the same operation header for both stages", async () => {
+    const error = { code: "OPERATION_TIMEOUT", operationId, retryable: true, message: "Przekroczono czas operacji." };
+    fetchMock.mockImplementation(async (_url, init) => ({ ok: false, json: async () => ({ ...error, operationId: new Headers(init.headers).get("X-Operation-Id") }) }));
+    for (const result of [await analyzeInitialCase(request, options()), await decideInitialCase(decisionRequest, options())]) {
+      expect(result).toEqual({ status: "failed", error });
+    }
+    for (const [, init] of fetchMock.mock.calls) {
+      expect(new Headers(init.headers).get("X-Operation-Id")).toBe(JSON.parse(init.body).operationId);
+      expect(new Headers(init.headers).get("Content-Type")).toBe("application/json");
+    }
+  });
   it("sends one JSON analysis request and validates the actual response schema", async () => {
     fetchMock.mockResolvedValue({ ok: true, json: async () => analysis }); const opts = options();
     expect(await analyzeInitialCase(request, opts)).toEqual({ status: "success", value: analysis });

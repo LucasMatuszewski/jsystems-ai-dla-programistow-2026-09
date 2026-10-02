@@ -163,6 +163,8 @@ ErrorEnvelope contains code, localized message, retryable, operationId and optio
 
 All routes use Node runtime and no-store responses. Enforce byte limits while reading the request, including when Content-Length is absent; a header check alone is insufficient. Old Pages Router bodyParser and Server Action body limits are not upload controls for these Route Handlers.
 
+For initial analysis and decision requests, the browser also sends its validated operation UUID in `X-Operation-Id`. Validate this header before reading the body so body-read errors and timeouts retain the client's correlation ID. A valid header UUID must match the body's operation UUID; mismatches are validation errors and cannot reach the provider. Missing or invalid headers preserve the legacy server-generated fallback and subsequent validated body identity. This header is correlation metadata, not authentication; the client must still reject error envelopes with a different operation ID.
+
 ### POST /api/images/prepare
 
 - Input: multipart with one image part and no other files; maximum body 10,065,536 bytes including multipart overhead.

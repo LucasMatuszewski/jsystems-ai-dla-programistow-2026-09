@@ -150,11 +150,25 @@ describe("real initial decision stack with only external LLM HTTP substituted", 
     const pending = POST(request(input(), caller.signal)); await started; caller.abort(); const response = await pending;
     expect(response.status).toBe(408); expect(await response.text()).toBe(""); expect(response.headers.get("cache-control")).toBe("no-store");
   }, 3000);
+  it("retains a valid operation header when JSON body reading fails before identity is available", async () => {
+    const response = await POST(new Request(endpoint, { method: "POST", headers: { "Content-Type": "application/json", "X-Operation-Id": operationId }, body: "{" }));
+    expect((await error(response, 400, "VALIDATION_ERROR")).operationId).toBe(operationId); expect(calls).toHaveLength(0);
+  });
+  it("rejects header/body operation mismatch before generation", async () => {
+    const response = await POST(new Request(endpoint, { method: "POST", headers: { "Content-Type": "application/json", "X-Operation-Id": caseId }, body: JSON.stringify(input()) }));
+    expect((await error(response, 422, "VALIDATION_ERROR")).operationId).toBe(caseId); expect(calls).toHaveLength(0);
+  });
+  it.each([undefined, "not-a-uuid"])("preserves body operation fallback for missing/invalid header %s", async header => {
+    const headers = new Headers({ "Content-Type": "application/json" }); if (header) headers.set("X-Operation-Id", header);
+    const value = input(); const response = await POST(new Request(endpoint, { method: "POST", headers, body: JSON.stringify({ ...value, form: { ...value.form, equipmentName: " " } }) }));
+    expect((await error(response, 422, "VALIDATION_ERROR")).operationId).toBe(operationId); expect(calls).toHaveLength(0);
+  });
   it("bounds a connected stalled body with the real90-second stage deadline", async () => {
     let cancelled = false;
     const body = new ReadableStream<Uint8Array>({ start(controller) { controller.enqueue(new TextEncoder().encode("{")); }, cancel() { cancelled = true; } });
-    const init: RequestInit & { duplex: "half" } = { method: "POST", body, duplex: "half", headers: { "Content-Type": "application/json" } };
-    const started = performance.now(); await error(await POST(new Request(endpoint, init)), 504, "OPERATION_TIMEOUT");
+    const init: RequestInit & { duplex: "half" } = { method: "POST", body, duplex: "half", headers: { "Content-Type": "application/json", "X-Operation-Id": operationId } };
+    const started = performance.now(); const envelope = await error(await POST(new Request(endpoint, init)), 504, "OPERATION_TIMEOUT");
+    expect(envelope.operationId).toBe(operationId);
     expect(performance.now() - started).toBeGreaterThanOrEqual(89000); expect(cancelled).toBe(true); expect(calls).toHaveLength(0);
   }, 100000);
   it("rejects invalid input through actual Next HTTP before external generation", async () => {

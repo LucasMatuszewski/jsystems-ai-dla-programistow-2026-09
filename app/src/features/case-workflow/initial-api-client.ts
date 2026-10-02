@@ -14,7 +14,7 @@ async function postInitial<T>(url: string, request: AnalysisRequest | DecisionRe
   if (new Blob([body]).size > maxBytes) return failed("PAYLOAD_LIMIT", request.operationId);
   let successfulResponse = false;
   try {
-    const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body, signal, cache: "no-store" });
+    const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-Operation-Id": request.operationId }, body, signal, cache: "no-store" });
     if (signal.aborted) return { status: "aborted" };
     successfulResponse = response.ok;
     const payload: unknown = await response.json();

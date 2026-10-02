@@ -117,6 +117,19 @@ describe("real multimodal analysis route with only remote LLM HTTP substituted",
       expect(calls.length).toBe(1);
     } finally { parent.dispose(); }
   }, 3000);
+  it("retains a valid operation header when JSON body reading fails before identity is available", async () => {
+    const response = await POST(new Request(endpoint, { method: "POST", headers: { "Content-Type": "application/json", "X-Operation-Id": operationId }, body: "{" }));
+    expect((await error(response, 400, "VALIDATION_ERROR")).operationId).toBe(operationId); expect(calls).toHaveLength(0);
+  });
+  it("rejects header/body operation mismatch before generation", async () => {
+    const response = await POST(new Request(endpoint, { method: "POST", headers: { "Content-Type": "application/json", "X-Operation-Id": caseId }, body: JSON.stringify(input) }));
+    expect((await error(response, 422, "VALIDATION_ERROR")).operationId).toBe(caseId); expect(calls).toHaveLength(0);
+  });
+  it.each([undefined, "not-a-uuid"])("preserves body operation fallback for missing/invalid header %s", async header => {
+    const headers = new Headers({ "Content-Type": "application/json" }); if (header) headers.set("X-Operation-Id", header);
+    const response = await POST(new Request(endpoint, { method: "POST", headers, body: JSON.stringify({ ...input, form: { ...input.form, equipmentName: " " } }) }));
+    expect((await error(response, 422, "VALIDATION_ERROR")).operationId).toBe(operationId); expect(calls).toHaveLength(0);
+  });
   it("rejects invalid form through actual Next HTTP before provider work", async () => {
     const response = await realFetch(endpoint, { method: "POST", body: JSON.stringify({ ...input, form: { ...input.form, equipmentName: " " } }), headers: { "Content-Type": "application/json" }, signal: AbortSignal.timeout(15000) });
     const envelope = await error(response, 422, "VALIDATION_ERROR"); expect(envelope.operationId).toBe(operationId);
