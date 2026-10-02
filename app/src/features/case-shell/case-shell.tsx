@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,8 @@ import { createInitialWorkflowController, type InitialWorkflowView } from "@/fea
 import { ProcessingSteps } from "@/features/case-workflow/processing-steps";
 import { createSessionAdapter, type CheckpointKind, type StorageWarning } from "@/features/session/session-adapter";
 import { StorageNotice } from "@/features/session/storage-notice";
-import { InitialDecisionDetails } from "@/features/case-chat/initial-decision-details";
+import { CaseChat, type CaseChatProps } from "@/features/case-chat/case-chat";
 import { CaseSummary } from "@/features/case-chat/case-summary";
-import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
-import { Message, MessageContent } from "@/components/ai-elements/message";
 import type { CaseForm as SubmittedForm } from "@/lib/contracts/form";
 import { activeCaseSnapshotSchema, type ActiveCaseSnapshot } from "@/lib/contracts/session";
 
@@ -42,6 +40,8 @@ type ShellState = {
   selectImage: (files: readonly File[]) => Promise<void>; removeImage: () => void; retryImage: () => void;
   requireImage: () => void; retry: () => void; returnToForm: () => void; showCompletedCase: () => void;
   startNewCase: () => boolean; openCase: (caseId: string) => void; selectForm: () => void; requestedCaseId: string | null; routeFailure: "missing" | "invalid" | null;
+  chatGeneration: number;
+  bindChat: (caseId: string, generation: number) => Omit<CaseChatProps, "initialSnapshot">;
 };
 const ShellContext = createContext<ShellState | null>(null);
 
@@ -67,6 +67,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
   const preparationRef = useRef<{ caseId: string; operationId: string; startedAt: string; controller: AbortController } | null>(null);
   const mountedRef = useRef(false);
   const completionNavigationRef = useRef(false);
+  const chatCancellationRef = useRef<{ caseId: string; generation: number; cancel: () => void } | null>(null);
   const selectForm = useCallback(() => {
     setRequestedCaseId(null); setRouteFailure(null); completionNavigationRef.current = false;
   }, []);
@@ -83,6 +84,30 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     setSnapshot(current);
     adapterRef.current.checkpoint(current, kind);
   }, []);
+
+  const bindChat = useCallback((caseId: string, generation: number): Omit<CaseChatProps, "initialSnapshot"> => {
+    const ownsCase = () => mountedRef.current && snapshotRef.current?.caseId === caseId && workflowOwnerRef.current === generation;
+    return {
+      readSnapshot: () => ownsCase() ? snapshotRef.current : null,
+      checkpoint: (changes, kind) => {
+        if (!ownsCase() || !snapshotRef.current) return false;
+        const checked = activeCaseSnapshotSchema.safeParse({ ...snapshotRef.current, ...changes, revision: snapshotRef.current.revision + 1 });
+        if (!checked.success) return false;
+        publish(checked.data, kind); return true;
+      },
+      registerCancellation: cancel => {
+        if (!ownsCase()) return () => {};
+        const registration = { caseId, generation, cancel };
+        chatCancellationRef.current = registration;
+        return () => { if (chatCancellationRef.current === registration) chatCancellationRef.current = null; };
+      },
+    };
+  }, [publish]);
+  function cancelChat() {
+    const registration = chatCancellationRef.current;
+    chatCancellationRef.current = null;
+    if (registration && snapshotRef.current?.caseId === registration.caseId && workflowOwnerRef.current === registration.generation) registration.cancel();
+  }
 
   const installWorkflow = useCallback((ownerCaseId: string) => {
     const owner = ++workflowOwnerRef.current;
@@ -129,6 +154,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
       else if (current?.stage === "preparation" && current.stageStatus === "interrupted") setImage({ status: "interrupted", message: "Przygotowywanie zdjęcia zostało przerwane. Wybierz zdjęcie ponownie, aby kontynuować." });
     });
     return () => {
+      cancelChat();
       active = false; mountedRef.current = false;
       preparationRef.current?.controller.abort(); preparationRef.current = null;
       workflowRef.current?.dispose(); workflowRef.current = null;
@@ -137,12 +163,15 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
   }, [installWorkflow]);
 
   function stopOldWork() {
+    cancelChat();
     workflowOwnerRef.current++;
     cancelPreparation(); workflowRef.current?.dispose(); workflowRef.current = null; adapterRef.current?.dispose();
   }
   function startNewCase(): boolean {
-    const current = snapshotRef.current; const adapter = adapterRef.current;
-    if (!current || !adapter || blocked) return false;
+    const adapter = adapterRef.current;
+    if (!snapshotRef.current || !adapter || blocked) return false;
+    cancelChat();
+    const current = snapshotRef.current;
     const archived: ActiveCaseSnapshot = { ...current, stageStatus: current.stageStatus === "pending" ? "interrupted" : current.stageStatus,
       replyStates: Object.fromEntries(Object.entries(current.replyStates).map(([id, state]) => [id, state === "streaming" ? "interrupted" : state])) };
     stopOldWork();
@@ -226,6 +255,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     requireImage: () => setMissingImage(true), retry: () => { void workflowRef.current?.retry(); }, returnToForm,
     showCompletedCase,
     startNewCase, openCase, selectForm, requestedCaseId, routeFailure,
+    chatGeneration: workflowOwnerRef.current, bindChat,
   };
   return <ShellContext.Provider value={state}>{children}</ShellContext.Provider>;
 }
@@ -241,6 +271,9 @@ export function CaseShell({ screen, caseId }: { screen: "form" | "chat"; caseId?
   const showCompletedCase = state.showCompletedCase;
   const openCase = state.openCase;
   const selectForm = state.selectForm;
+  const bindChat = state.bindChat;
+  const chatCaseId = snapshot?.caseId;
+  const chatBindings = useMemo(() => chatCaseId ? bindChat(chatCaseId, state.chatGeneration) : null, [bindChat, chatCaseId, state.chatGeneration]);
   useEffect(() => { if (initialized && screen === "form") selectForm(); }, [initialized, screen, selectForm]);
   useEffect(() => { if (initialized && caseId && state.requestedCaseId !== caseId) openCase(caseId); }, [initialized, caseId, state.requestedCaseId, openCase]);
   useEffect(() => { if (initialized && screen === "chat" && !caseId && complete) showCompletedCase(); }, [initialized, screen, caseId, complete, showCompletedCase]);
@@ -255,11 +288,7 @@ export function CaseShell({ screen, caseId }: { screen: "form" | "chat"; caseId?
       {continuityControls}
       {!initialized || (caseId && state.requestedCaseId !== caseId) ? <p>Wczytywanie zapisanej sprawy.</p> : !exactCase || state.routeFailure || !complete || !snapshot?.submittedForm || !snapshot.preparedImage || !snapshot.initialDecision ? <section className="max-w-[800px] rounded-[16px] border bg-card p-4 sm:p-6"><h1 className="text-2xl">{routeHeading}</h1><p className="my-4">{blocked ?? "Ta sprawa nie ma dostępnej pełnej oceny początkowej w tej przeglądarce. Wróć do formularza, aby kontynuować."}</p><Link href="/" className="text-accent underline underline-offset-4">Wróć do formularza</Link></section> : <div className="grid min-w-0 items-start gap-6 md:grid-cols-[minmax(240px,320px)_minmax(0,1fr)]">
         <CaseSummary form={snapshot.submittedForm} preparedImage={snapshot.preparedImage} />
-        <Conversation aria-label="Rozmowa w sprawie" className="min-w-0"><ConversationContent className="min-w-0 gap-6 p-0">
-          {snapshot.messages.map((message, index) => <Message key={message.id} from={message.role} className="max-w-full min-w-0"><MessageContent className="w-full min-w-0">
-            {index === 0 ? <InitialDecisionDetails decision={snapshot.initialDecision!} /> : <div className="grid min-w-0 gap-2 whitespace-pre-wrap rounded-[16px] border bg-card p-4 [overflow-wrap:anywhere]"><p className="text-sm text-muted-foreground">{message.role === "user" ? "Pracownik" : "Asystent"}</p>{message.parts.map((part, partIndex) => <p key={partIndex}>{part.text}</p>)}{message.role === "assistant" && snapshot.replyStates[message.id] !== "complete" && <p className="text-sm text-muted-foreground">Ta odpowiedź nie została ukończona.</p>}</div>}
-          </MessageContent></Message>)}
-        </ConversationContent></Conversation>
+        {chatBindings && <CaseChat key={snapshot.caseId} initialSnapshot={snapshot} {...chatBindings} />}
       </div>}
       <div className="mt-4"><StorageNotice warning={warning} /></div>
     </main>;

@@ -490,6 +490,8 @@ export type PromptInputProps = Omit<
   HTMLAttributes<HTMLFormElement>,
   "onSubmit" | "onError"
 > & {
+  // Explicit opt-out for conversations that accept only employee text.
+  textOnly?: boolean;
   // e.g., "image/*" or leave undefined for any
   accept?: string;
   multiple?: boolean;
@@ -513,6 +515,7 @@ export type PromptInputProps = Omit<
 
 export const PromptInput = ({
   className,
+  textOnly = false,
   accept,
   multiple,
   globalDrop,
@@ -534,7 +537,7 @@ export const PromptInput = ({
 
   // ----- Local attachments (only used when no provider)
   const [items, setItems] = useState<(FileUIPart & { id: string })[]>([]);
-  const files = usingProvider ? controller.attachments.files : items;
+  const files = useMemo(() => textOnly ? [] : usingProvider ? controller.attachments.files : items, [textOnly, usingProvider, controller, items]);
 
   // ----- Local referenced sources (always local to PromptInput)
   const [referencedSources, setReferencedSources] = useState<
@@ -702,7 +705,10 @@ export const PromptInput = ({
     []
   );
 
-  const add = usingProvider ? addWithProviderValidation : addLocal;
+  const add = useCallback((incoming: File[] | FileList) => {
+    if (textOnly) return;
+    if (usingProvider) addWithProviderValidation(incoming); else addLocal(incoming);
+  }, [textOnly, usingProvider, addWithProviderValidation, addLocal]);
   const remove = usingProvider ? controller.attachments.remove : removeLocal;
   const openFileDialog = usingProvider
     ? controller.attachments.openFileDialog
@@ -735,7 +741,7 @@ export const PromptInput = ({
     if (!form) {
       return;
     }
-    if (globalDrop) {
+    if (globalDrop && !textOnly) {
       // when global drop is on, let the document-level handler own drops
       return;
     }
@@ -749,7 +755,7 @@ export const PromptInput = ({
       if (e.dataTransfer?.types?.includes("Files")) {
         e.preventDefault();
       }
-      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      if (!textOnly && e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
         add(e.dataTransfer.files);
       }
     };
@@ -759,10 +765,10 @@ export const PromptInput = ({
       form.removeEventListener("dragover", onDragOver);
       form.removeEventListener("drop", onDrop);
     };
-  }, [add, globalDrop]);
+  }, [add, globalDrop, textOnly]);
 
   useEffect(() => {
-    if (!globalDrop) {
+    if (!globalDrop || textOnly) {
       return;
     }
 
@@ -785,7 +791,7 @@ export const PromptInput = ({
       document.removeEventListener("dragover", onDragOver);
       document.removeEventListener("drop", onDrop);
     };
-  }, [add, globalDrop]);
+  }, [add, globalDrop, textOnly]);
 
   useEffect(
     () => () => {
@@ -907,7 +913,7 @@ export const PromptInput = ({
   // Render with or without local provider
   const inner = (
     <>
-      <input
+      {!textOnly && <input
         accept={accept}
         aria-label="Upload files"
         className="hidden"
@@ -916,7 +922,7 @@ export const PromptInput = ({
         ref={inputRef}
         title="Upload files"
         type="file"
-      />
+      />}
       <form
         className={cn("w-full", className)}
         onSubmit={handleSubmit}

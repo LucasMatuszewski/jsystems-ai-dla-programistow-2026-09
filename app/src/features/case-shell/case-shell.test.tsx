@@ -3,8 +3,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActiveCaseSnapshot } from "@/lib/contracts/session";
 import type { InitialWorkflowDependencies } from "@/features/case-workflow/initial-workflow-controller";
 import { CaseShell, CaseShellProvider } from "./case-shell";
+import type { CaseChatProps } from "@/features/case-chat/case-chat";
 
-const mocks = vi.hoisted(() => ({ restore: vi.fn(), checkpoint: vi.fn(), newCase: vi.fn(), dispose: vi.fn(), warning: vi.fn(), push: vi.fn(), replace: vi.fn(), start: vi.fn(), retry: vi.fn(), cancel: vi.fn(), invalidate: vi.fn(), controllerDispose: vi.fn(), controllerFactory: vi.fn(), adapterFactory: vi.fn(), processing: vi.fn(), prepare: vi.fn(), screenFiles: vi.fn(), picker: vi.fn() }));
+const mocks = vi.hoisted(() => ({ restore: vi.fn(), checkpoint: vi.fn(), newCase: vi.fn(), dispose: vi.fn(), warning: vi.fn(), push: vi.fn(), replace: vi.fn(), start: vi.fn(), retry: vi.fn(), cancel: vi.fn(), invalidate: vi.fn(), controllerDispose: vi.fn(), controllerFactory: vi.fn(), adapterFactory: vi.fn(), processing: vi.fn(), prepare: vi.fn(), screenFiles: vi.fn(), picker: vi.fn(), chatProps: null as CaseChatProps | null, chatCancel: vi.fn(), chatSeeds: [] as string[] }));
+vi.mock("@/features/case-chat/case-chat", async () => {
+  const { useEffect, useState } = await import("react");
+  return { CaseChat: (props: CaseChatProps) => {
+    mocks.chatProps = props;
+    useState(() => { mocks.chatSeeds.push(props.initialSnapshot.caseId); return props.initialSnapshot.caseId; });
+    const registerCancellation = props.registerCancellation;
+    useEffect(() => registerCancellation(mocks.chatCancel), [registerCancellation]);
+    return <div data-chat-case={props.initialSnapshot.caseId}><article aria-label="Wstępna ocena początkowa"><h1>Wstępna ocena początkowa</h1><p>{props.initialSnapshot.initialDecision?.summary}</p></article>{props.initialSnapshot.messages.slice(1).map(message => <p key={message.id}>{message.parts.map(part => part.text).join("")}</p>)}</div>;
+  } };
+});
 vi.mock("./new-case-dialog", () => ({ NewCaseDialog: ({ open, onOpenChange, onConfirm }: { open: boolean; onOpenChange: (open: boolean) => void; onConfirm: () => void }) => open ? <div role="dialog" aria-label="Rozpocząć nową sprawę?"><button onClick={() => onOpenChange(false)}>Anuluj</button><button onClick={onConfirm}>Rozpocznij nową sprawę</button></div> : null }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push, replace: mocks.replace }) }));
 vi.mock("@/features/session/session-adapter", () => ({ createSessionAdapter: mocks.adapterFactory }));
@@ -31,6 +42,7 @@ function formCase(): ActiveCaseSnapshot { return { schemaVersion: 1, caseId, rev
 function completed(): ActiveCaseSnapshot { return { ...formCase(), revision: 4, screen: "chat", stage: "chat", submittedForm: { ...submitted }, imageAnalysis: report, initialDecision: decision, messages: [initialMessage], replyStates: { [initialMessage.id]: "complete" } }; }
 let dependencies: InitialWorkflowDependencies;
 beforeEach(() => {
+  mocks.chatProps = null; mocks.chatSeeds = [];
   mocks.restore.mockReturnValue({ status: "restored", snapshot: formCase() }); mocks.warning.mockReturnValue(null);
   mocks.newCase.mockReturnValue({ status: "saved" });
   mocks.adapterFactory.mockImplementation(() => ({ restore: mocks.restore, checkpoint: mocks.checkpoint, startNewCase: mocks.newCase, dispose: mocks.dispose, getWarning: mocks.warning, flush: vi.fn() }));
@@ -38,6 +50,32 @@ beforeEach(() => {
   mocks.start.mockImplementation(async (form: object) => { dependencies.checkpoint({ ...completed(), caseId: dependencies.readCase().caseId, submittedForm: form as ActiveCaseSnapshot["submittedForm"] }); dependencies.onView({ pending: false, error: null }); dependencies.onComplete(); });
 });
 describe("one hydrated live case across form and chat", () => {
+  it("mounts one seeded chat after valid hydration and keeps the hook owner stable through checkpoints", async () => {
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: completed() });
+    render(<CaseShellProvider><CaseShell screen="chat" caseId={caseId} /></CaseShellProvider>);
+    await screen.findByRole("article", { name: "Wstępna ocena początkowa" });
+    expect(mocks.chatSeeds).toEqual([caseId]);
+    const owner = mocks.chatProps!;
+    const user = { id: "follow-up", role: "user" as const, parts: [{ type: "text" as const, text: "Zachowane pytanie" }] };
+    act(() => expect(owner.checkpoint({ messages: [...completed().messages, user], replyStates: completed().replyStates, pendingOperation: null, stageStatus: "idle" }, "immediate")).toBe(true));
+    expect(mocks.checkpoint).toHaveBeenLastCalledWith(expect.objectContaining({ caseId, messages: [...completed().messages, user], revision: 5 }), "immediate");
+    expect(screen.getByText("Zachowane pytanie")).toBeVisible(); expect(mocks.chatSeeds).toEqual([caseId]);
+  });
+  it("cancels chat before archiving accepted canonical text and rejects the departing owner's late writes", async () => {
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: completed() });
+    render(<CaseShellProvider><CaseShell screen="chat" caseId={caseId} /></CaseShellProvider>);
+    await screen.findByRole("article", { name: "Wstępna ocena początkowa" });
+    const owner = mocks.chatProps!;
+    const user = { id: "user-follow-up", role: "user" as const, parts: [{ type: "text" as const, text: "Zachowane pytanie" }] };
+    const reply = { id: "partial-reply", role: "assistant" as const, parts: [{ type: "text" as const, text: "Część odpowiedzi", state: "done" as const }] };
+    mocks.chatCancel.mockImplementation(() => owner.checkpoint({ messages: [...completed().messages, user, reply], replyStates: { ...completed().replyStates, [reply.id]: "interrupted" }, pendingOperation: null, stageStatus: "idle" }, "immediate"));
+    fireEvent.click(screen.getByRole("button", { name: "Nowa sprawa" })); fireEvent.click(screen.getByRole("button", { name: "Rozpocznij nową sprawę" }));
+    expect(mocks.chatCancel).toHaveBeenCalledTimes(1);
+    expect(mocks.newCase.mock.calls[0][0]).toMatchObject({ caseId, messages: [...completed().messages, user, reply], replyStates: { [reply.id]: "interrupted" } });
+    const count = mocks.checkpoint.mock.calls.length;
+    act(() => expect(owner.checkpoint({ messages: completed().messages, replyStates: completed().replyStates, pendingOperation: null, stageStatus: "idle" }, "immediate")).toBe(false));
+    expect(mocks.checkpoint).toHaveBeenCalledTimes(count);
+  });
   it("does not reopen the old UUID while the router is still leaving its page after confirmed new case", async () => {
     mocks.restore.mockReturnValue({ status: "restored", snapshot: completed() });
     const { rerender } = render(<CaseShellProvider><CaseShell screen="chat" caseId={caseId} /></CaseShellProvider>);
