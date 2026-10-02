@@ -1,0 +1,124 @@
+# Dzień 2 — Historia czatu
+
+**Data:** 29 września 2026 r.
+
+Wiadomości z porannego spotkania i jego wznowienia ułożono chronologicznie. Nazwy uczestników skrócono do imion; zrzuty ekranu i identyfikatory prywatnych demonstracji zastąpiono opisami.
+
+- **08:03:54 — Łukasz:** Korzystasz z VM?
+- **08:03:56 — Maciej:** Tak, coś takiego.
+- **08:12:02 — Łukasz:** Na VM musimy użyć `codex resume --no-daemon --sandbox danger-full-access`, bo pracujemy na koncie Admina.
+- **08:12:05 — Łukasz:** `codex resume --no-daemon --sandbox danger-full-access`
+- **08:16:00 — Łukasz:** Codex: `/fork` — pełna kopia sesji; `/btw` — tymczasowy czat z historią sesji, możliwość zadania pytania bez przerywania pracy agenta.
+- **08:29:11 — Łukasz:** `$create-design-system allegro.pl`
+- **08:31:48 — Łukasz:** `$create-design-system create design system for allegro.pl - use playwright in normal head mode so I will see everything what you do in the browser (do not use headless)`
+- **08:40:29 — Łukasz:** Szczegóły: `Ctrl+T` — wszystko naraz; kliknięcie „Show details” — szczegóły jednej komendy.
+- **08:49:02 — Łukasz:** lazygit — TUI do Gita.
+- **08:49:09 — Łukasz:** lazydocker.
+- **08:49:15 — Łukasz:** lazyvim.
+- **08:53:46 — Łukasz:** `code .` — otwarcie folderu jako projektu w VS Code.
+- **08:58:26 — Artur:** Wszystkie pliki z Windowsa są dostępne jako `/mnt/c/`, `/mnt/d/` itp.
+- **09:09:50 — Artur:** `\\wsl.localhost\`
+- **09:09:58 — Artur:** A’la udział sieciowy.
+- **09:46:23 — Patryk:** Coś się zacina.
+- **09:46:48 — Hubert:** Głos, coś ścięło dwa razy.
+- **09:46:58 — Konrad:** Był komunikat o problemach z połączeniem.
+- **09:47:57 — Łukasz:** Nie słyszycie mnie?
+- **09:48:03 — Artur:** Ja nie.
+- **09:48:05 — Hubert:** Tak, padło „Dajcie znać” i ścięło.
+- **09:48:45 — Patryk:** Nic nie słychać.
+- **09:48:50 — Patryk:** Pojedyncze słowa co jakiś czas.
+- **09:49:03 — Łukasz:** Zróbmy może wcześniejszą przerwę, do 11:05?
+- **09:49:09 — Patryk:** Tak.
+- **09:49:11 — Artur:** OK.
+- **09:49:13 — Łukasz:** Może się uspokoi w tym czasie.
+- **09:49:21 — Hubert:** OK.
+- **09:49:27 — Łukasz:** Ja na wszelki wypadek się przeloguję.
+- **09:49:31 — Artur:** Czy u Konrada, Macieja i Roberta też zacina?
+- **09:49:47 — Maciej:** Tak.
+- **09:49:56 — Łukasz:** Koniec przerwy o 11:05.
+- **09:50:11 — Artur:** OK, czyli to nie kwestia internetu w biurze.
+- **09:50:45 — Łukasz:** Rozłączę spotkanie na wszelki wypadek, OK? Musicie połączyć się jeszcze raz.
+- **09:51:13 — Łukasz:** Może to pomoże.
+- **09:51:50 — Łukasz:** 1, 2, 3…
+- **09:51:53 — Łukasz:** Rozłączam.
+- **10:07:22 — Norbert:** Tak, słychać.
+- **10:09:12 — Hubert:** Artur zaraz będzie.
+- **10:09:30 — Hubert:** Możemy zaczynać, przekażemy mu, co go ominęło.
+- **10:27:54 — Robert:** [zrzut ekranu]
+- **10:31:10 — Robert:** [zrzut ekranu]
+- **10:31:27 — Robert:** [zrzut ekranu]
+- **10:32:30 — Artur:** Używaj 5.3-Codex. Stary model, ale był całkiem przyzwoity.
+- **10:32:38 — Artur:** Do czasu, aż nie dostaniesz nic nowszego.
+- **11:13:33 — Konrad:** W tle męczę dzisiaj Codexa i wszystko płynnie działa.
+- **11:13:43 — Konrad:** Si.
+- **11:15:56 — Łukasz:** https://status.claude.com/
+- **11:16:01 — Łukasz:** https://status.openai.com/
+- **11:30:29 — Łukasz:** https://artificialanalysis.ai/
+- **11:33:16 — Artur:** Ale zdania są podzielone :) https://www.reddit.com/r/LocalLLaMA/comments/1woa5d3/mimov26_both_pro_and_flash_is_a_benchmaxxed_scam/
+- **11:42:16 — Łukasz:** https://openrouter.ai/stealth/space-bunny-alpha
+- **11:43:28 — Łukasz:** https://arena.ai/
+- **11:59:02 — Łukasz:** Prompt do zbudowania strony HTML dla fikcyjnego serwisu komputerowego: ciemny motyw o wysokim kontraście, wyraziste nagłówki, animowany pasek, kategorie i przycisk CTA; z humorystyczną historią o niechęci właściciela do napraw Maców.
+- **12:01:47 — Konrad:** Przerwa obiadowa?
+- **12:02:35 — Łukasz:** Koniec przerwy o 13:35.
+- **12:02:57 — Norbert:** Okej, będzie.
+- **12:44:05 — Patryk:** Tak.
+- **12:44:06 — Patryk:** Mi się akurat ten model trafił.
+- **12:44:06 — Patryk:** [zrzut ekranu]
+- **12:44:44 — Łukasz:** https://01a0ecd1-eb04-7857-8fd2-eadabf089a13.arena.site/
+- **12:44:57 — Łukasz:** https://01a0ecd1-eb05-7251-8e77-e3caeda7f26b.arena.site/
+- **12:45:08 — Norbert:** [linki do demonstracji uczestnika pominięto]
+- **12:45:28 — Norbert:** Tak, tak.
+- **12:45:32 — Bartosz:** [link do demonstracji uczestnika pominięto]
+- **12:45:44 — Daniel:** U mnie Flash :)
+- **12:45:44 — Daniel:** [zrzut ekranu]
+- **12:45:47 — Norbert:** [zrzut ekranu]
+- **12:46:22 — Artur:** U mnie Gemini też prawie identycznie.
+- **12:46:22 — Artur:** [zrzut ekranu]
+- **12:47:10 — Norbert:** Tak, Sol.
+- **12:47:31 — Patryk:** [link do demonstracji uczestnika pominięto]
+- **12:47:36 — Patryk:** OK, teraz link do tego MiMo.
+- **12:49:48 — Bartosz:** Szybki tower defense.
+- **12:55:47 — Łukasz:** https://github.com/github/spec-kit — Space Kit, framework do Spec-Driven Development.
+- **12:56:08 — Łukasz:** https://x.com/mitchellh/status/2057171518027887035 — zero dependency, rozwiązania własne.
+- **13:00:07 — Łukasz:** https://x.com/mattpocockuk
+- **13:01:05 — Łukasz:** Skills: https://github.com/mattpocock/skills
+- **13:01:38 — Łukasz:** https://www.skills.sh/github/awesome-copilot
+- **13:02:27 — Łukasz:** Spec-Driven: https://www.skills.sh/?q=spec; PRD: https://www.skills.sh/?q=prd
+- **13:03:12 — Łukasz:** https://www.skills.sh/mattpocock/skills/grill-me
+- **13:26:11 — Łukasz:** https://z.ai/subscribe
+- **13:28:50 — Łukasz:** Integracja GLM od Z.ai z narzędziami AI: https://docs.z.ai/devpack/tool/others
+- **13:30:45 — Łukasz:** https://openrouter.ai/docs/guides/features/in-region-routing
+- **13:31:09 — Artur:** https://openrouter.ai/models?region=eu
+- **13:33:01 — Łukasz:** https://www.ovhcloud.com/en/public-cloud/ai-endpoints/
+- **13:33:48 — Łukasz:** https://bielik.ai/
+- **13:34:37 — Łukasz:** https://mistral.ai/ — Francja.
+- **13:43:26 — Łukasz:** https://platform.xiaomimimo.com/token-plan — MiMo v2.6.
+- **13:43:57 — Łukasz:** https://claude.com/pricing
+- **13:46:27 — Łukasz:** https://chatgpt.com/codex/pricing/
+- **13:47:41 — Łukasz:** https://openrouter.ai/stealth/space-bunny-alpha#providers — bezpłatny model, chyba nowy MiniMax.
+- **13:53:06 — Łukasz:** https://openrouter.ai/docs/cookbook/coding-agents/codex-cli
+- **13:53:46 — Łukasz:** https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/course-materials/.claude-example
+- **14:03:34 — Łukasz:** https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/.bashrc — aliasy Claude Code dla OpenRouter, Z.ai i Ollamy.
+- **14:03:59 — Łukasz:** Konfiguracja własnych modeli Codex, Ollama i OpenRouter: https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/main/.codex
+- **14:08:42 — Łukasz:** Prompt PRD dla aplikacji zwrotów i reklamacji: https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Prompt%20examples/PRD-electronics-returns-complains-app.md
+- **14:18:00 — Łukasz:** https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/Prezentacja_Dzien1.html#18
+- **14:18:46 — Łukasz:** https://github.com/EdukeyTeam/agent-skills
+- **14:20:17 — Łukasz:** https://github.com/EdukeyTeam/agent-toolbox
+- **14:21:19 — Łukasz:** `npx --yes skills@latest add EdukeyTeam/agent-toolbox --skill '*'`
+- **14:30:42 — Łukasz:** Prompt PRD: https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/main/course-materials/Prompt%20examples/PRD-electronics-returns-complains-app.md
+- **14:30:52 — Łukasz:** https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/Prezentacja_Dzien1.html#18
+- **14:49:19 — Łukasz:** AG-UI — aplikacje webowe jako narzędzia dla agentów AI: https://www.copilotkit.ai/; https://docs.ag-ui.com/introduction
+- **14:57:30 — Łukasz:** `$EDITOR=micro` albo nano, fresh, vim, nvim; może być też edytor GUI.
+- **14:58:13 — Łukasz:** `Ctrl+W` usuwa słowa/stringi.
+- **14:58:31 — Hubert:** Jaka jest różnica między wklejonym promptem a tą opcją w micro? Czy to tylko kwestia wizualna?
+- **14:58:53 — Łukasz:** `Ctrl+J` dodaje nową linię.
+- **15:05:39 — Karol:** Ja już muszę kończyć na dziś. Cześć.
+- **15:06:20 — Konrad:** Też muszę lecieć, dzięki, do jutra.
+- **15:07:16 — Bartosz:** Dzięki, cześć.
+- **15:07:22 — Robert:** Dzięki.
+- **15:07:22 — Patryk:** Dzięki, na razie.
+- **15:07:24 — Robert:** Do jutra.
+- **15:07:25 — Hubert:** Dzięki, do jutra 🙂 Cześć.
+- **15:07:27 — Jakub:** Dzięki.
+- **15:07:28 — Maciej:** Cześć, do jutra.
+- **15:07:29 — Norbert:** Dzięki, cześć.

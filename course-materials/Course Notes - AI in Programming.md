@@ -24,9 +24,11 @@ Notes from course for JSystem — AI dla programistów: od pomysłu do MVP
 - CLI tools, Automation (Auto Review, Auto Mode, Schedules/Rutines, Loops), YOLO in container/cloud or local device (e.g. mac mini, Nvidia DGX Spark, AMD Strix Halo)
 - Huge jump in quality of **Opus 4.5+**, GPT 5.4 and Gemini 3
 - **Open Source LLMs** are very close to top models:
-  - GLM-5.2, Minimax M3, Kimi K2.6, DeepSeek v4 Pro - best OSS models are all from China
+  - GLM-5.3 and GLM-5.3-Flash (z.ai), Kimi K3 (Moonshot), MiMo 1.6 (Xiaomi - great and very cheap), Minimax M3, DeepSeek v4 Pro - best OSS models are all from China (updated 02.10.2026)
   - Best OSS for consumer hardware: Google [Gemma 4](https://ollama.com/library/gemma4), [Qwen 3.6](https://ollama.com/library/qwen3.6)
   - could be used also with Claude Code: [Ollama](https://docs.ollama.com/integrations/claude-code), [vLLM](https://docs.vllm.ai/en/latest/serving/integrations/claude_code/) (good concurrency for scaling), [LocalAI](https://localai.io/integrations/index.html#claude-code)
+  - **Tiny and local models as agent workers** (verified 2026-10-01): LFM2.5-350M (219 MB) handles extraction and simple tool calls; 8 GB laptop = `gemma4:e2b` or LFM2.5-350M, 16 GB = `gemma4:e4b` / `gemma4:12b` / `lfm2.5:8b`; run them as workers with `ollama launch claude` or `codex --oss` - sizes, benchmarks, configs: [local-models-as-agent-workers.md](Research/local-models-as-agent-workers.md)
+  - **"Luna" as a subagent model = GPT-6 Luna (OpenAI)**: cheap high-volume tier (350-3,000 local messages per 5h on Plus), `codex -m gpt-6-luna` - details and Codex lineup: [token-optimization-limits-resets.md](Research/token-optimization-limits-resets.md#gpt-6-luna-as-a-subagent-model)
 - **Screenshots** as a better way to provide context for vision models (less tokens thanks to compression, more information thanks to formatting, colors, images, etc.)
   - [DeepSeek OCR research paper on context compression](https://arxiv.org/abs/2510.18234)
   - [Andrej Karpathy on X.com](https://x.com/karpathy/status/1980397031542989305?lang=en) "whether pixels are better inputs to LLMs than text. Maybe it makes more sense that all inputs to LLMs should only ever be images"
@@ -140,7 +142,7 @@ Notes from course for JSystem — AI dla programistów: od pomysłu do MVP
 
 - [Andrej Karpathy](https://x.com/karpathy) — ex-OpenAI, Data Science
 - [Paul Rohan](https://x.com/rohanpaul_ai) — Data science, AI deep dive, news
-- [Tibo](https://x.com/thsottiaux) — OpenAI, Codex team
+- [Tibo](https://x.com/thsottiaux) — OpenAI, Codex team; announces Codex rate-limit resets a few hours ahead ("Saint Tibo the token giver")
 - [Petter Steinberger](https://x.com/steipete) — OpenClaw founder
 - [Pliny Deliberator](https://x.com/elder_plinius) — Jail Breaking in AI
 - [Boris Cherny](https://x.com/bcherny) — Claude Code creator, Anthropic
@@ -203,6 +205,7 @@ Notes from course for JSystem — AI dla programistów: od pomysłu do MVP
   - [How was DeepSeek-R1 built; For dummies : r/LLMDevs](https://www.reddit.com/r/LLMDevs/comments/1ibhpqw/how_was_deepseekr1_built_for_dummies/)
   - It changed a lot in AI, enabled Vibe Coding, Autonomus Agents
   - Should we always use reasoning models??? :)
+- **System 1 models (Jev)** - new model class between big LLMs and classic ML classifiers: fast, cheap, calibrated typed judgments (routing, triage, classification) instead of a full LLM call; TypeSafe launched Jev 15.09.2026 - details, trade-offs, JevBench: [system-1-models-jev.md](Research/system-1-models-jev.md)
 - **Types of AI Assistance** in programming (quick history):
   - **autocomplete** (starting from [Tabnine](https://www.tabnine.com/), GH Copilot, now Cursor Tab [based on Supermaven](https://supermaven.com/blog/cursor-announcement))
   - Chat / Research / Talk about your code
@@ -219,6 +222,7 @@ Notes from course for JSystem — AI dla programistów: od pomysłu do MVP
     - Batching / Scripting - run dozens to hundreds of sub-agents in parallel:
       - Claude Workflow scripts: [Dynamic Workflows](https://code.claude.com/docs/en/workflows)
       - Codex CSV file batching: [Codex CSV Batch with Subagents](https://developers.openai.com/codex/subagents#process-csv-batches-with-subagents-experimental)
+        - **UPDATE**: spawn CSV agents was REMOVED in July 2026 and replaced by Multi Agent v2 Mode - here is why: [ChatGPT Research on CSV Agent Spawning](https://chatgpt.com/s/t_6abe712058a48191835314697f61d570)
     - Hooks - trigger actions in deterministic way on events:
       - [Claude - Hooks](https://code.claude.com/docs/en/hooks-guide)
       - [Codex - Hooks](https://developers.openai.com/codex/hooks)
@@ -252,8 +256,11 @@ Notes from course for JSystem — AI dla programistów: od pomysłu do MVP
   - [Search Leaderboard](https://arena.ai/leaderboard/search)
 - Design Arena Elo (agent vs agent fights in UI, Game Dev, etc.): [Design Arena](https://www.designarena.ai/leaderboard)
 - Software Engineering Benchmarks:
-  - DeepSWE Bench (newer and better): [DeepSWE Bench](https://deepswe.datacurve.ai/)
+  - **DeepSWE Bench** (Datacurve, v1 2026-05-26, v1.1 2026-06-14, leaderboard refreshed 2026-09-22): [DeepSWE Bench](https://deepswe.datacurve.ai/), [intro post](https://deepswe.datacurve.ai/blog/deepswe), [v1.1 changes](https://deepswe.datacurve.ai/blog/deepswe-v1-1)
+    - contamination-free long-horizon tasks, all models in one harness (mini-swe-agent); top v1.1: gpt-6-astra, gemini-3.8-flash, claude-opus-5 at 74% - details: [benchmarks-deepswe-harness-vs-model.md](Research/benchmarks-deepswe-harness-vs-model.md#deepswe-bench)
   - SWE Bench: [SWE-bench Leaderboards](https://www.swebench.com/)
+- **Harness vs model - you buy a harness + model, not just a model** (same model scores differently in different harnesses):
+  - e.g. one harness config change moved SWE-bench Verified from 28% to 49% with unchanged weights; Terminal-Bench ranks model + agent pairs - evidence and papers: [benchmarks-deepswe-harness-vs-model.md](Research/benchmarks-deepswe-harness-vs-model.md#harness-vs-model)
 - Terminal Bench: [Terminal-Bench](https://www.tbench.ai/leaderboard/terminal-bench/2.0)
 - Tool Calling: [Berkeley Function Calling Leaderboard (BFCL) V4](https://gorilla.cs.berkeley.edu/leaderboard.html)
 - AIME (High School Math Exam): [AIME 2025 Benchmark Leaderboard | Artificial Analysis](https://artificialanalysis.ai/evaluations/aime-2025)
@@ -317,6 +324,13 @@ Notes from course for JSystem — AI dla programistów: od pomysłu do MVP
 ### Claude Code extension for VSCode "family":
 [https://open-vsx.org/extension/Anthropic/claude-code#review-details](https://open-vsx.org/extension/Anthropic/claude-code#review-details)
 
+### Copilot in VS Code - Autopilot, Assisted Permissions, Subagents (group questions, verified 2026-10-01)
+
+- **Autopilot / Allow all**: `chat.tools.global.autoApprove` (renamed in v1.104 from `chat.tools.autoApprove`, no migration); Autopilot (Preview) auto-approves tools and keeps working until done - skips confirmation for destructive actions and consumes AI credits
+- **Assisted permissions** (experimental, `chat.assistedPermissions.enabled`): an LLM judge rates the risk of each tool call, Agent Host sessions only; in Copilot CLI: `/permissions assisted`
+- **Copilot CLI subagents**: `/tasks` (tree of subagents, teleport into one), `/subagents` (model per agent), `/fleet` (parallel execution)
+- **Can everything from the course run in VS Code?** Almost: Claude Code in VS Code is the same CLI; Copilot has agent modes + `runSubagent`; headless CI, worktree fleets with a multiplexer and Beads stay in the terminal
+- All setting IDs, limits and the full answers (partly in Polish): [copilot-vscode-autopilot-permissions-subagents.md](Research/copilot-vscode-autopilot-permissions-subagents.md)
 
 ---
 
@@ -343,14 +357,26 @@ Notes from course for JSystem — AI dla programistów: od pomysłu do MVP
 - **ChatGPT Plus** for $20/m
   - provides access to **Codex** (both CLI and Cloud agents with GitHub integration)
 - **GLM Codding Plan**
-  - GLM-5 is probably the best open source Coding LLM (some argue that M2.7 is better/faster)
+  - GLM-5.3 (and the faster GLM-5.3-Flash) is probably the best open source Coding LLM (some argue that M2.7 is better/faster)
   - Lite plan may be slow but costs only $3/m and offers 3x usage of Claude Code Pro!
   - Pro plan is for $12 for the first year, $30/m later (5x Lite plan = 15x Claude Code Pro)
     Video on GLM-5 and Minimax M2.7: [So close to Opus at 1/10th the price (GLM-4.7 and Minimax M2.1 showdown) - YouTube](https://www.youtube.com/watch?v=kEPLuEjVr_4)
   - Invite link with additional 10%: https://z.ai/subscribe?ic=IA5VBRGQV4
+  - ⚠️ **UPDATE 01.10.2026**: z.ai restructured pricing around GLM-5.3 - docs now say "starting at 18 USD/mo" with a credits system (Lite 2,000/5h + 10,000 weekly, Pro 12,000/60,000, Max 28,000/140,000 credits), older GLM-5.2/5.1 auto-routed to GLM-5.3, off-peak = 50% credits: [z.ai devpack docs](https://docs.z.ai/devpack/overview). Re-check before quoting the $3/$12 prices above
+- **MiniMax** - M2.1/M2.5 API $0.30/$1.20 per M tokens; Token Plan Plus $20/m, Max $50/m, Ultra $120/m; [M Plan](https://www.minimax.io/m-plan) annual from $220/yr with MiniMax Code agent included. Cheapest per-token coding workhorse, fast (M2.7): [YT showdown](https://www.youtube.com/watch?v=kEPLuEjVr_4) (verified 01.10.2026)
+- **Kimi (Moonshot)** - K3 flagship (~$3/$15 per M via gateways), K2.7 Code better value for long coding sessions; Kimi Code membership tiers (Allegretto $39/m); K3 subscriptions sold out at one point due to demand - [pricing guide](https://felloai.com/kimi-pricing), [docs](https://www.kimi.com/code/docs/en). Top-tier agentic coder, watch availability (verified 01.10.2026)
+- **DeepSeek** - official API pricing (01.10.2026): `deepseek-v4-pro` (1M ctx) $0.66-1.32 input / $1.98-3.96 output per M; `deepseek-flash` (V4.1-Flash, 1M ctx) $0.15-0.30 input / $0.60-1.20 output; off-peak half price - [pricing](https://api-docs.deepseek.com/quick_start/pricing). Cheapest flagship-tier API with 1M context; no flat-rate subscription, so no Claude Code-style plan - pay per token
 - **Tetrate.ai** $15 for free (OpenRouter for Enterprise):
   - 1. Create account for $5 free: [Tetrate: Safe, Fast, and Profitable AI for the Enterprise](https://tetrate.io/)
   - 2. Use goose CLI to add Tetrate Agent Router for $10 more: [Quickstart | goose](https://block.github.io/goose/docs/quickstart/)
+
+### TOKEN OPTIMIZATION - limits, resets, cheaper models (verified 01.10.2026)
+
+- **Claude Pro/Max**: rolling 5-hour window + weekly limit at the same time; the 5h window starts on your first prompt, so the **6am trick** (scheduled throwaway prompt) works; check `/usage`
+- **Banked resets are granted, not bought** (model releases, incidents; redeem within about a month): Codex, and Claude since the Opus 5.5 release (end of 09.2026); paid options = Claude usage credits, Codex paid instant reset
+- **Strategy**: burn the weekly allowance to zero first, then apply the reset (effectively 2x for that week)
+- **Cheaper models as workers**: GPT-6 Luna, local LFM2.5 / Gemma 4 / Qwen 3.6, Chinese APIs (MiniMax, Kimi, DeepSeek, MiMo)
+- Full numbers (Codex 5h ranges per model), auto-continue, how to save the allowance, sources: [token-optimization-limits-resets.md](Research/token-optimization-limits-resets.md)
 
 ## My Recommendations - tools to install/use:
 
@@ -389,12 +415,30 @@ Notes from course for JSystem — AI dla programistów: od pomysłu do MVP
   - examples:
     - [payload/templates/website/.cursor/rules at main · payloadcms/payload · GitHub](https://github.com/payloadcms/payload/tree/main/templates/website/.cursor/rules)
 
+### Config files & Permissions (Claude Code, Codex, Copilot - verified 2026-10-01)
+
+- **Claude Code**: `permissions` block in `settings.json` with `allow` / `ask` / `deny`, evaluated deny > ask > allow (an allow can't punch a hole in a deny); files: managed > `--settings` > `.claude/settings.local.json` > `.claude/settings.json` > `~/.claude/settings.json`
+- **Codex**: `approval_policy` + `sandbox_mode` in `config.toml`; allow/deny specific commands with Starlark **rules** in `~/.codex/rules/` or `<repo>/.codex/rules/` (most restrictive wins)
+- **Copilot CLI**: saved approvals in `~/.copilot/permissions-config.json` (allow only); deny with `--deny-tool` flags (deny always wins) and `deniedUrls`
+- Full syntax, examples and sources: [config-files-and-permissions.md](Research/config-files-and-permissions.md)
+- Example files in this repo:
+  - Claude Code: [project `.claude/settings.json`](../.claude/settings.json) (allow/deny + pom.xml security hook), [`.claude-example/settings.json`](.claude-example/settings.json), commented version with the reasoning behind each rule: [`.claude-example/settings.jsonc`](.claude-example/settings.jsonc)
+  - Codex: [project `.codex/config.toml`](../.codex/config.toml) (`approval_policy`, `sandbox_mode`, network), Java/Spring variant: [`agent-configs/codex-java-spring/config.toml`](agent-configs/codex-java-spring/config.toml)
+  - Copilot CLI: `--allow-tool` / `--deny-tool` flags in [`.copilot-example/start-copilot.sh`](.copilot-example/start-copilot.sh) and [`start-copilot.ps1`](.copilot-example/start-copilot.ps1)
+  - Hooks that block secrets in all three tools: [`hooks-example/`](hooks-example/)
+
 ### AGENTS.md
 
 Custom project file (or many nested files) with instructions and description of application or it's parts:
   - Growing standard: [AGENTS.md](https://agents.md/)
   - CLAUDE.md [CLAUDE.MD files: Customizing Claude Code for your codebase | Claude](https://claude.com/blog/using-claude-md-files)
   - GEMINI.md [Provide context with GEMINI.md files | Gemini CLI](https://geminicli.com/docs/cli/gemini-md/)
+  - **Claude Code reads AGENTS.md natively (v2.1.277+, 2026)**: [How Claude remembers your project](https://code.claude.com/docs/en/memory)
+    - **Precedence when both exist**: CLAUDE.md (also `.claude/CLAUDE.md`, `CLAUDE.local.md`) in the working dir or any parent **wins by default**; AGENTS.md is read only when none of those exist
+    - Change in `/config` -> **Project instructions**: `claude-md-or-agents-md` (default) | `claude-md-and-agents-md` (both, CLAUDE.md first) | `claude-md` | `managed-only` (org instructions only)
+    - Portable trick: one-line `CLAUDE.md` containing `@AGENTS.md` imports it for Claude AND other tools read the AGENTS.md directly
+    - Verify what was loaded: `/memory` (AGENTS.md appears in the list); `/context` shows its token cost
+    - Files over 200 lines "consume more context and may reduce adherence"; hard cap 4 MiB; use `.claude/rules/` path-scoped rules instead of one giant file
   - Discussions / Sources:
     - X.com thread: [Matt Pocock](https://x.com/mattpocockuk/status/2012906065856270504)
     - Article & Prompt to fix AGENTS.md: [A Complete Guide To AGENTS.md](https://www.aihero.dev/a-complete-guide-to-agents-md)
@@ -402,12 +446,19 @@ Custom project file (or many nested files) with instructions and description of 
     - [mcp-for-beginners/AGENTS.md at main · microsoft/mcp-for-beginners · GitHub](https://github.com/microsoft/mcp-for-beginners/blob/main/AGENTS.md) (includes Java Spring Boot)
     - [payload/templates/website/AGENTS.md at main · payloadcms/payload · GitHub](https://github.com/payloadcms/payload/blob/main/templates/website/AGENTS.md)
 
+### Claude Code: enterprise (managed) settings vs your config
+
+- Org-wide `managed-settings.json` (highest precedence, users can't override) can enforce permission rules, models, hooks, MCP servers and block bypass mode
+- Your CLAUDE.md/AGENTS.md can't be blocked by default; only an explicit org setting (`instructionFiles: "managed-only"`) leaves them out
+- Paths per OS, full key list, how to check what applied: [config-files-and-permissions.md](Research/config-files-and-permissions.md#claude-code-enterprise-managed-settings-vs-your-config)
+
 ### SKILLS.md
 
 - What are Skills:
   - [GitHub - agentskills/agentskills: Specification and documentation for Agent Skills](https://github.com/agentskills/agentskills)
   - [Overview - Agent Skills](https://agentskills.io/home)
 - **skills.sh** - Library of Skills & "skill manager" tool from Vercel: [The Agent Skills Directory](https://skills.sh/)
+  - **Does skills.sh install plugins? NO (verified 01.10.2026)** - the `skills` CLI ([vercel-labs/skills](https://github.com/vercel-labs/skills)) installs **skills only** (SKILL.md instruction files): `add`, `use`, `list`, `find`, `remove`, `update`, `init`; ~80 agents supported. Partial plugin compatibility: if a repo has `.claude-plugin/marketplace.json` or `.claude-plugin/plugin.json`, the **skills declared in those manifests** are discovered and installable - but the plugin itself (commands, agents, hooks, MCP config) is not. Full plugin install stays with the agents' own mechanisms (e.g. Claude Code `claude plugin`, Codex `codex plugin marketplace add`)
 - **NEW TREND: Skills over MCP** - an MCP server serves skills and the agent loads them on demand, so they are always up to date (no `skills update` in every repo). Official MCP extension `io.modelcontextprotocol/skills`, [SEP-2640](https://modelcontextprotocol.io/seps/2640-skills-extension) final since 13 Sep 2026; client support is still rolling out: [Skills over MCP Working Group](https://modelcontextprotocol.io/community/working-groups/skills-over-mcp), [spec & implementations](https://github.com/modelcontextprotocol/ext-skills)
 - Our public skills (PRD, ADR, design system, code review responses): [EdukeyTeam/agent-toolbox](https://github.com/EdukeyTeam/agent-toolbox) - install with `npx skills add EdukeyTeam/agent-toolbox --skill write-prd`
 - Skills in popular tools (docs):
@@ -467,6 +518,13 @@ Scripts the agent harness runs on lifecycle events (session start, before/after 
 - Codex: `.codex/hooks.json` (trust once with `/hooks`) - [Hooks](https://developers.openai.com/codex/hooks)
 - Example in this repo: one script that blocks `.env`, `secrets/` and SSH keys in all three tools: [`hooks-example/`](hooks-example/)
 
+### Statusline (Claude Code)
+
+- Custom status line under the prompt: `statusLine` in settings.json runs your script after each turn with session JSON on stdin, no API tokens: [Statusline docs](https://code.claude.com/docs/en/statusline)
+- Easiest: type `/statusline show model name and context percentage` and Claude Code writes the script for you
+- Full example in this repo (git branch, context bar, cost, Pro/Max 5h + weekly usage): [`.claude-example/statusline.sh`](.claude-example/statusline.sh), wired in [`.claude-example/settings.json`](.claude-example/settings.json)
+- Minimal manual setup and stdin JSON fields: [config-files-and-permissions.md](Research/config-files-and-permissions.md#statusline-claude-code)
+
 ### Tools
 
 - built-in Agent tools (provided by IDE / CLI you use):
@@ -511,6 +569,9 @@ Scripts the agent harness runs on lifecycle events (session start, before/after 
   - in OpenCode: [MCP servers | OpenCode](https://opencode.ai/docs/mcp-servers/)
 - **Most Popular MCPs**:
   - Context7 - documentation: [Context7 - Up-to-date documentation for AI](https://context7.com/)
+    - deep dive: [Research/context7-research.md](Research/context7-research.md) - how it works, setup commands (Claude Code, Codex, Copilot CLI, Cursor), ctx7 CLI, pricing and limits
+    - quick setup in Claude Code: `claude mcp add --scope user --transport http context7 https://mcp.context7.com/mcp`
+    - or one command for any tool: `npx ctx7 setup`
   - Chrome DevTools: [GitHub - Chrome DevTools for coding agents](https://github.com/ChromeDevTools/chrome-devtools-mcp)
   - Playwright: [Microsoft Playwright MCP](https://github.com/microsoft/playwright-mcp)
     - Claude: `claude mcp add playwright npx @playwright/mcp@latest`
@@ -571,7 +632,7 @@ Main agent can delegate tasks to sub-agents (often specialized), to focus on orc
   - Claude Code: [Create custom subagents - Claude Code Docs](https://code.claude.com/docs/en/sub-agents)
     - [Agent Teams (experimental feature) vs Sub-Agents](https://code.claude.com/docs/en/agent-teams)
     - [Blog: Subagents in Claude Code](https://claude.com/blog/subagents-in-claude-code)
-  - Codex CLI [Multi-agents](https://developers.openai.com/codex/multi-agent/)
+  - Codex CLI [Multi-agents](https://developers.openai.com/codex/multi-agent/) - the user-facing command is **`/subagents`** (see the supervision layers below)
   - Google Antigravity [Subagents](https://antigravity.google/docs/subagents)
   - Cursor: [Subagents | Cursor Docs](https://cursor.com/docs/context/subagents)
   - Copilot: [About custom agents - GitHub Docs](https://docs.github.com/en/copilot/concepts/agents/coding-agent/about-custom-agents)
@@ -579,7 +640,12 @@ Main agent can delegate tasks to sub-agents (often specialized), to focus on orc
   - Goose: [Subagents | goose](https://block.github.io/goose/docs/guides/subagents/)
 - Nested Sub-Agents (sub-agents spawned by sub-agents):
   - [Claude Code - Nested Sub-Agents](https://code.claude.com/docs/en/sub-agents#spawn-nested-subagents) (max depth is 5, not configurable)
-  - [Codex Subagent settings](https://developers.openai.com/codex/subagents#global-settings) - `agent.max_threads` (default: 6 - maximum number of concurrent agents) & `agent.max_depth` (default: 1 - only main agent can spawn sub-agents, set to 2+ to allow nested sub-agents)
+  - [Codex Subagent settings](https://developers.openai.com/codex/subagents#global-settings) - `agent.max_threads` is now a **legacy alias** of `agents.max_concurrent_threads_per_session` (default **4** as of CLI 0.159.3, was 6) & `agent.max_depth` (default: 1 - only main agent can spawn sub-agents, set to 2+ to allow nested sub-agents)
+- **Codex CLI: two layers of multi-agent supervision** (verified 2026-10-01, CLI 0.159.3):
+  - **Agent Command Center** (shipped 0.149.0, 2026-08-20): open with **`codex agents`** from the shell or **`/agents`** in a session - a dashboard over **top-level sessions/tasks**: search, start, open, rename, stop, filter, archive/delete, plus **Git worktree** management: [release notes](https://github.com/openai/codex/releases/tag/rust-v0.149.0), [docs](https://learn.chatgpt.com/docs/agent-configuration/subagents)
+    - same release added **`codex queue`** - send a message to an existing local or remote Codex session (even when it is not in the foreground)
+  - **`/subagents`** - the Subagents picker **inside the current session**: switch between and inspect the agent threads the current root agent spawned (internally named `MultiAgents` in source - the old docs name "Multi-agents" maps to the user-facing command **`/subagents`**; current docs say `/agent` singular, docs slightly ahead of stable - UNCONFIRMED)
+  - Mental model for teaching: **Agent Command Center manages jobs, `/subagents` inspects the workers inside a job**
 - **Git Worktrees** for Parallel Agents in same repository:
   - What is a Git Worktree? [Git Worktree Docs](https://git-scm.com/docs/git-worktree)
   - Claude: [Run parallel Claude code sessions with Git worktrees | Claude Docs](https://code.claude.com/docs/en/common-workflows#run-parallel-claude-code-sessions-with-git-worktrees)
@@ -587,6 +653,15 @@ Main agent can delegate tasks to sub-agents (often specialized), to focus on orc
   - Cursor: [Parallel Agents | Cursor Docs](https://cursor.com/docs/configuration/worktrees)
   - Avoid a full `node_modules` install per worktree: pnpm global virtual store (`virtualStoreType: global` in `pnpm-workspace.yaml`), each worktree only links into one shared store: [pnpm + git worktrees](https://pnpm.io/git-worktrees)
 - Library of Sub-Agent definitions from GitHub: [Awesome Copilot Agents](https://github.com/github/awesome-copilot/tree/main/agents)
+
+### Agent managers / multiplexers - work with many agents at once (links verified 01.10.2026)
+
+- **[Herdr](https://herdr.dev)** - open-source terminal multiplexer for agents: vendor-neutral, tracks agent state (idle/working/blocked/done), survives lost SSH
+- **[Beads](https://github.com/gastownhall/beads)** - git-backed issue tracker as shared memory for agents (Steve Yegge)
+- **[Paseo](https://paseo.sh)**, **[Orca](https://www.onorca.dev)**, **[T3 Code](https://t3.codes)**, **[Conductor](https://conductor.build)**, **[Vibe Kanban](https://www.vibekanban.com)** - orchestrators / control planes for parallel agents; **[Codex App](https://developers.openai.com/codex/app)** - OpenAI's single-vendor desktop app
+- **Herdr vs Codex App**: vendor-neutral runtime on your own machines vs zero-ops, OpenAI-only app with cloud tasks - they combine well
+- **Remote agents**: `herdr --machine <label>` over SSH, Codex cloud tasks, `codex exec`, `codex agents` + `codex queue`
+- Details, comparison and remote setup: [agent-managers-and-remote-agents.md](Research/agent-managers-and-remote-agents.md)
 
 ### Claude Code Plugins vs MCP/Skills
 
@@ -619,6 +694,11 @@ Main agent can delegate tasks to sub-agents (often specialized), to focus on orc
 - Good AGENTS.md and rules for better understanding of the project
 - Make AI Agent ask you questions instead of acting immediately (Custom agent or in AGENTS.md)
   - With better initial prompt and info Agent will not interrupt you so often and work longer
+  - **Codex: interactive questions OUTSIDE plan mode** (verified 2026-10-01, CLI 0.159.3):
+    - The interactive questions UI (clickable options) is **plan mode only**: [Plan mode](https://developers.openai.com/codex/plan-mode) - toggle with `/plan` or **Shift+Tab**; "Plan mode lets Codex gather context, ask clarifying questions, and build a stronger plan"
+    - Outside plan mode: **no built-in "ask user" tool** yet - open feature request: [GitHub issue #30150](https://github.com/openai/codex/issues/30150) (since 2026-06-26)
+    - Workaround 1 - prompting: ask Codex to **interview you** before acting (official suggestion in [Best practices](https://learn.chatgpt.com/guides/best-practices)), or add one line to AGENTS.md like "Before implementing, ask me clarifying questions until requirements are unambiguous" - questions arrive as plain text, not the structured UI: [r/codex thread](https://www.reddit.com/r/codex/comments/1vdo16g/adding_this_one_line_allows_your_codex_to_ask/)
+    - Workaround 2 (official, structured): **MCP elicitation** - an MCP server can ask the user structured questions mid-tool-call (`mcpServer/elicitation/request`); enable with `approval_policy.granular.mcp_elicitations = true` in config.toml: [Config reference](https://developers.openai.com/codex/config-reference), [MCP app-server docs](https://developers.openai.com/codex/app-server)
 - Product Requirement Document (PRD): 
   - [GitHub - snarktank/ai-dev-tasks: A simple task management system for managing AI dev agents](https://github.com/snarktank/ai-dev-tasks)
   - [Legal agent income up-cert PRD creation - Amp](https://ampcode.com/threads/T-019b98b9-3fe1-77ea-9d43-235c62200559)
@@ -669,7 +749,13 @@ Main agent can delegate tasks to sub-agents (often specialized), to focus on orc
 ### Headless agents in CI/CD
 
 - Code review and security review of every PR with Copilot, Claude Code, Codex or OpenCode, posted as a PR comment and to Jira; pipelines for Azure, GitLab and Bitbucket: [`cicd-headless/agent-review/`](cicd-headless/agent-review/)
-- Headless commands: `copilot -p`, `claude -p`, `codex exec`, `opencode run`
+- Headless commands: `copilot -p`, `claude -p`, `codex exec`, `opencode run` (also `agy -p`, `grok -p`)
+  - deep dive (validated 01.10.2026): [Research/Headless agents - CLI automation, JSON streaming, subscriptions and CI-CD](Research/Headless%20agents%20-%20CLI%20automation,%20JSON%20streaming,%20subscriptions%20and%20CI-CD.md) - JSON event streams, JSON Schema output, subscription vs API billing per tool, CI/CD patterns, security rules
+  - **JSON event streams** (newline-delimited): `claude -p --output-format stream-json` | `codex exec --json` | `agy -p --output-format stream-json` | `grok -p --output-format streaming-json` (different spelling!) | `copilot -p --output-format json` | `opencode run --format json`
+  - **JSON Schema final output** (validated, not just "please respond with JSON"): Claude `--json-schema`, Codex `--output-schema <file>`, Antigravity `--json-schema`; Grok/Copilot CLI expose events only (validate yourself, e.g. Zod); OpenCode via SDK `json_schema`
+  - **Claude `--bare`**: skips hooks, skills, MCP, plugins, CLAUDE.md discovery = deterministic CI mode (recommended by Anthropic for scripts/SDK), but does NOT use subscription OAuth - needs `ANTHROPIC_API_KEY`; also the safe choice in untrusted repos (`-p` loads project config without showing the trust dialog)
+  - **Env trap**: `ANTHROPIC_API_KEY` set in the environment overrides the subscription even in `-p` mode - `unset ANTHROPIC_API_KEY` to go back to subscription billing
+  - Budgets/limits: `copilot -p --max-ai-credits 50` (1 credit = $0.01, soft cap), `grok --max-turns`, plus your own orchestrator timeouts
 - One `OPENROUTER_API_KEY` can drive all four (Copilot CLI BYOK via `COPILOT_PROVIDER_BASE_URL`); Copilot on its own account needs a user-owned fine-grained PAT with **Copilot Requests**: [Copilot CLI programmatically](https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/run-cli-programmatically), [Codex non-interactive](https://developers.openai.com/codex/noninteractive), [Claude Code headless](https://code.claude.com/docs/en/headless)
 - CI image: Debian slim, not Alpine (agent CLIs expect glibc). Bitbucket app passwords stopped working in July 2026, use access/API tokens
 
