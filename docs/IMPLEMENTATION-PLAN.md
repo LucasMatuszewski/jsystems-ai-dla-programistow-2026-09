@@ -35,7 +35,7 @@ This table is the **only dependency registry**. Completion dependencies mean acc
 | 3 — Initial assessment | B06–B07, F04–F06, Q03–Q04 | Real analysis/decision generations, validated first message and populated chat |
 | 4 — Chat/continuity | B08–B09, F07–F09, Q05–Q06 | Real stream, truthful retry/completion, refresh/reset/tab isolation |
 | 5 — Quality/capacity | F10, Q07 | Brand/accessibility fixes and five independent actual cases |
-| 6 — Demo/acceptance | D01, Q08 | Verified runbook and all 58 AC/34 TAC evidence |
+| 6 — Demo/acceptance | D01, Q08 | Verified runbook and all 59 AC/34 TAC evidence |
 
 BE foundations, FE UI and QA preparation can overlap only with committed prerequisites and disjoint files. Phase gates release completed behavior; QA R checkpoints start earlier as specified below.
 

@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 import { preparedImageSchema } from "../../src/lib/contracts/image";
-import { ACTIVE_CASE_STORAGE_KEY, activeCaseSnapshotSchema } from "../../src/lib/contracts/session";
+import { ACTIVE_CASE_STORAGE_KEY } from "../../src/lib/contracts/session";
+import { parseCaseCheckpoint } from "./helpers/case-checkpoint";
 import { choose, fillCase, imageFixture, imageLabels, imagePicker, labels } from "./helpers/case-input";
 
 const manifest = JSON.parse(readFileSync("tests/fixtures/example-images-provenance.json", "utf8")) as { files: { originalName: string; sha256: string }[] };
@@ -56,7 +57,7 @@ for (const fixture of manifest.files) {
     expect(await preview.getAttribute("src") === image.thumbnailDataUrl).toBe(true);
     await expect.poll(async () => {
       const raw = await page.evaluate(key => localStorage.getItem(key), ACTIVE_CASE_STORAGE_KEY);
-      const saved = activeCaseSnapshotSchema.safeParse(raw ? JSON.parse(raw) : null);
+      const saved = parseCaseCheckpoint(raw);
       return saved.success && saved.data.preparedImage?.sha256 === image.sha256 && saved.data.preparedImage.imageDataUrl === image.imageDataUrl && saved.data.preparedImage.thumbnailDataUrl === image.thumbnailDataUrl && saved.data.screen === "form" && saved.data.imageAnalysis === null && saved.data.initialDecision === null && saved.data.messages.length === 0 && !JSON.stringify(saved.data).includes(readFileSync(source).toString("base64"));
     }).toBe(true);
     for (const width of [1440, 360]) {

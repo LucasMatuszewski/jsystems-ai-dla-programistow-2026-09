@@ -2,6 +2,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { NewCaseDialog } from "./new-case-dialog";
 import { CaseForm, type CaseFormValues } from "@/features/case-form/case-form";
 import { EquipmentImagePicker, type ImagePickerState } from "@/features/case-form/equipment-image-picker";
 import { prepareEquipmentImage, screenEquipmentImageFiles } from "@/features/case-workflow/image-preparation-client";
@@ -15,10 +17,11 @@ import { CaseSummary } from "@/features/case-chat/case-summary";
 import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import type { CaseForm as SubmittedForm } from "@/lib/contracts/form";
-import type { ActiveCaseSnapshot } from "@/lib/contracts/session";
+import { activeCaseSnapshotSchema, type ActiveCaseSnapshot } from "@/lib/contracts/session";
 
 const emptyValues: CaseFormValues = { scenario: "", category: "", equipmentName: "", purchaseDate: "", deliveryDate: "", buyerStatus: "", sellerStatus: "", reason: "", requestedRemedy: "" };
 const unreadableNotice = "Nie można odczytać zapisanej sprawy. Zachowano jej zapis. Ten formularz nie może go teraz zmienić.";
+function blankCase(): ActiveCaseSnapshot { return { schemaVersion: 1, caseId: crypto.randomUUID(), revision: 0, screen: "form", stage: "form", stageStatus: "idle", draftForm: { ...emptyValues }, submittedForm: null, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, preparedImage: null, imageAnalysis: null, initialDecision: null, messages: [], replyStates: {}, pendingOperation: null, storageWarning: null }; }
 
 function hasCompleteCase(snapshot: ActiveCaseSnapshot | null): boolean {
   if (!snapshot?.submittedForm || !snapshot.preparedImage || !snapshot.imageAnalysis || !snapshot.initialDecision || snapshot.screen !== "chat" || snapshot.stage !== "chat") return false;
@@ -38,6 +41,7 @@ type ShellState = {
   changeDraft: (next: CaseFormValues) => void; submit: (form: SubmittedForm) => void;
   selectImage: (files: readonly File[]) => Promise<void>; removeImage: () => void; retryImage: () => void;
   requireImage: () => void; retry: () => void; returnToForm: () => void; showCompletedCase: () => void;
+  startNewCase: () => boolean; openCase: (caseId: string) => void; selectForm: () => void; requestedCaseId: string | null; routeFailure: "missing" | "invalid" | null;
 };
 const ShellContext = createContext<ShellState | null>(null);
 
@@ -52,18 +56,24 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
   const [image, setImage] = useState<ImagePickerState>({ status: "empty" });
   const [missingImage, setMissingImage] = useState(false);
   const [view, setView] = useState<InitialWorkflowView>({ pending: false, error: null });
+  const [requestedCaseId, setRequestedCaseId] = useState<string | null>(null);
+  const [routeFailure, setRouteFailure] = useState<"missing" | "invalid" | null>(null);
   const snapshotRef = useRef<ActiveCaseSnapshot | null>(null);
   const adapterRef = useRef<ReturnType<typeof createSessionAdapter> | null>(null);
   const workflowRef = useRef<ReturnType<typeof createInitialWorkflowController> | null>(null);
+  const workflowOwnerRef = useRef(0);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const originalFile = useRef<File | null>(null);
   const preparationRef = useRef<{ caseId: string; operationId: string; startedAt: string; controller: AbortController } | null>(null);
   const mountedRef = useRef(false);
   const completionNavigationRef = useRef(false);
+  const selectForm = useCallback(() => {
+    setRequestedCaseId(null); setRouteFailure(null); completionNavigationRef.current = false;
+  }, []);
   const showCompletedCase = useCallback(() => {
     if (completionNavigationRef.current) return;
     completionNavigationRef.current = true;
-    routerRef.current.replace("/chat");
+    if (snapshotRef.current) routerRef.current.replace(`/chat/${snapshotRef.current.caseId}`);
   }, []);
 
   const publish = useCallback((next: ActiveCaseSnapshot, kind: CheckpointKind = "immediate") => {
@@ -73,6 +83,18 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     setSnapshot(current);
     adapterRef.current.checkpoint(current, kind);
   }, []);
+
+  const installWorkflow = useCallback((ownerCaseId: string) => {
+    const owner = ++workflowOwnerRef.current;
+    const ownsCase = () => mountedRef.current && workflowOwnerRef.current === owner && snapshotRef.current?.caseId === ownerCaseId;
+    workflowRef.current = createInitialWorkflowController({
+      readCase: () => snapshotRef.current!, checkpoint: next => { if (ownsCase()) publish(next); }, readOriginalFile: () => originalFile.current,
+      analyze: analyzeInitialCase, decide: decideInitialCase, prepare: prepareEquipmentImage,
+      now: () => Date.now(), makeOperationId: () => crypto.randomUUID(), makeMessageId: () => crypto.randomUUID(),
+      onView: next => { if (ownsCase()) setView(next); },
+      onComplete: () => { if (ownsCase() && hasCompleteCase(snapshotRef.current)) { completionNavigationRef.current = true; routerRef.current.push(`/chat/${ownerCaseId}`); } },
+    });
+  }, [publish]);
 
   useEffect(() => {
     let active = true;
@@ -97,15 +119,9 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
       }
       else notice = unreadableNotice;
     } else if (restored.status === "unreadable") notice = unreadableNotice;
-    else current = { schemaVersion: 1, caseId: crypto.randomUUID(), revision: 0, screen: "form", stage: "form", stageStatus: "idle", draftForm: { ...emptyValues }, submittedForm: null, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, preparedImage: null, imageAnalysis: null, initialDecision: null, messages: [], replyStates: {}, pendingOperation: null, storageWarning: null };
+    else current = blankCase();
     snapshotRef.current = current;
-    if (current) workflowRef.current = createInitialWorkflowController({
-      readCase: () => snapshotRef.current!, checkpoint: publish, readOriginalFile: () => originalFile.current,
-      analyze: analyzeInitialCase, decide: decideInitialCase, prepare: prepareEquipmentImage,
-      now: () => Date.now(), makeOperationId: () => crypto.randomUUID(), makeMessageId: () => crypto.randomUUID(),
-      onView: next => { if (active) setView(next); },
-      onComplete: () => { if (active && hasCompleteCase(snapshotRef.current)) { completionNavigationRef.current = true; routerRef.current.push("/chat"); } },
-    });
+    if (current) installWorkflow(current.caseId);
     queueMicrotask(() => {
       if (!active) return;
       setSnapshot(current); setBlocked(notice); setWarning(adapter.getWarning()); setInitialized(true);
@@ -118,7 +134,45 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
       workflowRef.current?.dispose(); workflowRef.current = null;
       adapter.dispose(); adapterRef.current = null; snapshotRef.current = null; originalFile.current = null;
     };
-  }, [publish]);
+  }, [installWorkflow]);
+
+  function stopOldWork() {
+    workflowOwnerRef.current++;
+    cancelPreparation(); workflowRef.current?.dispose(); workflowRef.current = null; adapterRef.current?.dispose();
+  }
+  function startNewCase(): boolean {
+    const current = snapshotRef.current; const adapter = adapterRef.current;
+    if (!current || !adapter || blocked) return false;
+    const archived: ActiveCaseSnapshot = { ...current, stageStatus: current.stageStatus === "pending" ? "interrupted" : current.stageStatus,
+      replyStates: Object.fromEntries(Object.entries(current.replyStates).map(([id, state]) => [id, state === "streaming" ? "interrupted" : state])) };
+    stopOldWork();
+    const next = blankCase();
+    const result = adapter.startNewCase(archived, next);
+    if (result.status === "failed") {
+      const retained = { ...archived, storageWarning: result.warning };
+      if (retained.stage === "preparation" && !retained.preparedImage) setImage({ status: "interrupted", message: "Przygotowywanie zdjęcia zostało przerwane. Wybierz zdjęcie ponownie, aby kontynuować." });
+      snapshotRef.current = retained; setSnapshot(retained); setWarning(result.warning); setView({ pending: false, error: null }); installWorkflow(retained.caseId);
+      return false;
+    }
+    snapshotRef.current = next; setSnapshot(next); originalFile.current = null; setImage({ status: "empty" }); setView({ pending: false, error: null });
+    // Keep the departing route selected until selectForm observes the committed navigation.
+    // Clearing it here would let the still-mounted /chat/old-id reopen the archived case.
+    setWarning(null); setBlocked(null); setRouteFailure(null); completionNavigationRef.current = false; installWorkflow(next.caseId);
+    routerRef.current.push("/"); return true;
+  }
+  function openCase(id: string) {
+    completionNavigationRef.current = false;
+    setRequestedCaseId(id);
+    if (!activeCaseSnapshotSchema.shape.caseId.safeParse(id).success) { setRouteFailure("invalid"); return; }
+    if (snapshotRef.current?.caseId === id) { setRouteFailure(null); return; }
+    const restored = adapterRef.current?.restore(id);
+    if (restored?.status !== "restored" || restored.snapshot.caseId !== id) { setRouteFailure("missing"); return; }
+    stopOldWork();
+    const next = restored.snapshot;
+    snapshotRef.current = next; setSnapshot(next); setBlocked(supportedCheckpoint(next) ? null : unreadableNotice); setRouteFailure(null);
+    originalFile.current = null; setImage(next.preparedImage ? { status: "ready", preparedImage: next.preparedImage } : { status: "empty" });
+    setView({ pending: false, error: null }); completionNavigationRef.current = false; installWorkflow(next.caseId);
+  }
 
   function checkpoint(changes: Partial<ActiveCaseSnapshot>, kind: CheckpointKind = "immediate") {
     const current = snapshotRef.current;
@@ -171,23 +225,35 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     selectImage, removeImage, retryImage: () => { if (originalFile.current) void selectImage([originalFile.current]); },
     requireImage: () => setMissingImage(true), retry: () => { void workflowRef.current?.retry(); }, returnToForm,
     showCompletedCase,
+    startNewCase, openCase, selectForm, requestedCaseId, routeFailure,
   };
   return <ShellContext.Provider value={state}>{children}</ShellContext.Provider>;
 }
 
-export function CaseShell({ screen }: { screen: "form" | "chat" }) {
+export function CaseShell({ screen, caseId }: { screen: "form" | "chat"; caseId?: string }) {
   const state = useContext(ShellContext);
   const mainRef = useRef<HTMLElement>(null);
+  const newCaseTrigger = useRef<HTMLButtonElement>(null);
+  const [newCaseOpen, setNewCaseOpen] = useState(false);
   if (!state) throw new Error("CaseShell requires its persistent provider.");
   const { initialized, snapshot, blocked, warning, view } = state;
   const complete = hasCompleteCase(snapshot);
   const showCompletedCase = state.showCompletedCase;
+  const openCase = state.openCase;
+  const selectForm = state.selectForm;
+  useEffect(() => { if (initialized && screen === "form") selectForm(); }, [initialized, screen, selectForm]);
+  useEffect(() => { if (initialized && caseId && state.requestedCaseId !== caseId) openCase(caseId); }, [initialized, caseId, state.requestedCaseId, openCase]);
+  useEffect(() => { if (initialized && screen === "chat" && !caseId && complete) showCompletedCase(); }, [initialized, screen, caseId, complete, showCompletedCase]);
   useEffect(() => { if (initialized && screen === "form" && complete) showCompletedCase(); }, [initialized, screen, complete, showCompletedCase]);
   useEffect(() => { if (initialized && screen === "chat") mainRef.current?.focus(); }, [initialized, screen]);
+  const exactCase = !caseId || snapshot?.caseId === caseId;
+  const routeHeading = caseId && !activeCaseSnapshotSchema.shape.caseId.safeParse(caseId).success ? "Nieprawidłowy adres sprawy" : state.routeFailure === "missing" ? "Nie znaleziono zapisanej sprawy" : "Brak ukończonej oceny sprawy";
+  const continuityControls = initialized && snapshot && !blocked && exactCase && !state.routeFailure ? <div className="mb-6 flex min-w-0 flex-wrap items-center justify-between gap-3"><p className="min-w-0 text-sm text-muted-foreground [overflow-wrap:anywhere]">ID sprawy: {snapshot.caseId}</p><Button ref={newCaseTrigger} type="button" onClick={() => setNewCaseOpen(true)}>Nowa sprawa</Button><NewCaseDialog open={newCaseOpen} onOpenChange={setNewCaseOpen} triggerRef={newCaseTrigger} onConfirm={() => { state.startNewCase(); setNewCaseOpen(false); }} /></div> : null;
 
   if (screen === "chat") {
     return <main ref={mainRef} id="main-content" tabIndex={-1} className="app-main">
-      {!initialized ? <p>Wczytywanie zapisanej sprawy.</p> : !complete || !snapshot?.submittedForm || !snapshot.preparedImage || !snapshot.initialDecision ? <section className="max-w-[800px] rounded-[16px] border bg-card p-4 sm:p-6"><h1 className="text-2xl">Brak ukończonej oceny sprawy</h1><p className="my-4">{blocked ?? "Ta sprawa nie ma jeszcze pełnej oceny początkowej. Wróć do formularza, aby kontynuować."}</p><Link href="/" className="text-primary underline underline-offset-4">Wróć do formularza</Link></section> : <div className="grid min-w-0 items-start gap-6 md:grid-cols-[minmax(240px,320px)_minmax(0,1fr)]">
+      {continuityControls}
+      {!initialized || (caseId && state.requestedCaseId !== caseId) ? <p>Wczytywanie zapisanej sprawy.</p> : !exactCase || state.routeFailure || !complete || !snapshot?.submittedForm || !snapshot.preparedImage || !snapshot.initialDecision ? <section className="max-w-[800px] rounded-[16px] border bg-card p-4 sm:p-6"><h1 className="text-2xl">{routeHeading}</h1><p className="my-4">{blocked ?? "Ta sprawa nie ma dostępnej pełnej oceny początkowej w tej przeglądarce. Wróć do formularza, aby kontynuować."}</p><Link href="/" className="text-accent underline underline-offset-4">Wróć do formularza</Link></section> : <div className="grid min-w-0 items-start gap-6 md:grid-cols-[minmax(240px,320px)_minmax(0,1fr)]">
         <CaseSummary form={snapshot.submittedForm} preparedImage={snapshot.preparedImage} />
         <Conversation aria-label="Rozmowa w sprawie" className="min-w-0"><ConversationContent className="min-w-0 gap-6 p-0">
           {snapshot.messages.map((message, index) => <Message key={message.id} from={message.role} className="max-w-full min-w-0"><MessageContent className="w-full min-w-0">
@@ -200,6 +266,7 @@ export function CaseShell({ screen }: { screen: "form" | "chat" }) {
   }
   const processing = snapshot?.submittedForm !== null && snapshot?.submittedForm !== undefined && snapshot.stage !== "form";
   return <main ref={mainRef} id="main-content" tabIndex={-1} className="app-main">
+    {continuityControls}
     <section className="app-intro" aria-labelledby="intro-title">
       <h1 id="intro-title">Wstępna ocena sprawy</h1>
       <p>Asystent pomaga pracownikowi przygotować wstępną ocenę reklamacji lub zwrotu. Wynik wymaga sprawdzenia i nie jest ostateczną decyzją w sprawie klienta.</p>

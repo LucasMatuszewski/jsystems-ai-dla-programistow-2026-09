@@ -41,4 +41,11 @@ export const activeCaseSnapshotSchema = z.strictObject({
   }
 });
 export type ActiveCaseSnapshot = z.infer<typeof activeCaseSnapshotSchema>;
+export const localCaseRegistrySchema = z.strictObject({
+  schemaVersion: z.literal(2), activeCaseId: z.uuid(), cases: z.record(z.uuid(), activeCaseSnapshotSchema),
+}).superRefine((value, context) => {
+  if (!value.cases[value.activeCaseId]) context.addIssue({ code: "custom", path: ["activeCaseId"], message: "Brakuje aktywnej sprawy w zapisanym rejestrze." });
+  for (const [id, snapshot] of Object.entries(value.cases)) if (id !== snapshot.caseId) context.addIssue({ code: "custom", path: ["cases", id, "caseId"], message: "Zapis sprawy ma niezgodny identyfikator." });
+});
+export type LocalCaseRegistry = z.infer<typeof localCaseRegistrySchema>;
 export type PendingOperation = z.infer<typeof pendingOperationSchema>;

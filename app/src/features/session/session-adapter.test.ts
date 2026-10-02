@@ -7,6 +7,7 @@ vi.mock("../../lib/contracts/session", () => ({
   ACTIVE_CASE_STORAGE_KEY: "hardware-service-copilot.active-case",
   SNAPSHOT_SOFT_UTF16_BUDGET: 4000000,
   activeCaseSnapshotSchema: { safeParse },
+  localCaseRegistrySchema: { safeParse: (data: { schemaVersion?: number; cases?: Record<string, ActiveCaseSnapshot>; activeCaseId?: string }) => data?.schemaVersion === 2 && data.cases && data.activeCaseId && data.cases[data.activeCaseId] ? { success: true, data: structuredClone(data) } : { success: false } },
 }));
 const key = "hardware-service-copilot.active-case";
 function snapshot(revision = 0): ActiveCaseSnapshot {
@@ -28,14 +29,74 @@ beforeEach(() => { vi.useFakeTimers(); safeParse.mockImplementation(data => ({ s
 afterEach(() => vi.useRealTimers());
 
 describe("validated active case checkpoints", () => {
+  it("atomically saves the latest old draft and a new case, cancelling queued writes from the old owner", () => {
+    const h = harness(); const previous = snapshot(); h.adapter.save(previous);
+    const latest = { ...snapshot(1), draftForm: { ...previous.draftForm, reason: "Najnowszy zachowany opis." } };
+    h.adapter.checkpoint(latest, "draft");
+    const fresh = { ...snapshot(), caseId: "7b40b034-5e7b-49dc-bb47-e8d8d2d5fc76" };
+    expect(h.adapter.startNewCase(latest, fresh)).toEqual({ status: "saved" });
+    expect(JSON.parse(h.blob()!)).toMatchObject({ activeCaseId: fresh.caseId, cases: { [previous.caseId]: latest, [fresh.caseId]: fresh } });
+    vi.runAllTimers(); expect(h.storage.setItem).toHaveBeenCalledTimes(2);
+  });
+  it("preserves the last saved registry when archival fails and does not replay queued old draft writes", () => {
+    const h = harness(); const previous = snapshot(); h.adapter.save(previous); const saved = h.blob();
+    const latest = snapshot(1); h.adapter.checkpoint(latest, "draft");
+    h.storage.setItem.mockImplementationOnce(() => { throw new DOMException("full", "QuotaExceededError"); });
+    const fresh = { ...snapshot(), caseId: "7b40b034-5e7b-49dc-bb47-e8d8d2d5fc76" };
+    expect(h.adapter.startNewCase(latest, fresh)).toMatchObject({ status: "failed", warning: "quota-exceeded" });
+    vi.runAllTimers(); expect(h.blob()).toBe(saved); expect(previous).toEqual(snapshot());
+    expect(h.adapter.restore()).toMatchObject({ status: "restored", snapshot: previous });
+  });
+  it("applies the complete registry budget without evicting an older individually valid case", () => {
+    const h = harness(); const previous = snapshot(); previous.draftForm.reason = "a".repeat(1100000);
+    expect(h.adapter.save(previous)).toEqual({ status: "saved" }); const saved = h.blob();
+    const next = { ...snapshot(), caseId: "7b40b034-5e7b-49dc-bb47-e8d8d2d5fc76" }; next.draftForm.reason = "b".repeat(1100000);
+    expect(h.adapter.save(next)).toMatchObject({ status: "failed", warning: "snapshot-too-large" });
+    expect(h.blob()).toBe(saved); expect(h.storage.setItem).toHaveBeenCalledTimes(1);
+    expect(next.draftForm.reason).toHaveLength(1100000);
+  });
+  it("preserves unreadable registry bytes when an explicit save is attempted", () => {
+    const h = harness(); h.storage.getItem.mockReturnValue("{");
+    expect(h.adapter.restore()).toEqual({ status: "unreadable" });
+    expect(h.adapter.save(snapshot())).toMatchObject({ status: "failed" });
+    expect(h.storage.setItem).not.toHaveBeenCalled(); expect(h.storage.removeItem).not.toHaveBeenCalled();
+  });
+  it("keeps earlier local cases when saving a new UUID under the same atomic product key", () => {
+    const h = harness(); const first = snapshot();
+    const second = { ...snapshot(), caseId: "7b40b034-5e7b-49dc-bb47-e8d8d2d5fc76" };
+    h.adapter.save(first); h.adapter.save(second);
+    const registry = JSON.parse(h.blob()!);
+    expect(registry).toMatchObject({ schemaVersion: 2, activeCaseId: second.caseId });
+    expect(registry.cases[first.caseId]).toEqual(first);
+    expect(registry.cases[second.caseId]).toEqual(second);
+    expect(h.storage.setItem).toHaveBeenCalledTimes(2);
+    expect(h.storage.setItem.mock.calls.every(([storedKey]) => storedKey === key)).toBe(true);
+  });
+  it("restores only the requested UUID and never falls back to another active local case", () => {
+    const h = harness(); const active = snapshot();
+    h.storage.getItem.mockReturnValue(JSON.stringify(active));
+    const requested = "7b40b034-5e7b-49dc-bb47-e8d8d2d5fc76";
+    expect(Reflect.apply(h.adapter.restore, h.adapter, [requested])).toEqual({ status: "missing" });
+    expect(h.storage.setItem).not.toHaveBeenCalled();
+    expect(h.storage.removeItem).not.toHaveBeenCalled();
+  });
+  it("migrates a legacy case on the first explicit save while retaining its complete stored facts", () => {
+    const h = harness(); const legacy = snapshot();
+    h.storage.getItem.mockReturnValue(JSON.stringify(legacy));
+    expect(h.adapter.restore()).toEqual({ status: "restored", snapshot: legacy });
+    expect(h.storage.setItem).not.toHaveBeenCalled();
+    const next = { ...snapshot(), caseId: "7b40b034-5e7b-49dc-bb47-e8d8d2d5fc76" };
+    h.adapter.save(next);
+    expect(JSON.parse(h.blob()!)).toMatchObject({ cases: { [legacy.caseId]: legacy } });
+  });
   it("distinguishes missing, corrupt JSON and unknown schema without deleting data", () => {
     const h = harness();
     expect(h.adapter.restore()).toEqual({ status: "missing" });
     h.storage.getItem.mockReturnValue("{");
-    expect(h.adapter.restore()).toEqual({ status: "unreadable" });
+    expect(createSessionAdapter({ storage: () => h.storage }).restore()).toEqual({ status: "unreadable" });
     h.storage.getItem.mockReturnValue('{"schemaVersion":2}');
     safeParse.mockReturnValue({ success: false });
-    expect(h.adapter.restore()).toEqual({ status: "unreadable" });
+    expect(createSessionAdapter({ storage: () => h.storage }).restore()).toEqual({ status: "unreadable" });
     expect(h.storage.removeItem).not.toHaveBeenCalled();
   });
   it("restores a complete checkpoint without changing it or scheduling work", () => {
@@ -63,7 +124,7 @@ describe("validated active case checkpoints", () => {
   it("uses one atomic write, validates before it, and preserves the caller's live state", () => {
     const h = harness(); const data = snapshot();
     expect(h.adapter.save(data)).toEqual({ status: "saved" });
-    expect(h.storage.setItem).toHaveBeenCalledWith(key, JSON.stringify(data));
+    expect(h.storage.setItem).toHaveBeenCalledWith(key, JSON.stringify({ schemaVersion: 2, activeCaseId: data.caseId, cases: { [data.caseId]: data } }));
     const previous = h.blob(); safeParse.mockReturnValue({ success: false });
     expect(h.adapter.save(snapshot(1))).toMatchObject({ status: "failed", warning: "unavailable" });
     expect(h.blob()).toBe(previous); expect(data).toEqual(snapshot());
@@ -95,7 +156,7 @@ describe("validated active case checkpoints", () => {
       h.adapter.checkpoint(snapshot(revision), "stream"); vi.advanceTimersByTime(100);
     }
     expect(h.storage.setItem).toHaveBeenCalledTimes(3);
-    expect(JSON.parse(h.blob()!).revision).toBe(14);
+    expect(JSON.parse(h.blob()!).cases[snapshot().caseId].revision).toBe(14);
   });
   it("reports inaccessible storage and failed product-key removal without clearing anything else", () => {
     const h = harness(); h.storage.getItem.mockImplementation(() => { throw new Error("blocked"); });
@@ -110,15 +171,15 @@ describe("validated active case checkpoints", () => {
     const h = harness(); h.adapter.checkpoint(snapshot(), "draft"); vi.advanceTimersByTime(299);
     expect(h.storage.setItem).not.toHaveBeenCalled(); h.adapter.checkpoint(snapshot(1), "draft");
     vi.advanceTimersByTime(299); expect(h.storage.setItem).not.toHaveBeenCalled(); vi.advanceTimersByTime(1);
-    expect(h.storage.setItem).toHaveBeenCalledTimes(1); expect(JSON.parse(h.blob()!).revision).toBe(1);
+    expect(h.storage.setItem).toHaveBeenCalledTimes(1); expect(JSON.parse(h.blob()!).cases[snapshot().caseId].revision).toBe(1);
     expect(h.onWriteResult).toHaveBeenCalledWith({ status: "saved" });
   });
   it("coalesces streams at 500ms and flushes terminal checkpoints immediately", () => {
     const h = harness(); h.adapter.checkpoint(snapshot(), "stream"); vi.advanceTimersByTime(250); h.adapter.checkpoint(snapshot(1), "stream");
     vi.advanceTimersByTime(249); expect(h.storage.setItem).not.toHaveBeenCalled(); vi.advanceTimersByTime(1);
-    expect(h.storage.setItem).toHaveBeenCalledTimes(1); expect(JSON.parse(h.blob()!).revision).toBe(1);
+    expect(h.storage.setItem).toHaveBeenCalledTimes(1); expect(JSON.parse(h.blob()!).cases[snapshot().caseId].revision).toBe(1);
     h.adapter.checkpoint(snapshot(2), "stream"); h.adapter.checkpoint(snapshot(3), "immediate");
-    expect(h.storage.setItem).toHaveBeenCalledTimes(2); expect(JSON.parse(h.blob()!).revision).toBe(3);
+    expect(h.storage.setItem).toHaveBeenCalledTimes(2); expect(JSON.parse(h.blob()!).cases[snapshot().caseId].revision).toBe(3);
     vi.runAllTimers(); expect(h.storage.setItem).toHaveBeenCalledTimes(2);
   });
   it("flushes queued data on request and cancels on disposal", () => {

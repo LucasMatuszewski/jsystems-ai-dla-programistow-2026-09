@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { draftFormSchema, activeCaseSnapshotSchema, ACTIVE_CASE_STORAGE_KEY, SESSION_CONTRACT_REVISION } from "@/lib/contracts/session";
+import { draftFormSchema, activeCaseSnapshotSchema, localCaseRegistrySchema, ACTIVE_CASE_STORAGE_KEY, SESSION_CONTRACT_REVISION } from "@/lib/contracts/session";
 const caseId = "7b40b034-5e7b-49dc-bb47-e8d8d2d5fc76";
 const operationId = "129d4e48-1a61-4a99-b1ac-0d1ce4576c58";
 const draft = { scenario: "", category: "", equipmentName: "  wpisana nazwa  ", purchaseDate: "2026-99-99", deliveryDate: "", buyerStatus: "", sellerStatus: "", reason: "  ", requestedRemedy: "" };
@@ -7,6 +7,28 @@ const form = { ...draft, scenario: "complaint", category: "other", equipmentName
 const analysis = { imageQuality: "limited", observations: [], signsOfUse: [], possibleCauses: [], limitations: [], missingInformation: [], analysisId: operationId, scenario: "complaint", imageDigest: "a".repeat(64), formFingerprint: "b".repeat(64), createdAt: "2026-10-01T00:00:00Z", modelId: "fixture" };
 const decision = { outcome: "human_verification_required", greeting: "Dzień dobry", summary: "Sprawdź", justification: ["Wymagane sprawdzenie"], evidence: [], policyReferences: ["heading"], limitations: [], questions: [], nextSteps: ["Sprawdź"], resaleAssessment: null, resaleExplanation: null, decisionId: operationId, caseId, scenario: "complaint", policy: { version: "old-unavailable-version", digest: "c".repeat(64), sourceUrl: "https://example.test/policy", retrievedAt: "2026-09-01T00:00:00Z", references: [{ headingId: "heading", title: "Procedura", url: "https://example.test/policy#heading" }] }, createdAt: "2026-10-01T00:00:00Z", modelId: "fixture", preliminary: true, employeeVerificationRequired: true };
 const snapshot = { schemaVersion: 1, caseId, revision: 0, screen: "form", stage: "form", stageStatus: "idle", draftForm: draft, submittedForm: null, timeZone: "Europe/Warsaw", preparedImage: null, imageAnalysis: null, initialDecision: null, messages: [], replyStates: {}, pendingOperation: null, storageWarning: null };
+describe("local case registry revision two", () => {
+  const registry = { schemaVersion: 2, activeCaseId: caseId, cases: { [caseId]: snapshot } };
+  it("retains multiple UUID cases without changing each canonical snapshot", () => {
+    const other = { ...snapshot, caseId: operationId };
+    const value = { ...registry, cases: { ...registry.cases, [operationId]: other } };
+    expect(localCaseRegistrySchema.safeParse(value)).toMatchObject({ success: true, data: value });
+  });
+  it("does not treat a legacy snapshot as a registry", () => {
+    expect(localCaseRegistrySchema.safeParse(snapshot).success).toBe(false);
+  });
+  it.each([
+    { ...registry, activeCaseId: operationId },
+    { ...registry, cases: { [operationId]: snapshot } },
+    { ...registry, cases: { invalid: snapshot } },
+    { ...registry, cases: {} },
+    { ...registry, schemaVersion: 3 },
+    { ...registry, extra: "private" },
+    { ...registry, cases: { [caseId]: { ...snapshot, extra: "private" } } },
+  ])("rejects inconsistent or unknown registry data without partial merging", value => {
+    expect(localCaseRegistrySchema.safeParse(value).success).toBe(false);
+  });
+});
 describe("browser snapshot revision one", () => {
   it("freezes the storage key and revision", () => {
     expect(ACTIVE_CASE_STORAGE_KEY).toBe("hardware-service-copilot.active-case");

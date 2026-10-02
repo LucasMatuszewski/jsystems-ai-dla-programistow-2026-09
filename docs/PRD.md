@@ -82,10 +82,14 @@ Both personas use the same workflow. Role selection, permissions and a superviso
 
 ### 4.6 Start a New Case
 
-1. The employee selects New case from the active chat.
-2. The system asks for confirmation that the current case and locally retained conversation will be removed.
-3. Cancel keeps the current case; confirm removes its context and opens an empty form.
-4. The new case receives no form data, image description or conversation from the previous case.
+1. The employee selects New case from the current case, including its form or chat.
+2. The system asks for confirmation before leaving the current case and explains that successfully saved previous cases remain available in this browser.
+3. Cancel leaves the current case unchanged; confirm interrupts current work and opens an empty form with a new UUID. Previous saved cases are preserved.
+4. The new case receives no form data, image description or conversation from the previous case. Late responses from the old case cannot change the new case.
+5. A completed case uses `/chat/<caseId>`. Reopening that address in the same browser restores that exact locally saved case without another initial assessment. A missing, malformed or unavailable ID never displays a different case.
+6. IDs do not provide cross-browser or cross-device recovery; persistence remains local to this browser. Storage failures must be explained without claiming that an unsaved case is recoverable.
+
+These requirements were updated on 2026-10-02 following the user's explicit request for a New case action and returning to previous chats by ID.
 
 ---
 
@@ -172,8 +176,9 @@ Both personas use the same workflow. Role selection, permissions and a superviso
 - AC-50: Restoring a completed case does not automatically regenerate its first assistant response.
 - AC-51: An interrupted request is labeled incomplete and offers retry without fabricating a response.
 - AC-52: Browser-storage failure displays a Polish notice that the current case may not survive refresh.
-- AC-53: Confirming New case removes the current saved case and opens an empty form.
+- AC-53: Confirming New case preserves successfully saved previous cases, interrupts old work and opens an empty form with a new UUID.
 - AC-54: Canceling New case leaves the current conversation and case context intact.
+- AC-59: A completed case can be reopened at `/chat/<caseId>` in the same browser without regenerating its initial assessment; unknown or malformed IDs cannot reveal another case.
 - AC-55: All interface labels, validation messages, progress messages and assistant replies are in Polish.
 - AC-56: Form and chat remain operable at viewport widths of 360 and 1440 CSS pixels without horizontal page scrolling.
 - AC-57: Form controls, image selection, submission, chat sending and New case are operable using a keyboard with visible focus.

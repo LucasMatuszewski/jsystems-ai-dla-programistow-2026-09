@@ -2,7 +2,8 @@ import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
-import { ACTIVE_CASE_STORAGE_KEY, activeCaseSnapshotSchema } from "../../src/lib/contracts/session";
+import { ACTIVE_CASE_STORAGE_KEY } from "../../src/lib/contracts/session";
+import { parseCaseCheckpoint } from "./helpers/case-checkpoint";
 import { preparedImageSchema, type PreparedImage } from "../../src/lib/contracts/image";
 import { expectAssociatedError, expectLocalSuccess, fillCase, imageFixture, imageLabels, imagePicker, labels, preparePhoto, submit } from "./helpers/case-input";
 
@@ -26,7 +27,7 @@ function trackActualRequests(page: Page): string[] {
 async function storedSnapshot(page: Page) {
   const raw = await page.evaluate((key) => localStorage.getItem(key), ACTIVE_CASE_STORAGE_KEY);
   if (!raw) throw new Error("Prepared checkpoint is missing");
-  const parsed = activeCaseSnapshotSchema.safeParse(JSON.parse(raw));
+  const parsed = parseCaseCheckpoint(raw);
   // Do not expose the snapshot or image payload in assertion diagnostics.
   expect(parsed.success, "actual saved checkpoint must satisfy C03").toBe(true);
   if (!parsed.success) throw new Error("Invalid prepared checkpoint");
@@ -37,7 +38,7 @@ async function expectPreparedCheckpoint(page: Page, image: PreparedImage) {
   await expect.poll(async () => {
     const raw = await page.evaluate((key) => localStorage.getItem(key), ACTIVE_CASE_STORAGE_KEY);
     if (!raw) return false;
-    const parsed = activeCaseSnapshotSchema.safeParse(JSON.parse(raw));
+    const parsed = parseCaseCheckpoint(raw);
     return parsed.success && parsed.data.preparedImage?.sha256 === image.sha256;
   }).toBe(true);
   const snapshot = await storedSnapshot(page);

@@ -1,18 +1,19 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ActiveCaseSnapshot } from "@/lib/contracts/session";
 import type { InitialWorkflowDependencies } from "@/features/case-workflow/initial-workflow-controller";
 import { CaseShell, CaseShellProvider } from "./case-shell";
 
-const mocks = vi.hoisted(() => ({ restore: vi.fn(), checkpoint: vi.fn(), dispose: vi.fn(), warning: vi.fn(), push: vi.fn(), replace: vi.fn(), start: vi.fn(), retry: vi.fn(), cancel: vi.fn(), invalidate: vi.fn(), controllerDispose: vi.fn(), controllerFactory: vi.fn(), adapterFactory: vi.fn(), processing: vi.fn() }));
+const mocks = vi.hoisted(() => ({ restore: vi.fn(), checkpoint: vi.fn(), newCase: vi.fn(), dispose: vi.fn(), warning: vi.fn(), push: vi.fn(), replace: vi.fn(), start: vi.fn(), retry: vi.fn(), cancel: vi.fn(), invalidate: vi.fn(), controllerDispose: vi.fn(), controllerFactory: vi.fn(), adapterFactory: vi.fn(), processing: vi.fn(), prepare: vi.fn(), screenFiles: vi.fn(), picker: vi.fn() }));
+vi.mock("./new-case-dialog", () => ({ NewCaseDialog: ({ open, onOpenChange, onConfirm }: { open: boolean; onOpenChange: (open: boolean) => void; onConfirm: () => void }) => open ? <div role="dialog" aria-label="Rozpocząć nową sprawę?"><button onClick={() => onOpenChange(false)}>Anuluj</button><button onClick={onConfirm}>Rozpocznij nową sprawę</button></div> : null }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push, replace: mocks.replace }) }));
 vi.mock("@/features/session/session-adapter", () => ({ createSessionAdapter: mocks.adapterFactory }));
 vi.mock("@/features/session/storage-notice", () => ({ StorageNotice: ({ warning }: { warning: string | null }) => warning ? <p role="status">Nie można zapisać sprawy. Po odświeżeniu odzyskanie sprawy może być niemożliwe.</p> : null }));
 vi.mock("@/features/case-workflow/initial-workflow-controller", () => ({ createInitialWorkflowController: mocks.controllerFactory }));
 vi.mock("@/features/case-workflow/initial-api-client", () => ({ analyzeInitialCase: vi.fn(), decideInitialCase: vi.fn() }));
-vi.mock("@/features/case-workflow/image-preparation-client", () => ({ prepareEquipmentImage: vi.fn(), screenEquipmentImageFiles: vi.fn() }));
+vi.mock("@/features/case-workflow/image-preparation-client", () => ({ prepareEquipmentImage: mocks.prepare, screenEquipmentImageFiles: mocks.screenFiles }));
 vi.mock("@/features/case-form/case-form", () => ({ CaseForm: ({ value, onValidSubmit, onChange, imageSlot }: { value: object; onValidSubmit: (form: object) => void; onChange: (form: object) => void; imageSlot: React.ReactNode }) => <form aria-label="Dane sprawy" onSubmit={event => { event.preventDefault(); onValidSubmit(submitted); }}><span>{JSON.stringify(value)}</span><button type="submit">Dalej</button><button type="button" onClick={() => onChange({ ...submitted, equipmentName: "Zmienione fakty" })}>Zmień dane</button>{imageSlot}</form> }));
-vi.mock("@/features/case-form/equipment-image-picker", () => ({ EquipmentImagePicker: () => <p>Zdjęcie przygotowane.</p> }));
+vi.mock("@/features/case-form/equipment-image-picker", () => ({ EquipmentImagePicker: ({ state, onSelect }: { state: { status: string }; onSelect: (files: File[]) => void }) => { mocks.picker(state); return <><p>Zdjęcie przygotowane.</p><button type="button" onClick={() => onSelect([new File(["image"], "photo.jpg", { type: "image/jpeg" })])}>Wybierz zdjęcie</button></>; } }));
 vi.mock("@/features/case-workflow/processing-steps", () => ({ ProcessingSteps: ({ snapshot, onRetry, onReturnToForm }: { snapshot: ActiveCaseSnapshot; onRetry: () => void; onReturnToForm: () => void }) => { mocks.processing(snapshot); return <section aria-label="Przygotowanie wstępnej oceny"><button onClick={onRetry}>Spróbuj ponownie</button><button onClick={onReturnToForm}>Wróć do formularza</button></section>; } }));
 vi.mock("@/features/case-chat/initial-decision-details", () => ({ InitialDecisionDetails: ({ decision }: { decision: { summary: string } }) => <article aria-label="Wstępna ocena początkowa"><h1>Wstępna ocena początkowa</h1><p>{decision.summary}</p></article> }));
 vi.mock("@/features/case-chat/case-summary", () => ({ CaseSummary: ({ form }: { form: { equipmentName: string } }) => <aside aria-label="Dane sprawy">{form.equipmentName}</aside> }));
@@ -31,11 +32,148 @@ function completed(): ActiveCaseSnapshot { return { ...formCase(), revision: 4, 
 let dependencies: InitialWorkflowDependencies;
 beforeEach(() => {
   mocks.restore.mockReturnValue({ status: "restored", snapshot: formCase() }); mocks.warning.mockReturnValue(null);
-  mocks.adapterFactory.mockImplementation(() => ({ restore: mocks.restore, checkpoint: mocks.checkpoint, dispose: mocks.dispose, getWarning: mocks.warning, flush: vi.fn() }));
+  mocks.newCase.mockReturnValue({ status: "saved" });
+  mocks.adapterFactory.mockImplementation(() => ({ restore: mocks.restore, checkpoint: mocks.checkpoint, startNewCase: mocks.newCase, dispose: mocks.dispose, getWarning: mocks.warning, flush: vi.fn() }));
   mocks.controllerFactory.mockImplementation((options: InitialWorkflowDependencies) => { dependencies = options; return { start: mocks.start, retry: mocks.retry, returnToForm: mocks.cancel, invalidate: mocks.invalidate, dispose: mocks.controllerDispose }; });
   mocks.start.mockImplementation(async (form: object) => { dependencies.checkpoint({ ...completed(), caseId: dependencies.readCase().caseId, submittedForm: form as ActiveCaseSnapshot["submittedForm"] }); dependencies.onView({ pending: false, error: null }); dependencies.onComplete(); });
 });
 describe("one hydrated live case across form and chat", () => {
+  it("does not reopen the old UUID while the router is still leaving its page after confirmed new case", async () => {
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: completed() });
+    const { rerender } = render(<CaseShellProvider><CaseShell screen="chat" caseId={caseId} /></CaseShellProvider>);
+    await screen.findByRole("article", { name: "Wstępna ocena początkowa" });
+    fireEvent.click(screen.getByRole("button", { name: "Nowa sprawa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rozpocznij nową sprawę" }));
+    const fresh = mocks.newCase.mock.calls[0][1];
+    expect(mocks.push).toHaveBeenCalledWith("/");
+    // The navigation promise has not committed: /chat/A is still mounted here.
+    expect(mocks.restore).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(dependencies.readCase().caseId).toBe(fresh.caseId);
+    rerender(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    expect(await screen.findByRole("button", { name: "Dalej" })).toBeVisible();
+    expect(screen.getByText(`ID sprawy: ${fresh.caseId}`)).toBeVisible();
+    expect(dependencies.readCase()).toMatchObject({ caseId: fresh.caseId, submittedForm: null, preparedImage: null, initialDecision: null, messages: [] });
+    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(mocks.start).not.toHaveBeenCalled(); expect(mocks.checkpoint).not.toHaveBeenCalled();
+  });
+  it("aborts pending photo preparation truthfully when archival fails and ignores its late prepared result", async () => {
+    let finishPreparation!: (value: { status: "prepared"; preparedImage: typeof image }) => void;
+    mocks.screenFiles.mockImplementation((files: File[]) => ({ status: "valid", file: files[0] }));
+    mocks.prepare.mockImplementation(() => new Promise(resolve => { finishPreparation = resolve; }));
+    mocks.newCase.mockReturnValue({ status: "failed", warning: "quota-exceeded", notice: "Brak miejsca." });
+    render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: "Wybierz zdjęcie" }));
+    expect(mocks.picker.mock.calls.at(-1)?.[0]).toMatchObject({ status: "pending" });
+    const signal: AbortSignal = mocks.prepare.mock.calls[0][1].signal;
+    fireEvent.click(screen.getByRole("button", { name: "Nowa sprawa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rozpocznij nową sprawę" }));
+    expect(signal.aborted).toBe(true);
+    expect(mocks.newCase.mock.calls[0][0]).toMatchObject({ caseId, stage: "preparation", stageStatus: "interrupted", preparedImage: null });
+    expect(mocks.picker.mock.calls.at(-1)?.[0]).toMatchObject({ status: "interrupted" });
+    expect(screen.getByRole("button", { name: "Wybierz zdjęcie" })).toBeEnabled();
+    const checkpointCount = mocks.checkpoint.mock.calls.length;
+    await act(async () => { finishPreparation({ status: "prepared", preparedImage: image }); });
+    expect(mocks.checkpoint).toHaveBeenCalledTimes(checkpointCount);
+    expect(mocks.picker.mock.calls.at(-1)?.[0]).toMatchObject({ status: "interrupted" });
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+  it("clears unknown-route recovery when returning to the current unfinished form", async () => {
+    mocks.restore.mockImplementation((id?: string) => id ? { status: "missing" } : { status: "restored", snapshot: formCase() });
+    const { rerender } = render(<CaseShellProvider><CaseShell screen="chat" caseId={operationId} /></CaseShellProvider>);
+    await screen.findByRole("heading", { name: "Nie znaleziono zapisanej sprawy" });
+    rerender(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    expect(await screen.findByRole("button", { name: "Nowa sprawa" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Dalej" })).toBeVisible();
+    expect(mocks.checkpoint).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+  it("rearms the canonical redirect when returning to root after a live completed case and unknown UUID", async () => {
+    const { rerender } = render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: "Dalej" }));
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(`/chat/${caseId}`));
+    rerender(<CaseShellProvider><CaseShell screen="chat" caseId={caseId} /></CaseShellProvider>);
+    await screen.findByRole("article", { name: "Wstępna ocena początkowa" });
+    mocks.restore.mockReturnValue({ status: "missing" });
+    rerender(<CaseShellProvider><CaseShell screen="chat" caseId={operationId} /></CaseShellProvider>);
+    await screen.findByRole("heading", { name: "Nie znaleziono zapisanej sprawy" });
+    const redirects = mocks.replace.mock.calls.length;
+    rerender(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledTimes(redirects + 1));
+    expect(mocks.replace).toHaveBeenLastCalledWith(`/chat/${caseId}`);
+    expect(mocks.start).toHaveBeenCalledTimes(1);
+  });
+  it("keeps failed archival pending work interrupted and rejects callbacks from the disposed owner", async () => {
+    const pending: ActiveCaseSnapshot = { ...formCase(), stage: "decision", stageStatus: "pending", submittedForm: submitted, imageAnalysis: report, pendingOperation: { kind: "decision", operationId, startedAt: "2026-10-01T08:00:00Z" } };
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: pending });
+    mocks.newCase.mockReturnValue({ status: "failed", warning: "quota-exceeded", notice: "Brak miejsca." });
+    render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    await screen.findByRole("region", { name: "Przygotowanie wstępnej oceny" });
+    const previousOwner = dependencies;
+    fireEvent.click(screen.getByRole("button", { name: "Nowa sprawa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rozpocznij nową sprawę" }));
+    expect(mocks.processing.mock.calls.at(-1)?.[0]).toMatchObject({ caseId, stageStatus: "interrupted", imageAnalysis: report, submittedForm: submitted });
+    fireEvent.click(screen.getByRole("button", { name: "Spróbuj ponownie" }));
+    expect(mocks.retry).toHaveBeenCalledTimes(1);
+    expect(dependencies).not.toBe(previousOwner);
+    previousOwner.checkpoint(completed()); previousOwner.onComplete();
+    expect(mocks.checkpoint).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(screen.getByRole("region", { name: "Przygotowanie wstępnej oceny" })).toBeVisible();
+  });
+  it("removes the previous case card immediately when the same provider navigates to an unknown UUID", async () => {
+    mocks.restore.mockImplementation((id?: string) => id && id !== caseId ? { status: "missing" } : { status: "restored", snapshot: completed() });
+    const { rerender } = render(<CaseShellProvider><CaseShell {...{ screen: "chat" as const, caseId }} /></CaseShellProvider>);
+    await screen.findByRole("article", { name: "Wstępna ocena początkowa" });
+    rerender(<CaseShellProvider><CaseShell {...{ screen: "chat" as const, caseId: operationId }} /></CaseShellProvider>);
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Nie znaleziono zapisanej sprawy" })).toBeVisible();
+  });
+  it("archives all old facts and starts a blank UUID only after successful confirmed save", async () => {
+    const old = completed(); mocks.restore.mockReturnValue({ status: "restored", snapshot: old });
+    render(<CaseShellProvider><CaseShell screen="chat" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: "Nowa sprawa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rozpocznij nową sprawę" }));
+    expect(mocks.newCase).toHaveBeenCalledTimes(1);
+    const [archived, fresh] = mocks.newCase.mock.calls[0];
+    expect(archived).toEqual(old);
+    expect(fresh.caseId).not.toBe(old.caseId);
+    expect(fresh).toMatchObject({ screen: "form", stage: "form", stageStatus: "idle", submittedForm: null, preparedImage: null, imageAnalysis: null, initialDecision: null, messages: [], replyStates: {}, pendingOperation: null, draftForm: { scenario: "", equipmentName: "", reason: "" } });
+    expect(mocks.controllerDispose).toHaveBeenCalledTimes(1);
+    expect(mocks.invalidate).not.toHaveBeenCalled();
+    expect(mocks.push).toHaveBeenCalledWith("/");
+  });
+  it("keeps the old complete live case when saving the new-case archive fails", async () => {
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: completed() });
+    mocks.newCase.mockReturnValue({ status: "failed", warning: "quota-exceeded", notice: "Brak miejsca." });
+    render(<CaseShellProvider><CaseShell screen="chat" /></CaseShellProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: "Nowa sprawa" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rozpocznij nową sprawę" }));
+    expect(screen.getByRole("article", { name: "Wstępna ocena początkowa" })).toHaveTextContent(decision.summary);
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(screen.getByRole("status")).toHaveTextContent("Po odświeżeniu");
+  });
+  it("never displays another active case for an unknown UUID route", async () => {
+    mocks.restore.mockImplementation((id?: string) => id ? { status: "missing" } : { status: "restored", snapshot: completed() });
+    render(<CaseShellProvider><CaseShell {...{ screen: "chat" as const, caseId: operationId }} /></CaseShellProvider>);
+    expect(await screen.findByRole("heading", { name: "Nie znaleziono zapisanej sprawy" })).toBeVisible();
+    expect(screen.queryByRole("article")).not.toBeInTheDocument();
+    expect(mocks.start).not.toHaveBeenCalled();
+  });
+  it("offers a confirmed new case while keeping the existing complete assessment until confirmation", async () => {
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: completed() });
+    render(<CaseShellProvider><CaseShell screen="chat" /></CaseShellProvider>);
+    await screen.findByRole("article", { name: "Wstępna ocena początkowa" });
+    fireEvent.click(screen.getByRole("button", { name: "Nowa sprawa" }));
+    expect(screen.getByRole("dialog", { name: "Rozpocząć nową sprawę?" })).toBeVisible();
+    expect(screen.getByRole("article", { name: "Wstępna ocena początkowa" })).toHaveTextContent(decision.summary);
+    expect(mocks.invalidate).not.toHaveBeenCalled();
+    expect(mocks.checkpoint).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Anuluj" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(screen.getByRole("article", { name: "Wstępna ocena początkowa" })).toHaveTextContent(decision.summary);
+  });
   it("restores an unfinished idle decision checkpoint as interrupted with explicit retry and no automatic writes", async () => {
     mocks.restore.mockReturnValue({ status: "restored", snapshot: { ...formCase(), submittedForm: submitted, imageAnalysis: report, stage: "decision", stageStatus: "idle", pendingOperation: null } });
     render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
@@ -54,7 +192,7 @@ describe("one hydrated live case across form and chat", () => {
     mocks.warning.mockReturnValue("quota-exceeded");
     mocks.adapterFactory.mockImplementation((options: { onWriteResult: (result: unknown) => void }) => ({ restore: mocks.restore, checkpoint: (snapshot: ActiveCaseSnapshot) => { mocks.checkpoint(snapshot); options.onWriteResult({ status: "failed", warning: "quota-exceeded", notice: "Po odświeżeniu odzyskanie sprawy może być niemożliwe." }); }, dispose: mocks.dispose, getWarning: mocks.warning, flush: vi.fn() }));
     const { rerender } = render(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
-    fireEvent.click(await screen.findByRole("button", { name: "Dalej" })); await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/chat"));
+    fireEvent.click(await screen.findByRole("button", { name: "Dalej" })); await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(`/chat/${caseId}`));
     expect(mocks.start).toHaveBeenCalledWith(submitted);
     rerender(<CaseShellProvider><CaseShell screen="chat" /></CaseShellProvider>);
     expect(await screen.findByRole("article", { name: "Wstępna ocena początkowa" })).toHaveTextContent(decision.summary);

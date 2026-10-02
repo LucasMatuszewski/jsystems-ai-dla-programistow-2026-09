@@ -66,6 +66,7 @@ U=unit, C=component, I=integration (only external LLM HTTP replaced), E=real no-
 | AC-56 | F01,F06,F10,Q08 | C, E, M | release-acceptance.spec.ts |
 | AC-57 | F02,F04,F07,F09,F10,Q08 | C, E, M | release-acceptance.spec.ts |
 | AC-58 | F01,F06,F07,F10,Q08 | C, E, M | release-acceptance.spec.ts |
+| AC-59 | F09,Q06,Q08 | U,C,E,M | case-continuity.spec.ts; exact UUID restore, legacy migration and unknown/malformed ID isolation |
 
 ## ADR
 

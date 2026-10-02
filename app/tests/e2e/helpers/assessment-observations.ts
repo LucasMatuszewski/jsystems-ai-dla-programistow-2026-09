@@ -1,7 +1,8 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { ACTIVE_CASE_STORAGE_KEY, activeCaseSnapshotSchema } from "../../../src/lib/contracts/session";
+import { ACTIVE_CASE_STORAGE_KEY } from "../../../src/lib/contracts/session";
+import { parseCaseCheckpoint } from "./case-checkpoint";
 import { createAnalysisRequestSchema, createDecisionRequestSchema } from "../../../src/lib/contracts/requests";
 import { createImageAnalysisSchema } from "../../../src/lib/contracts/analysis";
 import { createInitialDecisionSchema } from "../../../src/lib/contracts/decision";
@@ -55,7 +56,7 @@ async function fillAssessmentCase(page: Page, name: AssessmentCase) {
 
 async function checkpoint(page: Page) {
   const raw = await page.evaluate(key => localStorage.getItem(key), ACTIVE_CASE_STORAGE_KEY);
-  const parsed = activeCaseSnapshotSchema.safeParse(raw ? JSON.parse(raw) : null);
+  const parsed = parseCaseCheckpoint(raw);
   expect(parsed.success, "actual checkpoint must satisfy C03 without exposing its private payload").toBe(true);
   if (!parsed.success) throw new Error("Invalid actual assessment checkpoint");
   return parsed.data;
@@ -144,7 +145,7 @@ export async function assessActualCase(page: Page, testInfo: TestInfo, name: Ass
   expect({ version: decision.policy.version, digest: decision.policy.digest, sourceUrl: decision.policy.sourceUrl, retrievedAt: decision.policy.retrievedAt }).toEqual({ version: source.sha256, digest: source.sha256, sourceUrl: sourceManifest.source_url, retrievedAt: "2026-09-30T09:15:03.305782Z" });
   const card = page.getByRole("article", { name: assessmentLabels.card, exact: true });
   await waitForOperationCompletion(card);
-  await expect(page).toHaveURL(/\/chat$/);
+  await expect(page).toHaveURL(new URL(`/chat/${initial.caseId}`, page.url()).href);
   await expect(card).toHaveCount(1);
   await expect(card.getByText(FIRST_ASSESSMENT_NOTICE, { exact: true })).toBeVisible();
   const renderedCard = await card.innerText();

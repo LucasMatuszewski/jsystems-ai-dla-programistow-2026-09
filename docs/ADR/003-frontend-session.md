@@ -4,6 +4,8 @@
 
 **Status:** Accepted
 
+**2026-10-02 requirement amendment:** The user's request to return to previous chats by ID supersedes the single retained-case and destructive New case statements below. Retain validated snapshots separately by UUID in this browser, using `/chat/<caseId>` for the exact selected case. Keep the existing snapshot schema and runtime context boundaries; no server database or cross-device recovery is introduced. Preserve and migrate the legacy active snapshot without deleting its only successful copy. New case requires confirmation, cancels and invalidates previous operations, saves the previous case where possible, and starts an empty case with a fresh UUID. Cancel changes nothing. Storage failure must preserve current in-memory data and must not claim successful archival. Missing or malformed route IDs must not fall back to another saved case. Legacy `/chat` may redirect to the active case's canonical ID address. Only opaque UUIDs belong in paths; equipment details, messages and credentials do not. Existing interruption, quota, debounce, full-history and one-editor isolation constraints continue to apply. Tests must cover exact-case restoration without replay, migration, confirmation, storage failure, wrong IDs and late callbacks.
+
 **Relates to:** [Main architecture](000-main-architecture.md)
 
 ---

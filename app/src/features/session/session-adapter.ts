@@ -1,4 +1,4 @@
-import { activeCaseSnapshotSchema, ACTIVE_CASE_STORAGE_KEY, SNAPSHOT_SOFT_UTF16_BUDGET, type ActiveCaseSnapshot } from "../../lib/contracts/session";
+import { activeCaseSnapshotSchema, localCaseRegistrySchema, ACTIVE_CASE_STORAGE_KEY, SNAPSHOT_SOFT_UTF16_BUDGET, type ActiveCaseSnapshot, type LocalCaseRegistry } from "../../lib/contracts/session";
 export type StorageWarning = NonNullable<ActiveCaseSnapshot["storageWarning"]>;
 export type WriteResult = { status: "saved" } | { status: "failed"; warning: StorageWarning; notice: string };
 export type RestoreResult = { status: "restored"; snapshot: ActiveCaseSnapshot } | { status: "missing" | "unreadable" } | { status: "unavailable"; warning: StorageWarning; notice: string };
@@ -18,6 +18,29 @@ export function createSessionAdapter(options: { storage: () => SessionStorage; o
   let timer: ReturnType<typeof setTimeout> | null = null;
   let queued: ActiveCaseSnapshot | null = null;
   let queuedKind: Exclude<CheckpointKind, "immediate"> | null = null;
+  let registry: LocalCaseRegistry | null = null;
+  let loaded = false;
+  let unreadable = false;
+
+  function load(): RestoreResult | null {
+    if (loaded) return unreadable ? { status: "unreadable" } : null;
+    let json: string | null;
+    try { json = options.storage().getItem(ACTIVE_CASE_STORAGE_KEY); }
+    catch (error) { const failure = fail(ioWarning(error)); return { ...failure, status: "unavailable" }; }
+    loaded = true;
+    if (json === null) return null;
+    try {
+      const data: unknown = JSON.parse(json);
+      const current = localCaseRegistrySchema.safeParse(data);
+      if (current.success) registry = current.data;
+      else {
+        const legacy = activeCaseSnapshotSchema.safeParse(data);
+        if (legacy.success) registry = { schemaVersion: 2, activeCaseId: legacy.data.caseId, cases: { [legacy.data.caseId]: legacy.data } };
+        else unreadable = true;
+      }
+    } catch { unreadable = true; }
+    return unreadable ? { status: "unreadable" } : null;
+  }
 
   function fail(code: StorageWarning): Extract<WriteResult, { status: "failed" }> {
     warning = code;
@@ -30,17 +53,27 @@ export function createSessionAdapter(options: { storage: () => SessionStorage; o
     if (timer !== null) clearTimeout(timer);
     timer = null; queued = null; queuedKind = null;
   }
-  function write(snapshot: ActiveCaseSnapshot): WriteResult {
+  function write(snapshot: ActiveCaseSnapshot, previous?: ActiveCaseSnapshot): WriteResult {
     let result: WriteResult;
     try {
       const validated = activeCaseSnapshotSchema.safeParse(snapshot);
-      if (!validated.success) result = fail("unavailable");
+      const existing = load();
+      const previousValidated = previous ? activeCaseSnapshotSchema.safeParse(previous) : null;
+      if (!validated.success || existing || (previousValidated && !previousValidated.success)) result = fail("unavailable");
       else {
         // A successful new checkpoint recovers persistence. Never mutate caller state.
-        const json = JSON.stringify({ ...validated.data, storageWarning: null });
+        const next: LocalCaseRegistry = { schemaVersion: 2, activeCaseId: validated.data.caseId, cases: {
+          ...registry?.cases,
+          ...(previousValidated?.success ? { [previousValidated.data.caseId]: { ...previousValidated.data, storageWarning: null } } : {}),
+          [validated.data.caseId]: { ...validated.data, storageWarning: null },
+        } };
+        const checked = localCaseRegistrySchema.safeParse(next);
+        if (!checked.success) throw new Error("Invalid local registry");
+        const json = JSON.stringify(checked.data);
         if (json.length * 2 > SNAPSHOT_SOFT_UTF16_BUDGET) result = fail("snapshot-too-large");
         else {
           options.storage().setItem(ACTIVE_CASE_STORAGE_KEY, json);
+          registry = checked.data;
           warning = null;
           result = { status: "saved" };
         }
@@ -55,15 +88,11 @@ export function createSessionAdapter(options: { storage: () => SessionStorage; o
     return snapshot === null ? null : write(snapshot);
   }
   return {
-    restore(): RestoreResult {
-      let json: string | null;
-      try { json = options.storage().getItem(ACTIVE_CASE_STORAGE_KEY); }
-      catch (error) { const failure = fail(ioWarning(error)); return { ...failure, status: "unavailable" }; }
-      if (json === null) return { status: "missing" };
-      try {
-        const validated = activeCaseSnapshotSchema.safeParse(JSON.parse(json));
-        if (!validated.success) return { status: "unreadable" };
-        const snapshot = validated.data;
+    restore(caseId?: string): RestoreResult {
+      const failure = load();
+      if (failure) return failure;
+      const snapshot = registry?.cases[caseId ?? registry.activeCaseId];
+      if (!snapshot) return { status: "missing" };
         warning ??= snapshot.storageWarning;
         return {
           status: "restored",
@@ -73,9 +102,9 @@ export function createSessionAdapter(options: { storage: () => SessionStorage; o
             replyStates: Object.fromEntries(Object.entries(snapshot.replyStates).map(([id, state]) => [id, state === "streaming" ? "interrupted" : state])),
           },
         };
-      } catch { return { status: "unreadable" }; }
     },
     save(snapshot: ActiveCaseSnapshot): WriteResult { cancel(); return write(snapshot); },
+    startNewCase(previous: ActiveCaseSnapshot, next: ActiveCaseSnapshot): WriteResult { cancel(); return write(next, previous); },
     checkpoint(snapshot: ActiveCaseSnapshot, kind: CheckpointKind): void {
       if (kind === "immediate") { cancel(); write(snapshot); return; }
       // Drafts debounce; streams use a fixed trailing window that cannot be postponed by tokens.
@@ -88,7 +117,7 @@ export function createSessionAdapter(options: { storage: () => SessionStorage; o
     discard(): DiscardResult {
       try {
         options.storage().removeItem(ACTIVE_CASE_STORAGE_KEY);
-        cancel(); warning = null;
+        cancel(); warning = null; registry = null; loaded = true; unreadable = false;
         return { status: "removed" };
       } catch (error) { return fail(ioWarning(error)); }
     },
