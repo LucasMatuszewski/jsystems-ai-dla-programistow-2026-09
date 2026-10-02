@@ -4,14 +4,14 @@ import type { ChatInit, ChatStatus, UIMessage } from "ai";
 import type { ActiveCaseSnapshot } from "@/lib/contracts/session";
 import { CaseChat, type CaseChatProps, type ChatCheckpoint } from "./case-chat";
 
-const sdk = vi.hoisted(() => ({ options: null as ChatInit<UIMessage> | null, messages: [] as UIMessage[], update: null as null | ((messages: UIMessage[]) => void), send: vi.fn(), stop: vi.fn(), status: "ready" as ChatStatus, seeds: [] as UIMessage[][] }));
+const sdk = vi.hoisted(() => ({ options: null as ChatInit<UIMessage> | null, messages: [] as UIMessage[], update: null as null | ((messages: UIMessage[]) => void), send: vi.fn(), regenerate: vi.fn(), stop: vi.fn(), status: "ready" as ChatStatus, seeds: [] as UIMessage[][] }));
 vi.mock("@ai-sdk/react", async () => {
   const { useState } = await import("react");
   return { useChat: (options: ChatInit<UIMessage>) => {
     sdk.options = options;
     const [messages, setMessages] = useState(() => { sdk.seeds.push(options.messages!); return options.messages!; });
     sdk.messages = messages; sdk.update = setMessages;
-    return { messages, sendMessage: sdk.send, stop: sdk.stop, status: sdk.status };
+    return { messages, setMessages, sendMessage: sdk.send, regenerate: sdk.regenerate, stop: sdk.stop, status: sdk.status };
   } };
 });
 vi.mock("@/features/case-chat/initial-decision-details", () => ({ InitialDecisionDetails: () => <article aria-label="Wstępna ocena początkowa">Pełna ocena.</article> }));
@@ -31,6 +31,7 @@ const checkpoint = vi.fn();
 beforeEach(() => {
   current = structuredClone(snapshot); cancel = null; sdk.status = "ready"; sdk.seeds = [];
   sdk.send.mockImplementation((message: UIMessage) => { sdk.update!([...sdk.messages, message]); return new Promise<void>(() => {}); });
+  sdk.regenerate.mockImplementation(() => new Promise<void>(() => {}));
   checkpoint.mockImplementation((changes: ChatCheckpoint) => { current = { ...current, ...changes }; return true; });
   props = { initialSnapshot: current, readSnapshot: () => current, checkpoint, registerCancellation: callback => { cancel = callback; return () => { cancel = null; }; } };
 });
@@ -62,7 +63,7 @@ describe("one hydrated streaming chat owner", () => {
     render(<CaseChat {...props} />); send();
     await waitFor(() => expect(sdk.send).toHaveBeenCalledTimes(1));
     expect(screen.getByRole("textbox")).toHaveValue("");
-    expect(current.messages.at(-1)?.parts[0].text).toBe("Dodatkowe pytanie");
+    expect(current.messages.find(message => message.role === "user")?.parts[0].text).toBe("Dodatkowe pytanie");
     expect(current.pendingOperation).toMatchObject({ kind: "chat", userMessageId: current.messages.at(-1)?.id });
     fireEvent.submit(screen.getByRole("textbox").closest("form")!);
     expect(sdk.send).toHaveBeenCalledTimes(1);
@@ -117,6 +118,7 @@ describe("one hydrated streaming chat owner", () => {
     expect(current.messages.at(-1)?.parts[0].text).toBe("Zachowana część");
     expect(current.replyStates[reply.id]).not.toBe("complete");
     expect(screen.getByText("Ta odpowiedź nie została ukończona.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Ponów odpowiedź" })).toBeVisible();
   });
   it("ignores a foreign old finish without closing or overwriting the current pending user", async () => {
     render(<CaseChat {...props} />); send(); await waitFor(() => expect(sdk.send).toHaveBeenCalledTimes(1));
@@ -135,5 +137,58 @@ describe("one hydrated streaming chat owner", () => {
     const retained = structuredClone(current);
     act(() => sdk.options!.onFinish!({ message: { ...reply, metadata: { operationId: operation.operationId, finishReason: "stop", completionState: "complete" } }, messages: sdk.messages, isAbort: false, isDisconnect: false, isError: false }));
     expect(current).toEqual(retained);
+  });
+  it("creates an empty incomplete assistant after an early failure and retries without duplicating its user", async () => {
+    sdk.send.mockImplementation((message: UIMessage) => { sdk.update!([...sdk.messages, message]); return Promise.reject(new Error("failure")); });
+    render(<CaseChat {...props} />); send();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Ponów odpowiedź" })).toBeVisible());
+    const user = current.messages[1]; const reply = current.messages[2];
+    expect(reply).toMatchObject({ role: "assistant", parts: [], metadata: { completionState: "incomplete" } });
+    expect(current.replyStates[reply.id]).toBe("failed"); expect(current.pendingOperation).toBeNull();
+    const oldOperationId = reply.metadata!.operationId;
+    fireEvent.click(screen.getByRole("button", { name: "Ponów odpowiedź" }));
+    await waitFor(() => expect(sdk.regenerate).toHaveBeenCalledWith({ messageId: reply.id }));
+    expect(sdk.send).toHaveBeenCalledTimes(1);
+    expect(current.pendingOperation).toMatchObject({ userMessageId: user.id, replyMessageId: reply.id });
+    expect(current.pendingOperation!.operationId).not.toBe(oldOperationId);
+    expect(current.messages.filter(message => message.role === "user")).toEqual([user]);
+    expect(current.messages[0]).toEqual(first);
+  });
+  it("waits for the ORIGINAL attempt settlement after Stop before explicit regeneration", async () => {
+    let settle!: () => void;
+    sdk.send.mockImplementation((message: UIMessage) => { sdk.update!([...sdk.messages, message]); return new Promise<void>(resolve => { settle = resolve; }); });
+    render(<CaseChat {...props} />); send();
+    const original = current.pendingOperation!; if (original.kind !== "chat") throw new Error("Missing operation");
+    const reply: UIMessage = { id: original.replyMessageId, role: "assistant", parts: [{ type: "text", text: "Zachowana część", state: "streaming" }] };
+    await act(async () => sdk.update!([...sdk.messages, reply]));
+    fireEvent.click(screen.getByRole("button", { name: "Zatrzymaj odpowiedź" }));
+    expect(current.pendingOperation).toBeNull();
+    const retry = screen.getByRole("button", { name: "Ponów odpowiedź" });
+    fireEvent.click(retry);
+    expect(sdk.regenerate).not.toHaveBeenCalled();
+    expect(current.messages.at(-1)?.parts[0].text).toBe("Zachowana część");
+    await act(async () => settle());
+    await waitFor(() => expect(retry).toBeEnabled());
+    fireEvent.click(retry);
+    await waitFor(() => expect(sdk.regenerate).toHaveBeenCalledTimes(1));
+    const next = current.pendingOperation!;
+    expect(next).toMatchObject({ userMessageId: original.userMessageId, replyMessageId: original.replyMessageId });
+    expect(next.operationId).not.toBe(original.operationId);
+    const retained = structuredClone(current);
+    act(() => sdk.options!.onFinish!({ message: { ...reply, metadata: { operationId: original.operationId, finishReason: "stop", completionState: "complete" } }, messages: sdk.messages, isAbort: false, isDisconnect: false, isError: false }));
+    expect(current).toEqual(retained);
+    const completed: UIMessage = { ...reply, parts: [{ type: "text", text: "Nowa pełna odpowiedź", state: "done" }], metadata: { operationId: next.operationId, finishReason: "stop", completionState: "complete" } };
+    await act(async () => { sdk.update!([...sdk.messages.slice(0, -1), completed]); sdk.options!.onFinish!({ message: completed, messages: [...sdk.messages.slice(0, -1), completed], isAbort: false, isDisconnect: false, isError: false }); });
+    expect(current.messages.map(message => message.id)).toEqual([first.id, original.userMessageId, original.replyMessageId]);
+    expect(current.messages[0]).toEqual(first); expect(current.replyStates[reply.id]).toBe("complete");
+    expect(screen.queryByRole("button", { name: "Ponów odpowiedź" })).not.toBeInTheDocument();
+  });
+  it("offers hydrated incomplete retry without automatically sending or regenerating", () => {
+    const user = { id: "saved-user", role: "user" as const, parts: [{ type: "text" as const, text: "Pytanie" }] };
+    const reply = { id: "saved-reply", role: "assistant" as const, parts: [], metadata: { operationId, finishReason: "aborted" as const, completionState: "incomplete" as const } };
+    current = { ...current, messages: [first, user, reply], replyStates: { first: "complete", [reply.id]: "interrupted" } };
+    render(<CaseChat {...props} initialSnapshot={current} />);
+    expect(screen.getByRole("button", { name: "Ponów odpowiedź" })).toBeEnabled();
+    expect(sdk.send).not.toHaveBeenCalled(); expect(sdk.regenerate).not.toHaveBeenCalled(); expect(checkpoint).not.toHaveBeenCalled();
   });
 });
