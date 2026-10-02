@@ -132,9 +132,9 @@ env_key = "OPENROUTER_API_KEY" # use env defined in your system
 # ============================================================
 # Profiles define behaviour without editing the file.
 # Usage:
-#   codex --profile oss-cloud
-#   codex --profile oss-small
-#   codex --profile oss-sql
+#   codex --oss --profile oss-cloud
+#   codex --oss --profile oss-small
+#   codex --oss --profile oss-sql
 #   codex --profile openrouter
 #
 # Make a profile the default by adding at the top of this file:
@@ -156,7 +156,7 @@ oss_provider = "ollama"
 model = "lfm2.5-thinking:latest"
 model_context_window = 32000 # Recommended: set a larger context window for OSS models
 
-[profiles.local-sql]
+[profiles.oss-sql]
 # Run with:
 #   codex --oss --profile oss-sql
 oss_provider = "ollama"
