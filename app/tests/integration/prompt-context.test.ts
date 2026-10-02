@@ -7,6 +7,7 @@ import type { ImageAnalysis } from "../../src/lib/contracts/analysis";
 import type { InitialDecision } from "../../src/lib/contracts/decision";
 import type { CaseMessage } from "../../src/lib/contracts/messages";
 import { createFirstDecisionMessage } from "../../src/lib/contracts/first-message";
+import { getEmployeeToday } from "../../src/lib/contracts/calendar";
 import { loadPolicy } from "../../src/server/policies/policy-loader";
 import { buildImagePrompt, buildInitialDecisionPrompt, buildChatPrompt } from "../../src/server/prompts/builder";
 
@@ -28,6 +29,21 @@ async function chatInput(scenario: "complaint" | "return" = "complaint") {
   return { caseContext: { form: form(scenario), timeZone: "Europe/Warsaw", imageAnalysis: analysis(scenario), initialDecision }, messages };
 }
 describe("real prompt resources, policy sources and contracts", () => {
+  it.each(["Pacific/Kiritimati", "Pacific/Pago_Pago"])("uses the current employee calendar date in %s for decision and chat without customer-date inference", async timeZone => {
+    const before = getEmployeeToday(timeZone);
+    const initial = await buildInitialDecisionPrompt({ form: form("return"), timeZone, imageAnalysis: analysis("return") });
+    const chat = await chatInput("return"); chat.caseContext.timeZone = timeZone;
+    const followUp = await buildChatPrompt(chat);
+    const after = getEmployeeToday(timeZone);
+    for (const prompt of [initial, followUp]) {
+      const block = prompt.system.match(/<CALENDAR_CONTEXT>\n([^\n]+)\n<\/CALENDAR_CONTEXT>/);
+      expect(Boolean(block)).toBe(true);
+      const calendar = JSON.parse(block![1]);
+      expect([before, after]).toContain(calendar.assessmentDate); expect(calendar.timeZone).toBe(timeZone);
+      expect(prompt.system).toMatch(/not.*customer.*notification.*date/i); expect(prompt.system).toMatch(/not.*date.*report/i);
+    }
+    expect(followUp.messages.slice(1).map(message => message.content)).toEqual(chat.messages.map(message => message.parts.map(part => part.text).join("")));
+  });
   it.each(["complaint", "return"] as const)("includes byte-exact complete %s source and ordered stages without the other policy", async scenario => {
     const selected = await loadPolicy(scenario); const other = await loadPolicy(scenario === "complaint" ? "return" : "complaint");
     const raw = await readFile(resolve(process.cwd(), "resources/policies", selected.provenance.fileName), "utf8");

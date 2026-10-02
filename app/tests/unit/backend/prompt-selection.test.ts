@@ -5,7 +5,8 @@ import type { InitialDecision } from "../../../src/lib/contracts/decision";
 import type { CaseMessage } from "../../../src/lib/contracts/messages";
 import { buildChatPrompt, buildImagePrompt, buildInitialDecisionPrompt, MAX_PROMPT_TEXT_BYTES } from "../../../src/server/prompts/builder";
 
-const mocks = vi.hoisted(() => ({ readFile: vi.fn(), loadPolicy: vi.fn(), references: vi.fn(), parse: vi.fn(), historyParse: vi.fn() }));
+const mocks = vi.hoisted(() => ({ readFile: vi.fn(), loadPolicy: vi.fn(), references: vi.fn(), parse: vi.fn(), historyParse: vi.fn(), today: vi.fn() }));
+vi.mock("../../../src/lib/contracts/calendar", () => ({ getEmployeeToday: mocks.today }));
 vi.mock("server-only", () => ({}));
 vi.mock("node:fs/promises", () => ({ readFile: mocks.readFile }));
 vi.mock("node:path", () => ({ resolve: (...parts: string[]) => parts.join("/") }));
@@ -30,6 +31,7 @@ function context() {
 }
 const history = (): CaseMessage[] => [{ id: "first", role: "assistant", parts: [{ type: "text", text: "Ocena początkowa" }] }, { id: "user", role: "user", parts: [{ type: "text", text: "Nowy fakt" }] }];
 beforeEach(() => {
+  mocks.today.mockReturnValue("2026-10-02");
   mocks.parse.mockImplementation(value => structuredClone(value)); mocks.historyParse.mockImplementation(value => structuredClone(value));
   mocks.references.mockReturnValue([heading]);
   mocks.loadPolicy.mockImplementation(async scenario => policy(scenario));
@@ -38,6 +40,18 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("bounded scenario prompt assembly", () => {
+  it("supplies server-derived assessment date for decision and each follow-up without inferring customer dates", async () => {
+    const initial = await buildInitialDecisionPrompt({ form: form(), timeZone: "Europe/Warsaw", imageAnalysis: analysis() });
+    mocks.today.mockReturnValue("2026-10-03");
+    const followUp = await buildChatPrompt({ caseContext: context(), messages: history() });
+    expect(mocks.today.mock.calls).toEqual([["Europe/Warsaw"], ["Europe/Warsaw"]]);
+    for (const [prompt, date] of [[initial, "2026-10-02"], [followUp, "2026-10-03"]] as const) {
+      expect(prompt.system).toContain(`"assessmentDate":"${date}"`);
+      expect(prompt.system).toMatch(/not.*customer.*notification.*date/i);
+      expect(prompt.system).toMatch(/not.*date.*report/i);
+    }
+    expect(followUp.messages.slice(1)).toEqual(history().map(message => ({ role: message.role, content: message.parts.map(part => part.text).join("") })));
+  });
   it.each(["complaint", "return"] as const)("selects only the fixed %s image instructions and no policy", async scenario => {
     const result = await buildImagePrompt({ form: form(scenario), timeZone: "Europe/Warsaw" });
     expect(result.system.includes(`INSTRUCTIONS:${scenario}-image.md`)).toBe(true);
