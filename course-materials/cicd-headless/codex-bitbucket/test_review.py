@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -36,7 +37,7 @@ class ReviewContracts(unittest.TestCase):
                     "BITBUCKET_BOT_UUID": "{bot}", "JIRA_BOT_ACCOUNT_ID": "jira-bot"}
         self.context = {"workspace": "training", "repo": "demo", "pr_id": "7",
                         "head": "a" * 40, "base": "b" * 40, "issue_key": "COURSE-42",
-                        "files": ["app.py"], "diff": "diff --git a/app.py b/app.py\n+deny()\n",
+                        "files": ["app.py"], "diff": "diff --git a/app.py b/app.py\n--- a/app.py\n+++ b/app.py\n@@ -0,0 +1 @@\n+deny()\n",
                         "ticket": {"summary": "Fix authorization", "description": "Use permissions"}}
         self.report = {"summary": "Authorization defect", "findings": [
             {"path": "app.py", "line": 1, "severity": "high", "title": "Missing permission check",
@@ -266,7 +267,56 @@ class ReviewContracts(unittest.TestCase):
             self.assertEqual(observed["args"][observed["args"].index("--sandbox") + 1], "read-only")
             self.assertIn("--output-schema", observed["args"])
             self.assertIn("--ignore-user-config", observed["args"])
+            for setting in ('features.shell_tool=false', 'features.unified_exec=false',
+                            'features.multi_agent=false', 'features.apps=false',
+                            'features.plugins=false', 'web_search="disabled"',
+                            'shell_environment_policy.inherit="none"',
+                            'shell_environment_policy.ignore_default_excludes=false'):
+                self.assertIn(setting, observed["args"])
             self.assertNotEqual(Path(observed["cwd"]), context_file.parent)
+
+    def test_findings_must_reference_added_lines_in_the_new_file(self):
+        self.context["files"] = ["old.py", "new file.py", "deleted.py"]
+        self.context["diff"] = ('diff --git a/old.py b/new file.py\n'
+                                '--- a/old.py\n+++ b/new file.py\n@@ -10,2 +20,3 @@\n'
+                                ' context\n-old\n+new\n+second\n'
+                                'diff --git a/deleted.py b/deleted.py\n'
+                                '--- a/deleted.py\n+++ /dev/null\n@@ -1 +0,0 @@\n-deleted\n')
+        finding = self.report["findings"][0]
+        finding.update(path="new file.py", line=21)
+        self.review.validate_report(self.report, self.context)
+        for path, line in (("new file.py", 20), ("new file.py", 999),
+                           ("old.py", 21), ("deleted.py", 1)):
+            with self.subTest(path=path, line=line):
+                finding.update(path=path, line=line)
+                with self.assertRaisesRegex(ValueError, "added line"):
+                    self.review.validate_report(self.report, self.context)
+
+    def test_publication_renders_model_markdown_and_mentions_as_inert_text(self):
+        hostile = '```\n![beacon](https://attacker.invalid/pixel) <img src=x> @reviewer\n```'
+        self.report["summary"] = hostile
+        for field in ("title", "evidence", "recommendation"):
+            self.report["findings"][0][field] = hostile
+        self.report["limitations"] = [hostile]
+        rendered = self.review.render(self.context, self.report)
+        self.assertNotIn("@reviewer", rendered)
+        self.assertIn("＠reviewer", rendered)
+        self.assertEqual(rendered.count('````text\n' + hostile.replace('@', '＠') + '\n````'), 5)
+
+    def test_cli_reports_a_safe_failure_reason_without_credentials(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = subprocess.run([sys.executable, str(SCRIPT), "collect", "--directory", folder],
+                                    env={"BITBUCKET_ACCESS_TOKEN": "synthetic-write-token"},
+                                    capture_output=True, text=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Set BITBUCKET_WORKSPACE", result.stderr)
+        self.assertNotIn("synthetic-write-token", result.stderr)
+
+    def test_unknown_exceptions_and_timeout_do_not_echo_untrusted_details(self):
+        self.assertEqual(self.review.failure_reason(subprocess.TimeoutExpired("private-content", 600)),
+                         "Codex analysis timed out")
+        self.assertEqual(self.review.failure_reason(ValueError("private-content")),
+                         "Invalid API response or review artifact")
 
     def test_api_rejects_foreign_urls_and_redirects_before_credentials_leave(self):
         api = self.review.Api("https://api.bitbucket.org/2.0", "Bearer synthetic")

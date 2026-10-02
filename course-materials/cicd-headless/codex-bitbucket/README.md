@@ -7,7 +7,7 @@ The example targets **Bitbucket Cloud + Jira Cloud**. Bitbucket Server/Data Cent
 ## Flow
 
 1. **Collect:** read PR metadata, source/destination commit hashes, paginated changed-file metadata and the PR diff. Find one Jira key in the title/source branch, check its allowed project, then fetch only ticket summary, description and status. Save `context.json`.
-2. **Analyze:** run `codex exec` in a fresh directory with a read-only sandbox, trusted prompt and JSON output schema. Pass only the supplied diff/ticket context and model credential. Validate the final response and save `review.json`.
+2. **Analyze:** run `codex exec` in a fresh directory with a read-only sandbox, all agent tools disabled, a trusted prompt and JSON output schema. Pass only the supplied diff/ticket context and model credential. Validate the final response and save `review.json`.
 3. **Publish:** validate the report and PR identity; recheck both current commit hashes; create or update the bot's Bitbucket summary comment and Jira comment. Jira API v3 comments use Atlassian Document Format (ADF).
 
 The publisher chooses destinations from validated CI metadata, not model output. It updates only comments matching both the stable marker and configured bot identity. Jira keys must be unambiguous and belong to `JIRA_PROJECT_KEYS`. If no key is found, review continues without Jira context/publication; if a linked ticket cannot be fetched, collection fails.
@@ -42,7 +42,7 @@ Bitbucket supplies `BITBUCKET_WORKSPACE`, `BITBUCKET_REPO_SLUG` and `BITBUCKET_P
 
 `BITBUCKET_ACCESS_TOKEN` is a **repository access token**, sent as `Authorization: Bearer ...`; an Atlassian user API token is a different credential type and may require another authentication scheme. Do not use retired app passwords. Obtain the bot UUID/account ID through your administrators or the relevant authenticated identity API; do not guess them. Use Jira email + an unscoped Cloud API token with the configured site URL for this Basic-auth example. Scoped Jira tokens use different gateway URLs/scopes; adapt and verify that setup separately.
 
-The subprocess receives an explicit environment allowlist and an isolated `CODEX_HOME`. It uses `--ignore-user-config`, `--ignore-rules`, `--ephemeral`, `--sandbox read-only`, `--output-schema` and `-o`. The temporary directory contains only supplied context, so project hooks, plugins and instruction files from the reviewed repository are not loaded. The read-only sandbox still needs a supported Linux runner; do not solve sandbox errors by blindly disabling it.
+The subprocess receives an explicit environment allowlist and fresh, existing `HOME`/`CODEX_HOME` directories. It uses `--ignore-user-config`, `--ignore-rules`, `--ephemeral`, `--strict-config`, `--sandbox read-only`, `--output-schema` and `-o`. A trusted one-model catalog removes shell, apply-patch and other model capabilities; explicit configuration disables command execution, plugins/apps, delegation, search and auxiliary tools. The resulting model request has `tools: []`, and the dispatcher rejects unexpected shell/apply-patch calls. Read-only sandboxing alone would still allow a shell to read the API key, so it is not the credential boundary. Model stdout/stderr are suppressed; the adapter reports sanitized stage errors. This policy is verified for pinned CLI 0.160.0; rerun the native test before changing that version. The sandbox still needs a supported Linux runner.
 
 ## API calls used
 
@@ -56,6 +56,8 @@ The subprocess receives an explicit environment allowlist and an isolated `CODEX
 | Find/create/update ticket comment | `GET/POST .../issue/{key}/comment`, `PUT .../comment/{comment_id}` |
 
 The adapter uses Python's standard library, TLS verification and timeouts. It rejects foreign-origin redirects/pagination before forwarding authorization. Diff responses over 120 KB, API responses over 2 MB, or a patch count different from the changed-file count fail rather than silently truncate. These checks cannot prove that every server-side patch contains every line; large/binary changes still need human inspection.
+
+Findings must point to added new-side lines parsed from the supplied patch. Deleted lines, rename source paths and invented line numbers are rejected. Model fields are rendered in protected text fences and mentions are neutralized before publication; the rendered comment has a 24 KB budget. Configuration, stale revisions, invalid patches, HTTP status and model timeout/exit failures have distinct sanitized diagnostics without response bodies or credentials.
 
 ## Run the stages from a trusted runner
 
@@ -85,12 +87,19 @@ Run the offline contract suite from the repository root:
 python3 -m unittest discover -s course-materials/cicd-headless/codex-bitbucket -p 'test_*.py' -v
 ```
 
-Synthetic fixtures exercise context collection, ticket extraction, revision races, partial diffs, paginated bot-comment updates, ADF payloads, invalid findings and removal of publication credentials from the Codex subprocess. External APIs and model execution are replaced in these tests. **No authenticated Bitbucket/Jira integration, paid model call or container build was performed by the offline suite.**
+Synthetic fixtures exercise context collection, ticket extraction, revision races, partial diffs, paginated bot-comment updates, ADF payloads, invalid findings and removal of publication credentials from the Codex subprocess. External APIs and model execution are replaced in the default suite. The optional native test below runs the installed pinned CLI against a loopback fake Responses server, with a synthetic key; it checks empty tool registration and rejects adversarial tool calls without invoking a paid model.
+
+```bash
+RUN_CODEX_NATIVE_TESTS=1 python3 -m unittest discover -s course-materials/cicd-headless/codex-bitbucket -p test_codex_tools.py -v
+```
+
+This test requires Codex 0.160.0 on `PATH` and permission to bind a loopback port. **No authenticated Bitbucket/Jira integration, paid model call or container build was performed by the offline suite.**
 
 For a live pilot, build the image and use a disposable same-repository PR with a synthetic Jira ticket: confirm ticket context; verify the two comments; rerun to confirm updates; push a new commit between analysis/publication and verify stale output is refused. Test API/model failures and permissions before enabling automatic runs.
 
 ## Primary sources
 
+- [Codex 0.160.0 tool registration](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/core/src/tools/spec_plan.rs) and [static model catalog](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/models-manager/src/manager.rs)
 - [Codex non-interactive mode](https://developers.openai.com/codex/noninteractive/) and local `codex exec --help` at 0.160.0
 - [Bitbucket PR API](https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/), [API authentication](https://developer.atlassian.com/cloud/bitbucket/rest/intro/#authentication), [repository access tokens](https://support.atlassian.com/bitbucket-cloud/docs/repository-access-tokens/)
 - [Jira issues API](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/), [comments and ADF](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-comments/), [Basic authentication](https://developer.atlassian.com/cloud/jira/platform/basic-auth-for-rest-apis/)

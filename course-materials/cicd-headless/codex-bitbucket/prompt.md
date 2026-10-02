@@ -6,8 +6,9 @@ Return the JSON object specified by the output schema.
 
 Report up to ten new correctness, authorization, security or error-handling defects.
 Each finding must include a concrete failing scenario and evidence from the diff.
-Use a path present in the changed-file list and a positive source/destination line
-number; these are references in a summary, not verified inline-comment coordinates.
+Use the new-side path and line number of an added line in the supplied unified
+patch. Context-only lines, removed lines and old renamed paths are not eligible.
+Put concerns without such a location in summary or limitations, not findings.
 Explain whether the change meets the supplied ticket requirements. Distinguish a
 demonstrated defect from missing context. Avoid style preferences and speculative
 findings. State limitations, including missing repository context, binary changes,
