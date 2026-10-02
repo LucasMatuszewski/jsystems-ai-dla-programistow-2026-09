@@ -3,6 +3,8 @@
 # into bitbucket-pipelines.yml. Configure three deployment environments (README.md).
 image: registry.example.com/course-codex-review:0.160.0
 
+# Before Jira use, configure JIRA_SHARED_AUDIENCE_PROJECT_KEYS only for admin-verified
+# projects readable by every reader of this Bitbucket repository; see README.md.
 clone:
   enabled: false
 

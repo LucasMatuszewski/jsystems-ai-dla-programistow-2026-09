@@ -6,7 +6,7 @@ The example targets **Bitbucket Cloud + Jira Cloud**. Bitbucket Server/Data Cent
 
 ## Flow
 
-1. **Collect:** read PR metadata, source/destination commit hashes, paginated changed-file metadata and the PR diff. Find one Jira key in the title/source branch, check its allowed project, then fetch only ticket summary, description and status. Save `context.json`.
+1. **Collect:** read PR metadata, source/destination commit hashes, paginated changed-file metadata and the PR diff. Find one Jira key in the title/source branch, check its allowed project, confirm the configured shared audience and unrestricted issue security, then use only ticket summary, description and status. Save `context.json`.
 2. **Analyze:** run `codex exec` in a fresh directory with a read-only sandbox, all agent tools disabled, a trusted prompt and JSON output schema. Pass only the supplied diff/ticket context and model credential. Validate the final response and save `review.json`.
 3. **Publish:** validate the report and PR identity; recheck both current commit hashes; create or update the bot's Bitbucket summary comment and Jira comment. Jira API v3 comments use Atlassian Document Format (ADF).
 
@@ -30,7 +30,9 @@ Merge the pipeline example into the repository's `bitbucket-pipelines.yml`. It d
 
 ## Variables and permissions
 
-Set non-secret `JIRA_PROJECT_KEYS` (e.g. `COURSE,SHOP`) as a repository variable. Scope credentials to the indicated **deployment environment**, rather than exposing them as shared repository variables.
+Set non-secret `JIRA_PROJECT_KEYS` (e.g. `COURSE,SHOP`) as a repository variable. Before enabling Jira context, an administrator must verify that every reader of this Bitbucket repository can also read the selected Jira project. Set `JIRA_SHARED_AUDIENCE_PROJECT_KEYS` only for projects whose audience has been verified for this repository. An empty/missing value blocks linked-ticket collection and publication; the ordinary project allowlist is not sufficient. Public repositories require ticket content approved for public disclosure. The adapter also rejects non-null or missing issue-security metadata and rechecks it before publication. This is a trusted administrative assertion, not an automatic ACL comparison; revalidate it when project/repository permissions change. Do not use a broadly privileged bot as evidence of shared visibility.
+
+Scope credentials to the indicated **deployment environment**, rather than exposing them as shared repository variables.
 
 | Environment | Variables | Permissions / purpose |
 |---|---|---|
@@ -52,7 +54,8 @@ The subprocess receives an explicit environment allowlist and fresh, existing `H
 | Fetch diff | `GET .../pullrequests/{id}/diff` (same-origin API redirect allowed) |
 | Check changed files | `GET .../pullrequests/{id}/diffstat`, following pagination |
 | Find/create/update PR comment | `GET/POST .../pullrequests/{id}/comments`, `PUT .../comments/{comment_id}` |
-| Read ticket | `GET {jira-site}/rest/api/3/issue/{key}?fields=summary,description,status` |
+| Read ticket | `GET {jira-site}/rest/api/3/issue/{key}?fields=summary,description,status,security` |
+| Recheck ticket security before publication | `GET {jira-site}/rest/api/3/issue/{key}?fields=security` |
 | Find/create/update ticket comment | `GET/POST .../issue/{key}/comment`, `PUT .../comment/{comment_id}` |
 
 The adapter uses Python's standard library, TLS verification and timeouts. It rejects foreign-origin redirects/pagination before forwarding authorization. Diff responses over 120 KB, API responses over 2 MB, or a patch count different from the changed-file count fail rather than silently truncate. These checks cannot prove that every server-side patch contains every line; large/binary changes still need human inspection.

@@ -109,6 +109,19 @@ def allowed_projects(env):
     return {p.strip() for p in required(env, "JIRA_PROJECT_KEYS").split(",") if p.strip()}
 
 
+def require_shared_ticket_audience(key, env):
+    # Trusted admin assertion about this repository's audience, not PR/model input.
+    projects = {p.strip() for p in env.get("JIRA_SHARED_AUDIENCE_PROJECT_KEYS", "").split(",") if p.strip()}
+    if key.split("-")[0] not in projects:
+        raise ReviewFailure("Jira audience is not confirmed for this Bitbucket repository")
+
+
+def require_ticket_visibility(fields):
+    # Missing security metadata is unknown, not evidence of unrestricted visibility.
+    if "security" not in fields or fields["security"] is not None:
+        raise ReviewFailure("Jira ticket visibility is restricted or unknown")
+
+
 def adf_text(node):
     if isinstance(node, str):
         return node
@@ -149,10 +162,12 @@ def collect(env, bb, jira):
     key = issue_key(pr, env)
     ticket = None
     if key:
+        require_shared_ticket_audience(key, env)
         if jira is None:
             raise ReviewFailure("Jira client required for the linked ticket")
-        issue = jira("GET", f"/rest/api/3/issue/{key}?fields=summary,description,status")
+        issue = jira("GET", f"/rest/api/3/issue/{key}?fields=summary,description,status,security")
         fields = issue["fields"]
+        require_ticket_visibility(fields)
         ticket = {"summary": fields.get("summary", ""), "description": adf_text(fields.get("description")),
                   "status": fields.get("status", {}).get("name", "")}
     return {"workspace": env["BITBUCKET_WORKSPACE"], "repo": env["BITBUCKET_REPO_SLUG"],
@@ -329,6 +344,9 @@ def publish(context, report, env, bb, jira):
         raise ReviewFailure("PR changed before publication; rerun")
     if issue_key(current, env) != key:
         raise ReviewFailure("Artifact ticket does not match the current PR ticket")
+    if key:
+        require_shared_ticket_audience(key, env)
+        require_ticket_visibility(jira("GET", f"/rest/api/3/issue/{key}?fields=security")["fields"])
     body = render(context, report)
     existing = next((comment for comment in bb_pages(bb, path + "/comments?pagelen=100")
                      if not comment.get("deleted") and comment.get("user", {}).get("uuid") == bot_uuid

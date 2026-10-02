@@ -34,7 +34,7 @@ class ReviewContracts(unittest.TestCase):
         }
         self.env = {"BITBUCKET_WORKSPACE": "training", "BITBUCKET_REPO_SLUG": "demo",
                     "BITBUCKET_PR_ID": "7", "JIRA_PROJECT_KEYS": "COURSE",
-                    "BITBUCKET_BOT_UUID": "{bot}", "JIRA_BOT_ACCOUNT_ID": "jira-bot"}
+                    "BITBUCKET_BOT_UUID": "{bot}", "JIRA_BOT_ACCOUNT_ID": "jira-bot", "JIRA_SHARED_AUDIENCE_PROJECT_KEYS": "COURSE"}
         self.context = {"workspace": "training", "repo": "demo", "pr_id": "7",
                         "head": "a" * 40, "base": "b" * 40, "issue_key": "COURSE-42",
                         "files": ["app.py"], "diff": "diff --git a/app.py b/app.py\n--- a/app.py\n+++ b/app.py\n@@ -0,0 +1 @@\n+deny()\n",
@@ -55,13 +55,13 @@ class ReviewContracts(unittest.TestCase):
             return self.pr
         def jira(method, path, payload=None):
             calls.append((method, path))
-            return {"key": "COURSE-42", "fields": {"summary": "Fix authorization",
+            return {"key": "COURSE-42", "fields": {"security": None, "summary": "Fix authorization",
                     "description": {"type": "doc", "content": [{"type": "paragraph", "content": [
                         {"type": "text", "text": "Use permissions"}]}]}, "status": {"name": "In Review"}}}
         context = self.review.collect(self.env, bb, jira)
         self.assertEqual(context["head"], "a" * 40)
         self.assertEqual(context["ticket"]["description"], "Use permissions")
-        self.assertIn(("GET", "/rest/api/3/issue/COURSE-42?fields=summary,description,status"), calls)
+        self.assertIn(("GET", "/rest/api/3/issue/COURSE-42?fields=summary,description,status,security"), calls)
 
     def test_collect_rejects_moving_pr_and_incomplete_diff(self):
         count = 0
@@ -116,7 +116,7 @@ class ReviewContracts(unittest.TestCase):
             if method != "GET":
                 writes.append(("jira", method, path, payload))
                 return {"id": "12"}
-            return {"comments": [{"id": "12", "author": {"accountId": "jira-bot"}, "body": {
+            return {"fields": {"security": None}, "comments": [{"id": "12", "author": {"accountId": "jira-bot"}, "body": {
                 "type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text",
                 "text": "codex-cr:training/demo#7"}]}]}}], "startAt": 0, "maxResults": 100, "total": 1}
         self.review.publish(self.context, self.report, self.env, bb, jira)
@@ -159,7 +159,7 @@ class ReviewContracts(unittest.TestCase):
         def jira(method, path, payload=None):
             if method != "GET":
                 writes.append(path)
-            return {"comments": [], "total": 0}
+            return {"fields": {"security": None}, "comments": [], "total": 0}
         with self.assertRaisesRegex(ValueError, "ticket"):
             self.review.publish(self.context, self.report, self.env, bb, jira)
         self.assertEqual(writes, [])
@@ -177,7 +177,7 @@ class ReviewContracts(unittest.TestCase):
         def jira(method, path, payload=None):
             nonlocal fail_jira
             if method == "GET":
-                return {"comments": jira_comments, "total": len(jira_comments)}
+                return {"fields": {"security": None}, "comments": jira_comments, "total": len(jira_comments)}
             if fail_jira:
                 fail_jira = False
                 raise RuntimeError("Synthetic Jira failure")
@@ -211,7 +211,7 @@ class ReviewContracts(unittest.TestCase):
         def jira(method, path, payload=None):
             if method != "GET":
                 writes.append(("jira", method))
-            return {"comments": [], "total": 0}
+            return {"fields": {"security": None}, "comments": [], "total": 0}
         with self.assertRaisesRegex(ValueError, "changed"):
             self.review.publish(self.context, self.report, self.env, bb, jira)
         self.assertEqual(writes, [("bb", "POST")])
@@ -227,7 +227,7 @@ class ReviewContracts(unittest.TestCase):
         def jira(method, path, payload=None):
             if method != "GET":
                 writes.append("jira")
-            return {"comments": [], "total": 0}
+            return {"fields": {"security": None}, "comments": [], "total": 0}
         self.review.publish(self.context, self.report, self.env, bb, jira)
         self.assertEqual(writes, ["bb", "jira"])
 
@@ -239,7 +239,7 @@ class ReviewContracts(unittest.TestCase):
             if method != "GET":
                 writes.append((method, path))
                 return {"id": "71"}
-            return {"comments": [{"id": "70", "author": {"accountId": "jira-bot"}, "body": {
+            return {"fields": {"security": None}, "comments": [{"id": "70", "author": {"accountId": "jira-bot"}, "body": {
                 "type": "doc", "content": [{"type": "paragraph", "content": [{"type": "text",
                 "text": "codex-cr:training/demo#70"}]}]}}], "total": 1}
         self.review.publish(self.context, self.report, self.env, bb, jira)
@@ -317,6 +317,31 @@ class ReviewContracts(unittest.TestCase):
                          "Codex analysis timed out")
         self.assertEqual(self.review.failure_reason(ValueError("private-content")),
                          "Invalid API response or review artifact")
+
+    def test_restricted_or_unconfirmed_jira_ticket_never_reaches_publication(self):
+        def bb(method, path, payload=None, text=False):
+            if method != "GET":
+                self.fail("Publication happened before checking ticket visibility")
+            if path.endswith("/diff"):
+                return self.context["diff"]
+            if "/diffstat" in path:
+                return {"values": [{"new": {"path": "app.py"}}]}
+            return self.pr
+        for security in ({"id": "restricted"}, "missing"):
+            with self.subTest(security=security):
+                def jira(method, path, payload=None):
+                    return {"fields": {} if security == "missing" else {"security": security}}
+                with self.assertRaisesRegex(ValueError, "visibility"):
+                    self.review.collect(self.env, bb, jira)
+                with self.assertRaisesRegex(ValueError, "visibility"):
+                    self.review.publish(self.context, self.report, self.env, bb, jira)
+        self.env.pop("JIRA_SHARED_AUDIENCE_PROJECT_KEYS", None)
+        def jira(*args):
+            self.fail("Unconfirmed audience must fail before fetching ticket data")
+        with self.assertRaisesRegex(ValueError, "audience"):
+            self.review.collect(self.env, bb, jira)
+        with self.assertRaisesRegex(ValueError, "audience"):
+            self.review.publish(self.context, self.report, self.env, bb, jira)
 
     def test_api_rejects_foreign_urls_and_redirects_before_credentials_leave(self):
         api = self.review.Api("https://api.bitbucket.org/2.0", "Bearer synthetic")
