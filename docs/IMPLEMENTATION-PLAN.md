@@ -1,22 +1,22 @@
 # Hardware Service Decision Copilot — Implementation Coordination
 
-**Updated:** 2026-10-01
-**Status:** Plan only; application execution requires a separate instruction.
+**Updated:** 2026-10-02
+**Status:** Implementation in progress under the user's explicit full-plan execution instruction. Accepted checkpoints are recorded in [the implementation ledger](implementation/LEDGER.md).
 
 ## Authority and confirmed delivery
 
 [PRD](PRD.md) defines functionality, [ADRs](ADR/000-main-architecture.md) define implementation decisions, and [design guidelines](design-guidelines.md) define visuals. This index coordinates execution; it does not replace those sources. The requested alternate PRD filename is absent; `docs/PRD.md` is canonical.
 
-The six confirmed preferences are:
+The original planning-stage preferences below remain historical context. The user subsequently authorized full application implementation, commits, pushes and pull requests for verified working scope.
 
-1. Current delivery is the plan and agent definitions; no app implementation now.
+1. The original delivery was the plan and agent definitions. Application implementation is now explicitly authorized.
 2. English plan lives at `docs/IMPLEMENTATION-PLAN.md`; application/chat text is Polish.
 3. Use native `.codex/agents/{fe-developer,be-developer,qa-engineer}.toml` definitions, inheriting settings.
-4. One shared repository; parallel edits only on disjoint leased files. No worktrees/branches.
+4. One shared repository; parallel edits only on disjoint leased files. Do not create additional worktrees for implementation; the user's later PR instruction authorizes the delivery branch.
 5. Use existing authorized OpenRouter configuration and ADR limits; no additional cost cap.
 6. Final PoC includes its README, training demo script and manual QA evidence.
 
-The baseline is already committed: `2020f82` (plan/native roles) and `1c84e11` (PRD/ADRs/policy sources). **S00 is complete**; verify referenced artifacts if subsequently changed, without repeating an empty commit. The application remains README-only. Out-of-scope features remain those in PRD §7.
+The original baseline was committed in `2020f82` (plan/native roles) and `1c84e11` (PRD/ADRs/policy sources). **S00 is complete**; verify referenced artifacts if subsequently changed, without repeating an empty commit. The application has progressed beyond that README-only baseline; use the implementation ledger and current verification evidence for accepted scope. Out-of-scope features remain those in PRD §7.
 
 ## Coordinator reading and dispatch
 
