@@ -5,7 +5,7 @@ These are reference agent configurations from prior course cohorts, kept as exam
 ## Folders
 
 - `claude-code-java-spring-boot/` — Claude Code sub-agent definitions (be-developer, fe-developer, qa-engineer) for a Java 21 + Spring Boot backend with a React/Vite frontend. Shows how to wire skills, MCP servers, persistent memory, and the Vercel AI SDK UI Message Stream SSE protocol.
-- `codex-java-spring/` — OpenAI Codex CLI config (`config.toml`) plus sub-agent definitions for Java/Spring Boot, Next.js frontend, and E2E QA.
+- `codex-java-spring/` — OpenAI Codex CLI config (`config.toml`), profile files (`<name>.config.toml`) and sub-agent definitions for Java/Spring Boot, Next.js frontend, and E2E QA. Codex reads profile files only from `~/.codex/`, so copy them there before running `codex --profile <name>`.
 
 ## Notes
 

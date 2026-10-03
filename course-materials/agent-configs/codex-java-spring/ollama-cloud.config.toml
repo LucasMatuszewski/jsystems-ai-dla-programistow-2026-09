@@ -1,0 +1,7 @@
+# Ollama cloud model (great for programming)
+# Copy to ~/.codex/ and run with:
+#   codex --profile ollama-cloud
+
+model_provider = "ollama" # built-in local provider; do not add --oss (it would force gpt-oss:20b)
+model = "glm-5:cloud" # or "deepseek-v3.2:cloud" or "minimax-m2.7:cloud"
+model_context_window = 64000 # Set a larger context window for cloud models

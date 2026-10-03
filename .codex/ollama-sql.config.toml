@@ -1,7 +1,7 @@
-# Small/fast local model for automations & function-calling style workflows
+# Local text-to-SQL model from Snowflake
 # Copy to ~/.codex/ and run with:
-#   codex --profile ollama-lfm
+#   codex --profile ollama-sql
 
 model_provider = "ollama" # built-in local provider; do not add --oss (it would force gpt-oss:20b)
-model = "lfm2.5-thinking" # tiny 1.5B model, agentic, very fast
+model = "a-kore/Arctic-Text2SQL-R1-7B"
 model_context_window = 32000 # Recommended: set a larger context window for OSS models

@@ -1,9 +1,10 @@
-# To use OpenRouter copy to ~/.codex/ and run with:
+# OpenRouter
+# Copy to ~/.codex/ and run with:
 #   codex --profile openrouter
 
 model_provider = "openrouter"
-model = "deepseek/deepseek-v4-pro" # or "z-ai/glm-5.1" or "minimax/minimax-m2.7", etc.
-model_context_window = 128000 # check for each model what is max contex window
+model = "deepseek/deepseek-v3.2" # or "z-ai/glm-5" or "minimax/minimax-m2.7", etc.
+model_context_window = 128000 # check for each model what is max context window
 
 # Provider definition lives here because Codex ignores [model_providers.*] in a project config.
 [model_providers.openrouter]
