@@ -81,6 +81,21 @@ describe("one hydrated streaming chat owner", () => {
     expect(current.pendingOperation).toMatchObject({ kind: "chat", userMessageId: current.messages.at(-1)?.id });
     expect(current.messages.at(-1)?.parts).toEqual([{ type: "text", text: "Pytanie o sprawę" }]);
   });
+  it("saves streamed partial text through the strict session contract", async () => {
+    checkpoint.mockImplementation((changes: ChatCheckpoint) => {
+      const parsed = activeCaseSnapshotSchema.safeParse({ ...current, ...changes, revision: current.revision + 1 });
+      if (!parsed.success) return false;
+      current = parsed.data;
+      return true;
+    });
+    render(<CaseChat {...props} />); send("Pytanie o sprawę");
+    await waitFor(() => expect(sdk.send).toHaveBeenCalledOnce());
+    const operation = current.pendingOperation;
+    if (operation?.kind !== "chat") throw new Error("Missing chat operation");
+    const reply: UIMessage = { id: operation.replyMessageId, role: "assistant", parts: [{ type: "text", text: "Zachowana część", state: "streaming" }] };
+    await act(async () => sdk.update!([...sdk.messages, reply]));
+    expect(current.messages.at(-1)?.parts[0]).toMatchObject({ type: "text", text: "Zachowana część" });
+  });
   it("submits the text captured by the form before React state catches up", async () => {
     render(<CaseChat {...props} />);
     const textbox = screen.getByRole("textbox", { name: "Wiadomość" }) as HTMLTextAreaElement;
@@ -113,7 +128,7 @@ describe("one hydrated streaming chat owner", () => {
     expect(current.messages.find(message => message.role === "user")?.parts[0].text).toBe("Dodatkowe pytanie");
     expect(current.messages.at(-1)).toMatchObject({ role: "assistant", parts: [], metadata: { completionState: "incomplete" } });
     expect(current.pendingOperation).toBeNull(); expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(screen.getByRole("textbox")).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Ponów odpowiedź" })).toHaveFocus();
     expect(document.body.textContent).not.toContain("PRIVATE_PROVIDER_BLOB");
   });
   it("persists streamed text after removing only SDK markers and accepts a matching successful terminal", async () => {
@@ -182,6 +197,14 @@ describe("one hydrated streaming chat owner", () => {
     expect(current.pendingOperation!.operationId).not.toBe(oldOperationId);
     expect(current.messages.filter(message => message.role === "user")).toEqual([user]);
     expect(current.messages[0]).toEqual(first);
+  });
+  it("requires retry of an incomplete reply before another employee turn", async () => {
+    sdk.send.mockImplementation((message: UIMessage) => { sdk.update!([...sdk.messages, message]); return Promise.reject(new Error("failure")); });
+    render(<CaseChat {...props} />); send("Pierwsze pytanie");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Ponów odpowiedź" })).toBeEnabled());
+    expect(screen.getByRole("textbox", { name: "Wiadomość" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Wyślij wiadomość" })).toBeDisabled();
+    expect(current.messages.filter(message => message.role === "user")).toHaveLength(1);
   });
   it("locks a case after a persisted non-retryable context error", async () => {
     sdk.send.mockImplementation((message: UIMessage) => {

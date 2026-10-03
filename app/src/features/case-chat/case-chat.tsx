@@ -25,6 +25,7 @@ export function CaseChat(props: CaseChatProps) {
   const attemptSettled = useRef(true);
   const setMessagesRef = useRef<(messages: UIMessage[]) => void>(() => {});
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const retryButtonRef = useRef<HTMLButtonElement>(null);
   const restoreInputFocus = useRef(false);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
@@ -82,6 +83,8 @@ export function CaseChat(props: CaseChatProps) {
       if (!complete && !event.isAbort) setError(previous => previous ?? ERROR_DEFINITIONS.INVALID_AI_OUTPUT.message);
     },
   });
+  const pendingRetry = retryTurn(messages, replyStates);
+  const retryMessageId = pendingRetry?.replyMessageId;
   useEffect(() => { setMessagesRef.current = setMessages; }, [setMessages]);
   const cancel = useCallback(() => {
     if (operation.current) { finish(bindings.current.readSnapshot()?.messages ?? canonicalMessages.current, "interrupted"); void stop(); }
@@ -105,15 +108,18 @@ export function CaseChat(props: CaseChatProps) {
     // reactive message store. User preservation occurs synchronously on submit.
     const reply = projected.find(message => message.id === currentOperation.replyMessageId && message.role === "assistant");
     const states = { ...snapshot.replyStates, ...(reply ? { [reply.id]: "streaming" as const } : {}) };
-    const { errorSeen: discarded, ...savedOperation } = currentOperation; void discarded;
+    const { errorSeen: discarded, failureRetryable: discardedRetryability, ...savedOperation } = currentOperation; void discarded; void discardedRetryability;
     bindings.current.checkpoint({ messages: projected, replyStates: states, pendingOperation: savedOperation, stageStatus: "pending" }, "stream");
   }, [messages]);
   useEffect(() => {
-    if (!pending && restoreInputFocus.current) { restoreInputFocus.current = false; inputRef.current?.focus(); }
-  }, [pending, error]);
+    if (!pending && restoreInputFocus.current && (!retryMessageId || attemptReady)) {
+      restoreInputFocus.current = false;
+      if (retryMessageId) retryButtonRef.current?.focus(); else inputRef.current?.focus();
+    }
+  }, [pending, error, attemptReady, retryMessageId]);
 
   async function submit(message: PromptInputMessage) {
-    if (operation.current || pending || terminalError || status === "submitted" || status === "streaming") return;
+    if (operation.current || pending || pendingRetry || terminalError || status === "submitted" || status === "streaming") return;
     const text = message.text.trim();
     if (!text) { setError("Wpisz wiadomość."); return; }
     if (text.length > MAX_USER_MESSAGE_CHARACTERS) { setError(ERROR_DEFINITIONS.CONTEXT_LIMIT.message); return; }
@@ -165,16 +171,15 @@ export function CaseChat(props: CaseChatProps) {
     if (activeAttempt.current === attempt) { activeAttempt.current = null; attemptSettled.current = true; setAttemptReady(true); }
   }
 
-  const pendingRetry = retryTurn(messages, replyStates);
   const lastMessage = messages.at(-1);
   const lastMetadata = lastMessage?.role === "assistant" ? terminalMetadataSchema.safeParse(lastMessage.metadata) : null;
   const terminalError = lastMetadata?.success === true && lastMetadata.data.completionState === "incomplete" && lastMetadata.data.retryable === false;
   return <div className="grid min-w-0 gap-6">
     <Conversation aria-label="Rozmowa w sprawie" aria-live="off" className="min-w-0"><ConversationContent className="min-w-0 gap-6 p-0">
-      {messages.map((message, index) => index === 0 ? <Message key={message.id} from="assistant" className="max-w-full min-w-0"><MessageContent className="w-full min-w-0"><InitialDecisionDetails decision={props.initialSnapshot.initialDecision!} /></MessageContent></Message> : <div key={message.id} className="grid min-w-0 gap-3"><ChatMessageView message={projectChatMessages([message])[0]} state={replyStates[message.id] ?? (pending ? "streaming" : "interrupted")} />{message.id === pendingRetry?.replyMessageId && <ReplyStatus waiting={!attemptReady} onRetry={() => { void retry(); }} />}</div>)}
+      {messages.map((message, index) => index === 0 ? <Message key={message.id} from="assistant" className="max-w-full min-w-0"><MessageContent className="w-full min-w-0"><InitialDecisionDetails decision={props.initialSnapshot.initialDecision!} /></MessageContent></Message> : <div key={message.id} className="grid min-w-0 gap-3"><ChatMessageView message={projectChatMessages([message])[0]} state={replyStates[message.id] ?? (pending ? "streaming" : "interrupted")} />{message.id === pendingRetry?.replyMessageId && <ReplyStatus buttonRef={retryButtonRef} waiting={!attemptReady} onRetry={() => { void retry(); }} />}</div>)}
     </ConversationContent></Conversation>
-    <PromptInput textOnly onSubmit={submit}><PromptInputBody><PromptInputTextarea ref={inputRef} aria-label="Wiadomość" placeholder="Wpisz pytanie dotyczące tej sprawy" value={input} onChange={event => setInput(event.target.value)} disabled={pending || terminalError} aria-describedby={error ? "chat-error" : undefined} /></PromptInputBody>
-      <PromptInputFooter><PromptInputSubmit disabled={terminalError} status={pending ? "streaming" : "ready"} onStop={cancel} aria-label={pending ? "Zatrzymaj odpowiedź" : "Wyślij wiadomość"} /></PromptInputFooter>
+    <PromptInput textOnly onSubmit={submit}><PromptInputBody><PromptInputTextarea ref={inputRef} aria-label="Wiadomość" placeholder="Wpisz pytanie dotyczące tej sprawy" value={input} onChange={event => setInput(event.target.value)} disabled={pending || Boolean(pendingRetry) || terminalError} aria-describedby={error ? "chat-error" : undefined} /></PromptInputBody>
+      <PromptInputFooter><PromptInputSubmit disabled={Boolean(pendingRetry) || terminalError} status={pending ? "streaming" : "ready"} onStop={cancel} aria-label={pending ? "Zatrzymaj odpowiedź" : "Wyślij wiadomość"} /></PromptInputFooter>
     </PromptInput>
     {pending && <p role="status" aria-live="polite">Trwa przygotowywanie odpowiedzi</p>}
     {error && <p id="chat-error" role="alert" className="border-l-4 border-primary bg-[#fff3e8] p-4">{error}</p>}
