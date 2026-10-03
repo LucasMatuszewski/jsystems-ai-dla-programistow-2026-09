@@ -84,7 +84,7 @@ Agents tend to create a new git worktree whenever they touch another branch, and
 - Create a worktree only when the user asks for one, or when another agent is working in this same checkout at the same time. Ask first.
 - Remove a worktree as soon as its branch is pushed or merged, always with `git worktree remove <path>` (not by deleting the folder), then `git worktree prune`. Check `git worktree list` before you finish.
 
-Claude Code enforces the "ask first" part: `permissions.ask` in [.claude/settings.json](.claude/settings.json) makes it stop for confirmation before `git worktree add` and before its built-in worktree tool. JSON has no comments, so the reason is written here. Other agents only have this instruction.
+Claude Code enforces the "ask first" part: `permissions.ask` in [.claude/settings.json](.claude/settings.json) makes it stop for confirmation before `git worktree add` (also in the `git -C <dir> worktree add` form) and before its built-in worktree tool. JSON has no comments, so the reason is written here. A Bash rule matches the command text, so it is a guard against the usual form, not a security boundary. Other agents only have this instruction.
 
 ### Completion Criteria
 A task is complete only when:
