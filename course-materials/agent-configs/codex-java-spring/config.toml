@@ -15,7 +15,6 @@ personality = "pragmatic"        # Style/tone preset (e.g., pragmatic/friendly/n
 sandbox_mode = "workspace-write" # Command/file access policy: workspace-read, workspace-write, danger-full-access
 # Note: network access is configured per sandbox, see [sandbox_workspace_write] below.
 oss_provider = "ollama"          # Default OSS (Open Source) models provider
-# profile = "openrouter"         # To use profile as default setting
 
 # approval_policy controls when Codex asks before it runs tools/commands.
 # CLI override example:
@@ -130,45 +129,31 @@ env_key = "OPENROUTER_API_KEY" # use env defined in your system
 # ============================================================
 # Profiles (switch configs from CLI)
 # ============================================================
-# Profiles define behaviour without editing the file.
-# Usage:
-#   codex --oss --profile oss-cloud
-#   codex --oss --profile oss-small
-#   codex --oss --profile oss-sql
-#   codex --profile openrouter
+# A profile is a separate file: ~/.codex/<name>.config.toml (top-level keys, no table).
+#   codex --profile <name>
+# loads ~/.codex/config.toml first, then layers ~/.codex/<name>.config.toml on top.
 #
-# Make a profile the default by adding at the top of this file:
-# profile = "oss-small"
-
-[profiles.oss-cloud]
-# For Ollama GLM-5 cloud model (great for programming)
-# Run with:
-#   codex --oss --profile oss-cloud
-oss_provider = "ollama"
-model = "glm-5:cloud" # or "deepseek-v3.2:cloud" or "minimax-m2.7:cloud"
-model_context_window = 64000 # Set a larger context window for cloude models
-
-[profiles.oss-small]
-# Small/fast local model for automations & function-calling style workflows
-# Run with:
-#   codex --oss --profile oss-small
-oss_provider = "ollama"
-model = "lfm2.5-thinking:latest"
-model_context_window = 32000 # Recommended: set a larger context window for OSS models
-
-[profiles.oss-sql]
-# Run with:
-#   codex --oss --profile oss-sql
-oss_provider = "ollama"
-model = "a-kore/Arctic-Text2SQL-R1-7B"
-model_context_window = 32000 # Recommended: set a larger context window for OSS models
-
-[profiles.openrouter]
-# To use OpenRouter run with:
-#   codex --profile openrouter
-model_provider = "openrouter"
-model = "deepseek/deepseek-v3.2" # or "z-ai/glm-5" or "minimax/minimax-m2.7", etc.
-model_context_window = 128000 # check for each model what is max contex window
+# Rules since Codex 0.134.0 (checked on Codex CLI 0.160.0):
+# - Profile files are read ONLY from CODEX_HOME (~/.codex). A <name>.config.toml inside a
+#   project's .codex/ directory is ignored, so copy the profile files to your home:
+#     cp course-materials/agent-configs/codex-java-spring/*.config.toml ~/.codex/
+#     Copy-Item course-materials\agent-configs\codex-java-spring\*.config.toml $HOME\.codex\   (PowerShell)
+# - [profiles.<name>] tables and the top-level `profile = "<name>"` selector are no longer
+#   read. A leftover [profiles.<name>] table makes `codex --profile <name>` fail with
+#   "cannot be used while config.toml contains legacy ... config".
+# - A profile name with no matching file is NOT an error: Codex silently keeps the base
+#   config (the default cloud model). Check the "model:" / "provider:" lines at startup.
+#
+# Profiles shipped in course-materials/agent-configs/codex-java-spring/:
+#   codex --profile ollama-cloud   # Ollama cloud model for coding
+#   codex --profile ollama-lfm     # small/fast local model
+#   codex --profile ollama-sql     # local text-to-SQL model
+#   codex --profile openrouter     # OpenRouter
+#
+# Do NOT combine `--oss` with a profile. `--oss` without `-m` always runs the default
+# gpt-oss:20b and ignores the profile's `model`. The ollama-* profiles set
+# `model_provider = "ollama"` (built-in provider) instead, so no flag is needed.
+# Without `--oss` Codex does not download the model for you: run `ollama pull <model>` first.
 
 # ============================================================
 # Local / OSS models (Ollama / LM Studio) - OPTIONAL

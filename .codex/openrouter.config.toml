@@ -1,4 +1,4 @@
-# To use OpenRouter run with:
+# To use OpenRouter copy to ~/.codex/ and run with:
 #   codex --profile openrouter
 
 model_provider = "openrouter"

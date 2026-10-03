@@ -3,5 +3,5 @@
 #   codex --profile ollama-lfm
 
 model_provider = "ollama" # built-in local provider; do not add --oss (it would force gpt-oss:20b)
-model = "lfm2.5-thinking" # tiny 1.5B model, agentic, very fast
+model = "lfm2.5-thinking:latest"
 model_context_window = 32000 # Recommended: set a larger context window for OSS models

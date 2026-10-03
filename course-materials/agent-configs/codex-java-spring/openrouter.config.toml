@@ -1,0 +1,7 @@
+# OpenRouter (the provider itself is defined in config.toml under [model_providers.openrouter])
+# Copy to ~/.codex/ and run with:
+#   codex --profile openrouter
+
+model_provider = "openrouter"
+model = "deepseek/deepseek-v3.2" # or "z-ai/glm-5" or "minimax/minimax-m2.7", etc.
+model_context_window = 128000 # check for each model what is max context window

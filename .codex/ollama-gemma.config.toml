@@ -1,6 +1,6 @@
-# Run with:
-#   codex --oss --profile ollama-gemma
-oss_provider = "ollama"
+# Copy to ~/.codex/ and run with:
+#   codex --profile ollama-gemma
+model_provider = "ollama" # built-in local provider; do not add --oss (it would force gpt-oss:20b)
 model = "gemma4"
 model_context_window = 128000 # Recommended: set a larger context window for OSS models
 
