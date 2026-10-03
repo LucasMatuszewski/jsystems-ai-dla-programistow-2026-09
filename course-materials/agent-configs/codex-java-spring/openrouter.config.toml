@@ -1,7 +1,13 @@
-# OpenRouter (the provider itself is defined in config.toml under [model_providers.openrouter])
+# OpenRouter
 # Copy to ~/.codex/ and run with:
 #   codex --profile openrouter
 
 model_provider = "openrouter"
 model = "deepseek/deepseek-v3.2" # or "z-ai/glm-5" or "minimax/minimax-m2.7", etc.
 model_context_window = 128000 # check for each model what is max context window
+
+# Provider definition lives here because Codex ignores [model_providers.*] in a project config.
+[model_providers.openrouter]
+name = "OpenRouter"
+base_url = "https://openrouter.ai/api/v1"
+env_key = "OPENROUTER_API_KEY" # name of the environment variable that holds your key

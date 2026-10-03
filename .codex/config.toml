@@ -9,9 +9,12 @@
 # ----------------------------
 # Basic model + behavior config
 # ----------------------------
-model = "gpt-6.1-sol"       # Default model. Even stronger (higher cost): codex --model gpt-6-astra
+# `model` and `model_reasoning_effort` are commented out on purpose. A project .codex/config.toml
+# is applied AFTER the selected profile, so an active `model` here would override the model of
+# every `codex --profile <name>`. Uncomment them only in your user-level ~/.codex/config.toml.
+# model = "gpt-6.1-sol"       # Default model. Even stronger (higher cost): codex --model gpt-6-astra
 model_provider = "openai"   # Can be set to provider from files: openrouter.config.toml
-model_reasoning_effort = "high" # How much LLM should think before providing an answer
+# model_reasoning_effort = "high" # How much LLM should think before providing an answer
 
 # Open Router:
 #model = "deepseek/deepseek-v4-pro" # We have also Azure GPT models on OpenRouter
@@ -176,6 +179,9 @@ wire_api = "responses"
 #   project's .codex/ directory is ignored, so copy the profile files to your home:
 #     cp .codex/*.config.toml ~/.codex/
 #     Copy-Item .codex\*.config.toml $HOME\.codex\   (PowerShell)
+# - A trusted project's .codex/config.toml is applied AFTER the profile and wins: keep `model`
+#   and other per-profile keys out of it. Codex also ignores [model_providers.*] tables in a
+#   project config, so each profile file below carries its own provider definition.
 # - [profiles.<name>] tables and the top-level `profile = "<name>"` selector are no longer
 #   read. A leftover [profiles.<name>] table makes `codex --profile <name>` fail with
 #   "cannot be used while config.toml contains legacy ... config".

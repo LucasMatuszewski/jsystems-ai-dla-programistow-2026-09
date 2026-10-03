@@ -8,7 +8,10 @@
 # ----------------------------
 # Basic model + behavior config
 # ----------------------------
-model = "gpt-6.1-sol"            # Default model for cloud runs. CLI: codex --model gpt-6.1-sol
+# `model` and `model_reasoning_effort` are commented out on purpose. A project .codex/config.toml
+# is applied AFTER the selected profile, so an active `model` here would override the model of
+# every `codex --profile <name>`. Uncomment them only in your user-level ~/.codex/config.toml.
+# model = "gpt-6.1-sol"            # Default model for cloud runs. CLI: codex --model gpt-6.1-sol
 approval_policy = "on-request"   # Route approval-worthy actions through the configured reviewer.
 approvals_reviewer = "auto_review" # Let Codex review eligible approval prompts automatically.
 personality = "pragmatic"        # Style/tone preset (e.g., pragmatic/friendly/none depending on build).
@@ -141,6 +144,9 @@ wire_api = "responses"
 #   project's .codex/ directory is ignored, so copy the profile files to your home:
 #     cp course-materials/agent-configs/codex-java-spring/*.config.toml ~/.codex/
 #     Copy-Item course-materials\agent-configs\codex-java-spring\*.config.toml $HOME\.codex\   (PowerShell)
+# - A trusted project's .codex/config.toml is applied AFTER the profile and wins: keep `model`
+#   and other per-profile keys out of it. Codex also ignores [model_providers.*] tables in a
+#   project config, so each profile file below carries its own provider definition.
 # - [profiles.<name>] tables and the top-level `profile = "<name>"` selector are no longer
 #   read. A leftover [profiles.<name>] table makes `codex --profile <name>` fail with
 #   "cannot be used while config.toml contains legacy ... config".
