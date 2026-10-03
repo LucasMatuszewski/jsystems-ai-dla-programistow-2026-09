@@ -79,12 +79,8 @@ Verify only the scope relevant to your change. If the change affects runtime beh
 - Do **not** push to remote unless the user explicitly asks.
 
 ### Git Worktrees
-Agents tend to create a new git worktree whenever they touch another branch, and then leave it behind. Each one is a second copy of the repository, usually with its own dependency install, so they fill the disk quickly.
-- Work in this checkout and switch branches (`git switch <branch>`). Do not create a worktree by default.
-- Create a worktree only when the user asks for one, or when another agent is working in this same checkout at the same time. Ask first.
-- Remove a worktree as soon as its branch is pushed or merged, always with `git worktree remove <path>` (not by deleting the folder), then `git worktree prune`. Check `git worktree list` before you finish.
-
-Claude Code enforces the "ask first" part: `permissions.ask` in [.claude/settings.json](.claude/settings.json) makes it stop for confirmation before `git worktree add` (also in the `git -C <dir> worktree add` form) and before its built-in worktree tool. JSON has no comments, so the reason is written here. A Bash rule matches the command text, so it is a guard against the usual form, not a security boundary. Other agents only have this instruction.
+- Use this checkout by default. Create a worktree only when requested or needed for parallel agent work; ask first when not explicitly requested.
+- Remove worktrees with `git worktree remove <path>` and run `git worktree prune` when done.
 
 ### Completion Criteria
 A task is complete only when:
