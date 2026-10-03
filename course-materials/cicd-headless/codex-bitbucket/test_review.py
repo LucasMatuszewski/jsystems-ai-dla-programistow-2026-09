@@ -313,6 +313,21 @@ class ReviewContracts(unittest.TestCase):
         self.assertIn("Set BITBUCKET_WORKSPACE", result.stderr)
         self.assertNotIn("synthetic-write-token", result.stderr)
 
+    def test_cli_malformed_artifact_cannot_emit_a_traceback(self):
+        self.report["findings"][0]["path"] = ["app.py"]
+        self.context["files"] = [["app.py"]]
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / 'context.json').write_text(json.dumps(self.context))
+            (root / 'review.json').write_text(json.dumps(self.report))
+            result = subprocess.run([sys.executable, str(SCRIPT), 'publish', '--directory', folder],
+                                    env={'BITBUCKET_ACCESS_TOKEN': 'synthetic-private-token'},
+                                    text=True, capture_output=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertNotIn('synthetic-private-token', result.stderr)
+        self.assertIn('Review stage failed:', result.stderr)
+
     def test_unknown_exceptions_and_timeout_do_not_echo_untrusted_details(self):
         self.assertEqual(self.review.failure_reason(subprocess.TimeoutExpired("private-content", 600)),
                          "Codex analysis timed out")
@@ -376,6 +391,32 @@ class ReviewContracts(unittest.TestCase):
             self.review.collect(self.env, bb, jira)
         with self.assertRaisesRegex(ValueError, "audience"):
             self.review.publish(self.context, self.report, self.env, bb, jira)
+
+    def test_jira_visibility_is_rechecked_after_scans_before_each_write(self):
+        for change_at in ('bitbucket_scan', 'after_bitbucket_write'):
+            with self.subTest(change_at=change_at):
+                security, writes = None, []
+                def bb(method, path, payload=None, text=False):
+                    nonlocal security
+                    if method != "GET":
+                        writes.append("bb")
+                        if change_at == 'after_bitbucket_write':
+                            security = {"id": "restricted"}
+                        return {"id": 8}
+                    if "/comments" in path:
+                        if change_at == 'bitbucket_scan':
+                            security = {"id": "restricted"}
+                        return {"values": []}
+                    return self.pr
+                def jira(method, path, payload=None):
+                    if method != "GET":
+                        writes.append("jira")
+                        return {"id": "9"}
+                    return {"key": "COURSE-42", "fields": {"security": security},
+                            "comments": [], "total": 0}
+                with self.assertRaisesRegex(ValueError, "visibility"):
+                    self.review.publish(self.context, self.report, self.env, bb, jira)
+                self.assertEqual(writes, [] if change_at == 'bitbucket_scan' else ['bb'])
 
     def test_api_rejects_foreign_urls_and_redirects_before_credentials_leave(self):
         api = self.review.Api("https://api.bitbucket.org/2.0", "Bearer synthetic")

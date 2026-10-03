@@ -364,8 +364,13 @@ def publish(context, report, env, bb, jira):
                      if not comment.get("deleted") and comment.get("user", {}).get("uuid") == bot_uuid
                      and MARKER in comment.get("content", {}).get("raw", "").splitlines()), None)
     # Recheck after scanning comment history; APIs do not offer an atomic SHA-conditional write.
-    if revision(bb("GET", path)) != (context["head"], context["base"]):
+    current = bb("GET", path)
+    if revision(current) != (context["head"], context["base"]):
         raise ReviewFailure("PR changed before comment write; rerun")
+    if issue_key(current, env) != key:
+        raise ReviewFailure("PR ticket changed before comment write; rerun")
+    if key:
+        require_ticket_visibility(jira("GET", f"/rest/api/3/issue/{key}?fields=security"), key)
     bb("PUT" if existing else "POST", path + "/comments" + (f"/{existing['id']}" if existing else ""),
        {"content": {"raw": body}})
     if key:
@@ -392,6 +397,7 @@ def publish(context, report, env, bb, jira):
         text = marker + "\nhttps://bitbucket.org/" + context["workspace"] + "/" + context["repo"] + "/pull-requests/" + context["pr_id"] + "\n" + body
         adf = {"type": "doc", "version": 1, "content": [{"type": "paragraph", "content": [
             {"type": "text", "text": line}]} for line in text.splitlines() if line]}
+        require_ticket_visibility(jira("GET", f"/rest/api/3/issue/{key}?fields=security"), key)
         jira("PUT" if existing else "POST", comment_path + (f"/{existing['id']}" if existing else ""), {"body": adf})
 
 
@@ -439,6 +445,6 @@ def failure_reason(exc):
 if __name__ == "__main__":
     try:
         main()
-    except (ValueError, RuntimeError, KeyError, OSError, subprocess.SubprocessError) as exc:
+    except Exception as exc:
         print(f"Review stage failed: {failure_reason(exc)}. No successful review is claimed.", file=sys.stderr)
         sys.exit(1)
