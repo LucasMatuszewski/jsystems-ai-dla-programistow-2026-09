@@ -119,12 +119,15 @@ env_key = "OPENROUTER_API_KEY" # use env defined in your system
 # http_headers = { "X-Example" = "value" }
 # env_http_headers = { "X-Example-Features" = "EXAMPLE_FEATURES" }
 #
-# Z.ai doesn't work after Codex deprecated Completions API (it adds /responses to URL = 404 in Z.ai)
-# [model_providers.zai]
-# name = "Z.ai Coding Plan"
-# base_url = "https://api.z.ai/api/coding/paas/v4" # Completions endpoint, deprecated by Codex
-# model = "glm-4.7" # or "glm-5" on Pro plan
-# env_key = "ZAI_API_KEY" # use env name defined in your system
+# Z.ai GLM Coding Plan - official guide: https://docs.z.ai/devpack/tool/codex
+# Use the Responses endpoint below. The older Chat Completions endpoint
+# (https://api.z.ai/api/coding/paas/v4) no longer works with Codex.
+# The Z.ai guide pastes the key into `experimental_bearer_token`; `env_key` keeps it out of the file.
+[model_providers.zai]
+name = "Z.ai Coding Plan"
+base_url = "https://api.z.ai/api/v1"
+env_key = "ZAI_API_KEY" # name of the environment variable that holds your Z.ai API key
+wire_api = "responses"
 
 # ============================================================
 # Profiles (switch configs from CLI)
@@ -149,6 +152,7 @@ env_key = "OPENROUTER_API_KEY" # use env defined in your system
 #   codex --profile ollama-lfm     # small/fast local model
 #   codex --profile ollama-sql     # local text-to-SQL model
 #   codex --profile openrouter     # OpenRouter
+#   codex --profile zai            # Z.ai GLM Coding Plan (also copy models.zai.json)
 #
 # Do NOT combine `--oss` with a profile. `--oss` without `-m` always runs the default
 # gpt-oss:20b and ignores the profile's `model`. The ollama-* profiles set
