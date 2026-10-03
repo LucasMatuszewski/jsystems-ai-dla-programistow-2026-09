@@ -1,11 +1,14 @@
 // Trusted pipeline for Bitbucket Server/Data Center. Runner: bash, python3, Docker.
 // Install reviewed review-pr.sh at /opt/course-ci/pr-agent/review-pr.sh.
 // A multibranch integration or authenticated webhook supplies CHANGE_URL.
+// For another Git host change GIT_PLATFORM and its credential variables; see review-pr.sh.
 pipeline {
   agent any
   options { skipDefaultCheckout(true); timeout(time: 15, unit: 'MINUTES'); disableConcurrentBuilds() }
   parameters {
-    string(name: 'REVIEW_MODEL', defaultValue: '', description: 'Approved Anthropic provider/model ID')
+    string(name: 'REVIEW_API_BASE', defaultValue: 'https://openrouter.ai/api/v1', description: 'OpenAI-compatible model endpoint')
+    string(name: 'REVIEW_MODEL', defaultValue: 'openai/gpt-6-luna', description: 'Model ID exactly as that endpoint expects it')
+    string(name: 'REVIEW_MAX_TOKENS', defaultValue: '250000', description: 'Input token budget per model call')
     string(name: 'BITBUCKET_URL', defaultValue: 'https://bitbucket.example.com', description: 'Trusted Server/DC URL')
   }
   stages {
@@ -13,7 +16,7 @@ pipeline {
       when { expression { env.CHANGE_URL?.trim() } }
       steps {
         withCredentials([
-          string(credentialsId: 'pr-agent-anthropic-key', variable: 'ANTHROPIC__KEY'),
+          string(credentialsId: 'pr-agent-review-api-key', variable: 'REVIEW_API_KEY'),
           string(credentialsId: 'bitbucket-review-token', variable: 'BITBUCKET_SERVER__BEARER_TOKEN')
         ]) {
           sh '''#!/usr/bin/env bash

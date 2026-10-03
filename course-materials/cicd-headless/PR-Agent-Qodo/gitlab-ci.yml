@@ -1,5 +1,6 @@
 # Merge into .gitlab-ci.yml. GitLab 15.7+; see README.md for credentials/trust.
-# Set masked ANTHROPIC__KEY and GITLAB__PERSONAL_ACCESS_TOKEN; set REVIEW_MODEL.
+# CI/CD variables: masked REVIEW_API_KEY and GITLAB__PERSONAL_ACCESS_TOKEN.
+# Optional: REVIEW_API_BASE, REVIEW_MODEL, REVIEW_MAX_TOKENS (defaults: OpenRouter, gpt-6-luna).
 stages: [review]
 
 pr_agent_review:
@@ -13,15 +14,25 @@ pr_agent_review:
     CONFIG__FALLBACK_MODELS: '[]'
     CONFIG__RESTRICTED_MODE: 'true'
     CONFIG__PROPAGATE_TOOL_ERRORS: 'true'
+    CONFIG__REASONING_EFFORT: low
     PR_REVIEWER__PERSISTENT_COMMENT: 'true'
     PR_REVIEWER__INLINE_KEY_ISSUES: 'false'
+    PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING: 'true'
+    PR_REVIEWER__MAX_NUMBER_OF_CALLS: '4'
   script:
     - |
       set -eu
-      : "${REVIEW_MODEL:?Set an approved Anthropic model identifier}"
-      : "${ANTHROPIC__KEY:?Inject a model API key}"
+      : "${REVIEW_API_KEY:?Set masked variable REVIEW_API_KEY (model endpoint API key)}"
       : "${GITLAB__PERSONAL_ACCESS_TOKEN:?Inject a GitLab bot token}"
-      export CONFIG__MODEL="$REVIEW_MODEL"
+      # Any OpenAI-compatible endpoint; "openai/" selects PR-Agent's OpenAI-compatible client.
+      export OPENAI__KEY="$REVIEW_API_KEY"
+      export OPENAI__API_BASE="${REVIEW_API_BASE:-https://openrouter.ai/api/v1}"
+      MODEL="openai/${REVIEW_MODEL:-openai/gpt-6-luna}"
+      export CONFIG__MODEL="$MODEL"
+      export CONFIG__CUSTOM_MODEL_MAX_TOKENS="${REVIEW_MAX_TOKENS:-250000}"
+      export CONFIG__MAX_MODEL_TOKENS="${REVIEW_MAX_TOKENS:-250000}"
+      export CONFIG__NO_TEMPERATURE_MODELS="[\"$MODEL\"]"
+      export CONFIG__ADDITIONAL_REASONING_EFFORT_MODELS="[\"$MODEL\"]"
       export GITLAB__URL="$CI_SERVER_URL"
       PR_URL="$CI_MERGE_REQUEST_PROJECT_URL/-/merge_requests/$CI_MERGE_REQUEST_IID"
       cd /app

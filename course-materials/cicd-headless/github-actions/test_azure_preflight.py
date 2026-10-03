@@ -29,6 +29,7 @@ class AzurePreflightContracts(unittest.TestCase):
                    'OPENAI__KEY': 'synthetic-never-log-this-key',
                    'OPENAI__API_BASE': 'https://training.openai.azure.com',
                    'OPENAI__DEPLOYMENT_ID': 'training-luna', 'CONFIG__MODEL': 'gpt-6-luna',
+                   'CONFIG__MAX_MODEL_TOKENS': '250000',
                    'PR_NUMBER': '7', 'GITHUB_REPOSITORY': 'training/demo',
                    'GITHUB_OUTPUT': str(root / 'output'), 'FAKE_METADATA': metadata,
                    'FAKE_GH_CALLED': str(root / 'called'), 'FAKE_PERMISSION': 'write',
@@ -58,6 +59,16 @@ class AzurePreflightContracts(unittest.TestCase):
                 result, called, _ = self.run_preflight(overrides)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertFalse(called)
+
+    def test_token_budget_must_be_a_number_within_the_model_context_window(self):
+        for value in ('1050001', '9999999', '999', 'lots', ''):
+            with self.subTest(value=value):
+                result, called, _ = self.run_preflight({'CONFIG__MAX_MODEL_TOKENS': value})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(called)
+        for value in ('32000', '250000', '1050000'):
+            result, _, _ = self.run_preflight({'CONFIG__MAX_MODEL_TOKENS': value})
+            self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_comment_commands_require_current_write_maintain_or_admin_permission(self):
         for permission in ('read', 'triage', 'none'):

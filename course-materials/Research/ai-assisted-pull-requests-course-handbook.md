@@ -4,7 +4,7 @@
 
 **Participant handbook · Version 1.0 · Research checked: 2 October 2026**
 
-**Companion CI examples:** [community PR-Agent 0.47.0 on GitHub, GitLab, Bitbucket and Azure](../cicd-headless/pr-agent/README.md), and [Codex headless with custom Bitbucket Cloud/Jira Cloud REST publication](../cicd-headless/codex-bitbucket/README.md). The examples document their configuration and offline checks; live integration still needs a pilot on your chosen host.
+**Companion CI examples:** [community PR-Agent 0.47.0 on GitHub, GitLab, Bitbucket, Azure DevOps, Jenkins, Bamboo and Gitea](../cicd-headless/PR-Agent-Qodo/README.md), and [Codex headless with custom Bitbucket Cloud/Jira Cloud REST publication](../cicd-headless/codex-bitbucket/README.md). The examples document their configuration and offline checks; live integration still needs a pilot on your chosen host.
 
 **Audience:** Developers, technical leads, platform engineers, and security practitioners working across different companies, programming languages, Git hosting platforms, and CI/CD systems.
 

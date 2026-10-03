@@ -1,6 +1,6 @@
 # GitHub review workflows: Community PR-Agent and Azure OpenAI
 
-Use [pr-agent-azure-review.yml](pr-agent-azure-review.yml) for Azure OpenAI. The historical [qodo-pr-agent-review.yml](qodo-pr-agent-review.yml) is a separate Anthropic example; its filename is retained for older course links. Both run **Community PR-Agent v0.47.0**, independently maintained under MIT, rather than commercial Qodo. Activate only one workflow initially to avoid duplicate reviews and charges.
+Use [pr-agent-azure-review.yml](pr-agent-azure-review.yml) for Azure OpenAI with its native deployment configuration. For OpenRouter, OpenAI or any other OpenAI-compatible endpoint, and for other CI platforms, use the [PR-Agent (Qodo) exercise](../PR-Agent-Qodo/README.md). The historical [qodo-pr-agent-review.yml](qodo-pr-agent-review.yml) is a separate Anthropic example; its filename is retained for older course links. Both run **Community PR-Agent v0.47.0**, independently maintained under MIT, rather than commercial Qodo. Activate only one workflow initially to avoid duplicate reviews and charges.
 
 ## Prepare Azure first
 
@@ -19,7 +19,7 @@ Use [pr-agent-azure-review.yml](pr-agent-azure-review.yml) for Azure OpenAI. The
 
 Azure also offers a current v1 API with `/openai/v1` and no dated `api-version`. This example uses PR-Agent's native Azure deployment configuration instead: `OPENAI__API_TYPE=azure`, root `OPENAI__API_BASE`, separate `OPENAI__DEPLOYMENT_ID`, and a dated API version. Do not mix the two URL conventions. The endpoint variable stays a root URL; the client constructs the deployment request path.
 
-`PR_AGENT_MODEL` configures model capabilities/token counting; `AZURE_OPENAI_DEPLOYMENT` selects the actual billed Azure deployment. They must describe the same model. The workflow adds the chosen model to PR-Agent's reasoning/no-temperature lists and limits review context to 32,000 tokens. Fallbacks are disabled, so an unavailable deployment fails instead of using an unexpected provider. Switching models may require different reasoning settings; test the new combination before automatic use.
+`PR_AGENT_MODEL` configures model capabilities/token counting; `AZURE_OPENAI_DEPLOYMENT` selects the actual billed Azure deployment. They must describe the same model. The workflow adds the chosen model to PR-Agent's reasoning/no-temperature lists. It sets a budget of 250,000 input tokens per model call and reviews a larger diff in up to 4 chunks; PR-Agent's own default of 32,000 made it skip most files of a large PR. A request above 272k input tokens moves `gpt-6-luna` to long-context pricing, which is why the default stays under that line. Lower or raise it with the optional Actions variable `PR_AGENT_MAX_TOKENS` (validated, at most 1,050,000). Fallbacks are disabled, so an unavailable deployment fails instead of using an unexpected provider. Switching models may require different reasoning settings; test the new combination before automatic use.
 
 ## Activate and test your fork
 
@@ -47,6 +47,7 @@ Offline contracts execute the actual preflight with a fake GitHub CLI and synthe
 
 - [Automatic PR-open run](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/actions/runs/37046964407) succeeded. The model identified the intentionally inverted owner check in a synthetic authorization fixture (1,634 input / 242 output tokens; one model call).
 - [Manual dispatch](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/actions/runs/37046972152) succeeded against the course-material PR. Its 32,000-token budget excluded the long research handbook, and the published review explicitly reported that coverage limit.
+- [Large-PR run, 3 October 2026](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/actions/runs/37139987375): with the 250,000-token budget and chunking, a 438,500-token diff (306 files) was reviewed in 2 calls with no files skipped for budget. With the earlier 32,000 limit the same PR had 261 files skipped.
 - [Standalone corrected-push run](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/actions/runs/37047847888) succeeded through the `synchronize` path, with the corrected fixture and persistent review update.
 - [Maintainer `/review` run](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/actions/runs/37047399598) succeeded after checking the caller's repository permission. The [same review comment](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/pull/5#issuecomment-5958663244) was updated after fixing the defect, and the earlier finding moved to resolved history.
 

@@ -1,0 +1,49 @@
+# Bamboo Data Center with Bitbucket Server/Data Center. Bamboo YAML Specs, format version 2.
+# PR-Agent has no Bamboo integration: Bamboo only launches the portable review-pr.sh, which
+# talks to the Bitbucket API. NOT run against a live Bamboo server by the course; see README.md.
+#
+# Before use:
+# - Install the reviewed review-pr.sh on the agent at /opt/course-ci/pr-agent/review-pr.sh.
+#   Do not run a copy taken from the pull request branch.
+# - The agent needs bash, python3 and Docker.
+# - Plan variables (mark the two secrets as password variables):
+#     REVIEW_API_KEY_PASSWORD      model endpoint API key
+#     BITBUCKET_TOKEN_PASSWORD     Bitbucket HTTP access token that may read and comment
+#     BITBUCKET_URL                https://bitbucket.example.com
+#     BITBUCKET_PROJECT            project key, e.g. COURSE
+#     BITBUCKET_REPO               repository slug, e.g. demo
+#     REVIEW_API_BASE, REVIEW_MODEL, REVIEW_MAX_TOKENS   optional; defaults are in review-pr.sh
+# - Enable plan branches for pull requests ("When pull request is created"), so that
+#   bamboo.repository.pr.key is set.
+---
+version: 2
+plan:
+  project-key: COURSE
+  key: PRAGENT
+  name: Community PR-Agent review
+
+stages:
+  - Review:
+      jobs:
+        - Review pull request
+
+Review pull request:
+  tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            #!/usr/bin/env bash
+            set -euo pipefail
+            pr_id="${bamboo_repository_pr_key:-}"
+            [[ "$pr_id" =~ ^[1-9][0-9]*$ ]] || { echo 'Not a pull request build; nothing to review.'; exit 0; }
+            export GIT_PLATFORM=bitbucket_server
+            export BITBUCKET_SERVER__URL="${bamboo_BITBUCKET_URL}"
+            export BITBUCKET_SERVER__BEARER_TOKEN="${bamboo_BITBUCKET_TOKEN_PASSWORD}"
+            export REVIEW_API_KEY="${bamboo_REVIEW_API_KEY_PASSWORD}"
+            export REVIEW_API_BASE="${bamboo_REVIEW_API_BASE:-https://openrouter.ai/api/v1}"
+            export REVIEW_MODEL="${bamboo_REVIEW_MODEL:-openai/gpt-6-luna}"
+            export REVIEW_MAX_TOKENS="${bamboo_REVIEW_MAX_TOKENS:-250000}"
+            export PR_URL="${bamboo_BITBUCKET_URL%/}/projects/${bamboo_BITBUCKET_PROJECT}/repos/${bamboo_BITBUCKET_REPO}/pull-requests/${pr_id}"
+            export PR_AGENT_IMAGE='pragent/pr-agent:0.47.0@sha256:7d98954c29289846a08faf00aaea0f1f1375b1676cd8a2ed303e0af07010af7a'
+            bash /opt/course-ci/pr-agent/review-pr.sh review
