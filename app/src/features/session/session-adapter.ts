@@ -96,12 +96,20 @@ export function createSessionAdapter(options: { storage: () => SessionStorage; o
       const snapshot = registry?.cases[caseId ?? registry.activeCaseId];
       if (!snapshot) return { status: "missing" };
         warning ??= snapshot.storageWarning;
+        const pendingChat = snapshot.pendingOperation?.kind === "chat" && snapshot.stageStatus === "pending" ? snapshot.pendingOperation : null;
+        const incomplete = pendingChat ? { operationId: pendingChat.operationId, finishReason: "aborted" as const, completionState: "incomplete" as const, retryable: true } : null;
+        const reply = pendingChat ? snapshot.messages.find(message => message.id === pendingChat.replyMessageId && message.role === "assistant") : null;
+        const messages = pendingChat && incomplete ? reply
+          ? snapshot.messages.map(message => message.id === reply.id ? { ...message, parts: message.parts.map(part => ({ ...part, state: "done" as const })), metadata: incomplete } : message)
+          : [...snapshot.messages, { id: pendingChat.replyMessageId, role: "assistant" as const, parts: [], metadata: incomplete }]
+          : snapshot.messages;
         return {
           status: "restored",
           snapshot: {
             ...snapshot,
             stageStatus: snapshot.stageStatus === "pending" ? "interrupted" : snapshot.stageStatus,
-            replyStates: Object.fromEntries(Object.entries(snapshot.replyStates).map(([id, state]) => [id, state === "streaming" ? "interrupted" : state])),
+            messages,
+            replyStates: { ...Object.fromEntries(Object.entries(snapshot.replyStates).map(([id, state]) => [id, state === "streaming" ? "interrupted" : state])), ...(pendingChat ? { [pendingChat.replyMessageId]: "interrupted" as const } : {}) },
           },
         };
     },

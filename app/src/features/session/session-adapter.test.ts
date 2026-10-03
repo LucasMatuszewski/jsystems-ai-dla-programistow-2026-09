@@ -117,8 +117,22 @@ describe("validated active case checkpoints", () => {
     if (result.status !== "restored") throw new Error("Expected restored");
     expect(result.snapshot.stageStatus).toBe("interrupted");
     expect(result.snapshot.replyStates["sdk-reply"]).toBe("interrupted");
-    expect(result.snapshot.messages).toEqual(data.messages);
+    expect(result.snapshot.messages[0]).toEqual(data.messages[0]);
+    expect(result.snapshot.messages[1]).toMatchObject({ id: "sdk-reply", role: "assistant", parts: [{ type: "text", text: "Fragment", state: "done" }], metadata: { operationId: data.caseId, finishReason: "aborted", completionState: "incomplete", retryable: true } });
     expect(result.snapshot.pendingOperation).toEqual(data.pendingOperation);
+    expect(h.storage.setItem).not.toHaveBeenCalled();
+  });
+  it("restores an interrupted chat before any reply bytes with an empty retry placeholder", () => {
+    const h = harness(); const data = snapshot();
+    data.stage = "chat"; data.stageStatus = "pending";
+    data.pendingOperation = { kind: "chat", operationId: data.caseId, startedAt: "2026-10-01T10:00:00Z", userMessageId: "sdk-user", replyMessageId: "sdk-reply" };
+    data.messages = [{ id: "sdk-user", role: "user", parts: [{ type: "text", text: "Pytanie" }] }];
+    h.storage.getItem.mockReturnValue(JSON.stringify(data));
+    const result = h.adapter.restore();
+    expect(result.status).toBe("restored");
+    if (result.status !== "restored") throw new Error("Expected restored");
+    expect(result.snapshot.messages.at(-1)).toMatchObject({ id: "sdk-reply", role: "assistant", parts: [], metadata: { operationId: data.caseId, completionState: "incomplete", retryable: true } });
+    expect(result.snapshot.replyStates["sdk-reply"]).toBe("interrupted");
     expect(h.storage.setItem).not.toHaveBeenCalled();
   });
   it("uses one atomic write, validates before it, and preserves the caller's live state", () => {

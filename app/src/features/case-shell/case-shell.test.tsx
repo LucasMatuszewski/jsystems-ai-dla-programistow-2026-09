@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ActiveCaseSnapshot } from "@/lib/contracts/session";
+import { ACTIVE_CASE_STORAGE_KEY, type ActiveCaseSnapshot } from "@/lib/contracts/session";
 import type { InitialWorkflowDependencies } from "@/features/case-workflow/initial-workflow-controller";
 import { CaseShell, CaseShellProvider } from "./case-shell";
 import type { CaseChatProps } from "@/features/case-chat/case-chat";
@@ -95,7 +95,7 @@ describe("one hydrated live case across form and chat", () => {
     expect(mocks.replace).not.toHaveBeenCalled();
     expect(mocks.start).not.toHaveBeenCalled(); expect(mocks.checkpoint).not.toHaveBeenCalled();
   });
-  it("aborts pending photo preparation truthfully when archival fails and ignores its late prepared result", async () => {
+  it("starts a warned in-memory case when archival fails and ignores late photo preparation", async () => {
     let finishPreparation!: (value: { status: "prepared"; preparedImage: typeof image }) => void;
     mocks.screenFiles.mockImplementation((files: File[]) => ({ status: "valid", file: files[0] }));
     mocks.prepare.mockImplementation(() => new Promise(resolve => { finishPreparation = resolve; }));
@@ -108,13 +108,14 @@ describe("one hydrated live case across form and chat", () => {
     fireEvent.click(screen.getByRole("button", { name: "Rozpocznij nową sprawę" }));
     expect(signal.aborted).toBe(true);
     expect(mocks.newCase.mock.calls[0][0]).toMatchObject({ caseId, stage: "preparation", stageStatus: "interrupted", preparedImage: null });
-    expect(mocks.picker.mock.calls.at(-1)?.[0]).toMatchObject({ status: "interrupted" });
+    expect(mocks.picker.mock.calls.at(-1)?.[0]).toMatchObject({ status: "empty" });
     expect(screen.getByRole("button", { name: "Wybierz zdjęcie" })).toBeEnabled();
     const checkpointCount = mocks.checkpoint.mock.calls.length;
     await act(async () => { finishPreparation({ status: "prepared", preparedImage: image }); });
     expect(mocks.checkpoint).toHaveBeenCalledTimes(checkpointCount);
-    expect(mocks.picker.mock.calls.at(-1)?.[0]).toMatchObject({ status: "interrupted" });
-    expect(mocks.push).not.toHaveBeenCalled();
+    expect(mocks.picker.mock.calls.at(-1)?.[0]).toMatchObject({ status: "empty" });
+    expect(mocks.push).toHaveBeenCalledWith("/");
+    expect(screen.getByRole("status")).toHaveTextContent("Po odświeżeniu");
   });
   it("clears unknown-route recovery when returning to the current unfinished form", async () => {
     mocks.restore.mockImplementation((id?: string) => id ? { status: "missing" } : { status: "restored", snapshot: formCase() });
@@ -141,7 +142,7 @@ describe("one hydrated live case across form and chat", () => {
     expect(mocks.replace).toHaveBeenLastCalledWith(`/chat/${caseId}`);
     expect(mocks.start).toHaveBeenCalledTimes(1);
   });
-  it("keeps failed archival pending work interrupted and rejects callbacks from the disposed owner", async () => {
+  it("starts a new warned case after failed archival and rejects callbacks from the disposed owner", async () => {
     const pending: ActiveCaseSnapshot = { ...formCase(), stage: "decision", stageStatus: "pending", submittedForm: submitted, imageAnalysis: report, pendingOperation: { kind: "decision", operationId, startedAt: "2026-10-01T08:00:00Z" } };
     mocks.restore.mockReturnValue({ status: "restored", snapshot: pending });
     mocks.newCase.mockReturnValue({ status: "failed", warning: "quota-exceeded", notice: "Brak miejsca." });
@@ -150,14 +151,13 @@ describe("one hydrated live case across form and chat", () => {
     const previousOwner = dependencies;
     fireEvent.click(screen.getByRole("button", { name: "Nowa sprawa" }));
     fireEvent.click(screen.getByRole("button", { name: "Rozpocznij nową sprawę" }));
-    expect(mocks.processing.mock.calls.at(-1)?.[0]).toMatchObject({ caseId, stageStatus: "interrupted", imageAnalysis: report, submittedForm: submitted });
-    fireEvent.click(screen.getByRole("button", { name: "Spróbuj ponownie" }));
-    expect(mocks.retry).toHaveBeenCalledTimes(1);
+    expect(dependencies.readCase()).toMatchObject({ caseId: expect.not.stringMatching(caseId), stage: "form", submittedForm: null, imageAnalysis: null });
+    expect(mocks.retry).not.toHaveBeenCalled();
     expect(dependencies).not.toBe(previousOwner);
     previousOwner.checkpoint(completed()); previousOwner.onComplete();
     expect(mocks.checkpoint).not.toHaveBeenCalled();
-    expect(mocks.push).not.toHaveBeenCalled();
-    expect(screen.getByRole("region", { name: "Przygotowanie wstępnej oceny" })).toBeVisible();
+    expect(mocks.push).toHaveBeenCalledWith("/");
+    expect(screen.getByRole("button", { name: "Dalej" })).toBeVisible();
   });
   it("removes the previous case card immediately when the same provider navigates to an unknown UUID", async () => {
     mocks.restore.mockImplementation((id?: string) => id && id !== caseId ? { status: "missing" } : { status: "restored", snapshot: completed() });
@@ -181,15 +181,30 @@ describe("one hydrated live case across form and chat", () => {
     expect(mocks.invalidate).not.toHaveBeenCalled();
     expect(mocks.push).toHaveBeenCalledWith("/");
   });
-  it("keeps the old complete live case when saving the new-case archive fails", async () => {
+  it("opens a blank in-memory case with a warning when archiving the complete case fails", async () => {
     mocks.restore.mockReturnValue({ status: "restored", snapshot: completed() });
     mocks.newCase.mockReturnValue({ status: "failed", warning: "quota-exceeded", notice: "Brak miejsca." });
-    render(<CaseShellProvider><CaseShell screen="chat" /></CaseShellProvider>);
+    const { rerender } = render(<CaseShellProvider><CaseShell screen="chat" /></CaseShellProvider>);
     fireEvent.click(await screen.findByRole("button", { name: "Nowa sprawa" }));
     fireEvent.click(screen.getByRole("button", { name: "Rozpocznij nową sprawę" }));
-    expect(screen.getByRole("article", { name: "Wstępna ocena początkowa" })).toHaveTextContent(decision.summary);
-    expect(mocks.push).not.toHaveBeenCalled();
+    rerender(<CaseShellProvider><CaseShell screen="form" /></CaseShellProvider>);
+    expect(screen.queryByRole("article", { name: "Wstępna ocena początkowa" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Dalej" })).toBeVisible();
+    expect(mocks.push).toHaveBeenCalledWith("/");
     expect(screen.getByRole("status")).toHaveTextContent("Po odświeżeniu");
+  });
+  it("pauses editing when another tab changes the case registry", async () => {
+    mocks.restore.mockReturnValue({ status: "restored", snapshot: completed() });
+    render(<CaseShellProvider><CaseShell screen="chat" /></CaseShellProvider>);
+    await screen.findByRole("article", { name: "Wstępna ocena początkowa" });
+    const previousOwner = dependencies;
+    const callsBeforeConflict = mocks.checkpoint.mock.calls.length;
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: ACTIVE_CASE_STORAGE_KEY, newValue: "updated" })));
+    expect(screen.getByRole("alert")).toHaveTextContent("zmieniła się w innej karcie");
+    expect(screen.getByRole("button", { name: "Wczytaj aktualny zapis" })).toBeVisible();
+    previousOwner.checkpoint(completed()); previousOwner.onComplete();
+    expect(mocks.checkpoint).toHaveBeenCalledTimes(callsBeforeConflict);
+    expect(mocks.push).not.toHaveBeenCalled();
   });
   it("never displays another active case for an unknown UUID route", async () => {
     mocks.restore.mockImplementation((id?: string) => id ? { status: "missing" } : { status: "restored", snapshot: completed() });

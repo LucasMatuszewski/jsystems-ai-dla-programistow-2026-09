@@ -7,7 +7,7 @@ export const MAX_ASSISTANT_MESSAGE_CHARACTERS = 32000;
 export const MAX_USER_TURNS = 40;
 export const messageIdSchema = z.string().refine(value => value.trim().length > 0);
 export const FINISH_REASONS = Object.freeze(["stop", "length", "content-filter", "tool-calls", "error", "other", "aborted", "disconnected", "unknown"] as const);
-export const terminalMetadataSchema = z.strictObject({ operationId: z.uuid(), finishReason: z.enum(FINISH_REASONS), completionState: z.enum(["complete", "incomplete"]) }).superRefine((value, context) => {
+export const terminalMetadataSchema = z.strictObject({ operationId: z.uuid(), finishReason: z.enum(FINISH_REASONS), completionState: z.enum(["complete", "incomplete"]), retryable: z.boolean().optional() }).superRefine((value, context) => {
   if (value.completionState === "complete" && value.finishReason !== "stop") context.addIssue({ code: "custom", path: ["completionState"], message: "Odpowiedź nie została ukończona." });
 });
 export type TerminalMetadata = z.infer<typeof terminalMetadataSchema>;

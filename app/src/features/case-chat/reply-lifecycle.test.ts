@@ -18,4 +18,8 @@ describe("explicit outstanding reply lifecycle", () => {
     expect(retryTurn([...messages, { id: "later", role: "assistant", parts: [{ type: "text", text: "Ukończona" }] }], { reply: "interrupted", later: "complete" })).toBeNull();
     expect(retryTurn(messages, { reply: "complete" })).toBeNull();
   });
+  it("does not offer retry for a persisted terminal failure", () => {
+    const messages: UIMessage[] = [{ id: "first", role: "assistant", parts: [] }, { id: "user", role: "user", parts: [{ type: "text", text: "Pytanie" }] }, { ...reply, parts: [], metadata: { operationId, finishReason: "error", completionState: "incomplete", retryable: false } }];
+    expect(retryTurn(messages, { first: "complete", reply: "failed" })).toBeNull();
+  });
 });

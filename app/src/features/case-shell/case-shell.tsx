@@ -16,7 +16,7 @@ import { SessionRecovery } from "@/features/session/session-recovery";
 import { CaseChat, type CaseChatProps } from "@/features/case-chat/case-chat";
 import { CaseSummary } from "@/features/case-chat/case-summary";
 import type { CaseForm as SubmittedForm } from "@/lib/contracts/form";
-import { activeCaseSnapshotSchema, type ActiveCaseSnapshot } from "@/lib/contracts/session";
+import { ACTIVE_CASE_STORAGE_KEY, activeCaseSnapshotSchema, type ActiveCaseSnapshot } from "@/lib/contracts/session";
 
 const emptyValues: CaseFormValues = { scenario: "", category: "", equipmentName: "", purchaseDate: "", deliveryDate: "", buyerStatus: "", sellerStatus: "", reason: "", requestedRemedy: "" };
 const unreadableNotice = "Nie można odczytać zapisanej sprawy. Zachowano jej zapis. Ten formularz nie może go teraz zmienić.";
@@ -42,6 +42,7 @@ type ShellState = {
   requireImage: () => void; retry: () => void; returnToForm: () => void; showCompletedCase: () => void;
   startNewCase: () => boolean; openCase: (caseId: string) => void; selectForm: () => void; requestedCaseId: string | null; routeFailure: "missing" | "invalid" | null;
   chatGeneration: number;
+  storageConflict: boolean;
   recoverSession: () => void; recoveryError: string | null; preserveRecovery: boolean;
   bindChat: (caseId: string, generation: number) => Omit<CaseChatProps, "initialSnapshot">;
 };
@@ -62,6 +63,8 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<InitialWorkflowView>({ pending: false, error: null });
   const [requestedCaseId, setRequestedCaseId] = useState<string | null>(null);
   const [routeFailure, setRouteFailure] = useState<"missing" | "invalid" | null>(null);
+  const [storageConflict, setStorageConflict] = useState(false);
+  const storageConflictRef = useRef(false);
   const snapshotRef = useRef<ActiveCaseSnapshot | null>(null);
   const adapterRef = useRef<ReturnType<typeof createSessionAdapter> | null>(null);
   const workflowRef = useRef<ReturnType<typeof createInitialWorkflowController> | null>(null);
@@ -82,7 +85,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const publish = useCallback((next: ActiveCaseSnapshot, kind: CheckpointKind = "immediate") => {
-    if (!mountedRef.current || !adapterRef.current) return;
+    if (!mountedRef.current || !adapterRef.current || storageConflictRef.current) return;
     const current = { ...next, storageWarning: adapterRef.current.getWarning() };
     snapshotRef.current = current;
     setSnapshot(current);
@@ -90,7 +93,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const bindChat = useCallback((caseId: string, generation: number): Omit<CaseChatProps, "initialSnapshot"> => {
-    const ownsCase = () => mountedRef.current && snapshotRef.current?.caseId === caseId && workflowOwnerRef.current === generation;
+    const ownsCase = () => mountedRef.current && !storageConflictRef.current && snapshotRef.current?.caseId === caseId && workflowOwnerRef.current === generation;
     return {
       readSnapshot: () => ownsCase() ? snapshotRef.current : null,
       checkpoint: (changes, kind) => {
@@ -128,6 +131,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     mountedRef.current = true;
+    storageConflictRef.current = false;
     const adapter = createSessionAdapter({ storage: () => window.localStorage, onWriteResult: result => {
       if (!active) return;
       const nextWarning = result.status === "failed" ? result.warning : null;
@@ -138,6 +142,18 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
       }
     } });
     adapterRef.current = adapter;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== ACTIVE_CASE_STORAGE_KEY) return;
+      if (event.storageArea && event.storageArea !== window.localStorage) return;
+      storageConflictRef.current = true;
+      adapter.dispose();
+      workflowOwnerRef.current++;
+      preparationRef.current?.controller.abort(); preparationRef.current = null;
+      workflowRef.current?.dispose(); workflowRef.current = null;
+      cancelChat();
+      setStorageConflict(true);
+    };
+    window.addEventListener("storage", handleStorage);
     const restored = adapter.restore();
     let current: ActiveCaseSnapshot | null = null;
     let notice: string | null = null;
@@ -161,6 +177,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelChat();
       active = false; mountedRef.current = false;
+      window.removeEventListener("storage", handleStorage);
       preparationRef.current?.controller.abort(); preparationRef.current = null;
       workflowRef.current?.dispose(); workflowRef.current = null;
       adapter.dispose(); adapterRef.current = null; snapshotRef.current = null; originalFile.current = null;
@@ -174,7 +191,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
   }
   function startNewCase(): boolean {
     const adapter = adapterRef.current;
-    if (!snapshotRef.current || !adapter || blocked) return false;
+    if (!snapshotRef.current || !adapter || blocked || storageConflictRef.current) return false;
     cancelChat();
     const current = snapshotRef.current;
     const archived: ActiveCaseSnapshot = { ...current, stageStatus: current.stageStatus === "pending" ? "interrupted" : current.stageStatus,
@@ -183,12 +200,13 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     const next = blankCase();
     const result = adapter.startNewCase(archived, next);
     if (result.status === "failed") {
-      const retained = { ...archived, storageWarning: result.warning };
-      if (retained.stage === "preparation" && !retained.preparedImage) setImage({ status: "interrupted", message: "Przygotowywanie zdjęcia zostało przerwane. Wybierz zdjęcie ponownie, aby kontynuować." });
-      snapshotRef.current = retained; setSnapshot(retained); setWarning(result.warning); setView({ pending: false, error: null }); installWorkflow(retained.caseId);
-      return false;
+      const inMemory = { ...next, storageWarning: result.warning };
+      snapshotRef.current = inMemory; setSnapshot(inMemory); originalFile.current = null; setImage({ status: "empty" }); setMissingImage(false);
+      setWarning(result.warning); setView({ pending: false, error: null }); setBlocked(null); setRouteFailure(null); completionNavigationRef.current = false;
+      installWorkflow(inMemory.caseId); routerRef.current.push("/");
+      return true;
     }
-    snapshotRef.current = next; setSnapshot(next); originalFile.current = null; setImage({ status: "empty" }); setView({ pending: false, error: null });
+    snapshotRef.current = next; setSnapshot(next); originalFile.current = null; setImage({ status: "empty" }); setMissingImage(false); setView({ pending: false, error: null });
     // Keep the departing route selected until selectForm observes the committed navigation.
     // Clearing it here would let the still-mounted /chat/old-id reopen the archived case.
     setWarning(null); setBlocked(null); setRouteFailure(null); completionNavigationRef.current = false; installWorkflow(next.caseId);
@@ -277,7 +295,7 @@ export function CaseShellProvider({ children }: { children: ReactNode }) {
     requireImage: () => setMissingImage(true), retry: () => { void workflowRef.current?.retry(); }, returnToForm,
     showCompletedCase,
     startNewCase, openCase, selectForm, requestedCaseId, routeFailure,
-    chatGeneration: workflowOwnerRef.current, bindChat, recoverSession, recoveryError, preserveRecovery,
+    chatGeneration: workflowOwnerRef.current, storageConflict, bindChat, recoverSession, recoveryError, preserveRecovery,
   };
   return <ShellContext.Provider value={state}>{children}</ShellContext.Provider>;
 }
@@ -289,7 +307,7 @@ export function CaseShell({ screen, caseId }: { screen: "form" | "chat"; caseId?
   const newCaseTrigger = useRef<HTMLButtonElement>(null);
   const [newCaseOpen, setNewCaseOpen] = useState(false);
   if (!state) throw new Error("CaseShell requires its persistent provider.");
-  const { initialized, snapshot, blocked, warning, view } = state;
+  const { initialized, snapshot, blocked, warning, view, storageConflict } = state;
   useEffect(() => {
     if (wasBlocked.current && !blocked) mainRef.current?.focus();
     wasBlocked.current = Boolean(blocked);
@@ -306,6 +324,7 @@ export function CaseShell({ screen, caseId }: { screen: "form" | "chat"; caseId?
   useEffect(() => { if (initialized && screen === "chat" && !caseId && complete) showCompletedCase(); }, [initialized, screen, caseId, complete, showCompletedCase]);
   useEffect(() => { if (initialized && screen === "form" && complete) showCompletedCase(); }, [initialized, screen, complete, showCompletedCase]);
   useEffect(() => { if (initialized && screen === "chat") mainRef.current?.focus(); }, [initialized, screen]);
+  if (storageConflict) return <main ref={mainRef} id="main-content" tabIndex={-1} className="app-main"><section role="alert" className="max-w-[800px] rounded-[16px] border bg-card p-4 sm:p-6"><h1 className="text-2xl">Sprawa zmieniła się w innej karcie</h1><p className="my-4">Edycja w tej karcie została wstrzymana, aby nie nadpisać nowszego zapisu. Odśwież stronę, aby wczytać aktualne dane. Niezapisane zmiany z tej karty nie zostaną zachowane.</p><Button type="button" onClick={() => window.location.reload()}>Wczytaj aktualny zapis</Button></section></main>;
   const exactCase = !caseId || snapshot?.caseId === caseId;
   const routeHeading = caseId && !activeCaseSnapshotSchema.shape.caseId.safeParse(caseId).success ? "Nieprawidłowy adres sprawy" : state.routeFailure === "missing" ? "Nie znaleziono zapisanej sprawy" : "Brak ukończonej oceny sprawy";
   const continuityControls = initialized && snapshot && !blocked && exactCase && !state.routeFailure ? <div className="mb-6 flex min-w-0 flex-wrap items-center justify-between gap-3"><p className="min-w-0 text-sm text-muted-foreground [overflow-wrap:anywhere]">ID sprawy: {snapshot.caseId}</p><Button ref={newCaseTrigger} type="button" onClick={() => setNewCaseOpen(true)}>Nowa sprawa</Button><NewCaseDialog open={newCaseOpen} onOpenChange={setNewCaseOpen} triggerRef={newCaseTrigger} onConfirm={() => { state.startNewCase(); setNewCaseOpen(false); }} /></div> : null;

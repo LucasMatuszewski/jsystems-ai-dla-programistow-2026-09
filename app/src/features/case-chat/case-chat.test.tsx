@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChatInit, ChatStatus, UIMessage } from "ai";
-import type { ActiveCaseSnapshot } from "@/lib/contracts/session";
+import { activeCaseSnapshotSchema, type ActiveCaseSnapshot } from "@/lib/contracts/session";
 import { CaseChat, type CaseChatProps, type ChatCheckpoint } from "./case-chat";
 
 const sdk = vi.hoisted(() => ({ options: null as ChatInit<UIMessage> | null, messages: [] as UIMessage[], update: null as null | ((messages: UIMessage[]) => void), send: vi.fn(), regenerate: vi.fn(), stop: vi.fn(), status: "ready" as ChatStatus, seeds: [] as UIMessage[][] }));
@@ -69,6 +69,27 @@ describe("one hydrated streaming chat owner", () => {
     expect(sdk.send).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("status")).toHaveTextContent("Trwa przygotowywanie odpowiedzi");
   });
+  it("saves a pending user turn through the strict session contract before sending", async () => {
+    checkpoint.mockImplementation((changes: ChatCheckpoint) => {
+      const parsed = activeCaseSnapshotSchema.safeParse({ ...current, ...changes, revision: current.revision + 1 });
+      if (!parsed.success) return false;
+      current = parsed.data;
+      return true;
+    });
+    render(<CaseChat {...props} />); send("Pytanie o sprawę");
+    await waitFor(() => expect(sdk.send).toHaveBeenCalledOnce());
+    expect(current.pendingOperation).toMatchObject({ kind: "chat", userMessageId: current.messages.at(-1)?.id });
+    expect(current.messages.at(-1)?.parts).toEqual([{ type: "text", text: "Pytanie o sprawę" }]);
+  });
+  it("submits the text captured by the form before React state catches up", async () => {
+    render(<CaseChat {...props} />);
+    const textbox = screen.getByRole("textbox", { name: "Wiadomość" }) as HTMLTextAreaElement;
+    const setNativeValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+    setNativeValue?.call(textbox, "Pytanie przechwycone przez formularz");
+    fireEvent.submit(textbox.closest("form")!);
+    await waitFor(() => expect(sdk.send).toHaveBeenCalledOnce());
+    expect(current.messages.find(message => message.role === "user")?.parts[0].text).toBe("Pytanie przechwycone przez formularz");
+  });
   it("does not clear or send when ownership rejects the user checkpoint", async () => {
     checkpoint.mockReturnValue(false); render(<CaseChat {...props} />); send();
     await waitFor(() => expect(screen.getByRole("textbox")).toHaveValue("  Dodatkowe pytanie  "));
@@ -89,7 +110,8 @@ describe("one hydrated streaming chat owner", () => {
     sdk.send.mockImplementation((message: UIMessage) => { sdk.update!([...sdk.messages, message]); sdk.options!.onError!(new Error('PRIVATE_PROVIDER_BLOB')); return Promise.resolve(); });
     render(<CaseChat {...props} />); send();
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Usługa AI jest chwilowo niedostępna"));
-    expect(current.messages.at(-1)?.parts[0].text).toBe("Dodatkowe pytanie");
+    expect(current.messages.find(message => message.role === "user")?.parts[0].text).toBe("Dodatkowe pytanie");
+    expect(current.messages.at(-1)).toMatchObject({ role: "assistant", parts: [], metadata: { completionState: "incomplete" } });
     expect(current.pendingOperation).toBeNull(); expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.getByRole("textbox")).toHaveFocus();
     expect(document.body.textContent).not.toContain("PRIVATE_PROVIDER_BLOB");
@@ -115,6 +137,11 @@ describe("one hydrated streaming chat owner", () => {
     const operation = current.pendingOperation!; if (operation.kind !== "chat") throw new Error("Missing chat operation");
     const reply: UIMessage = { id: operation.replyMessageId, role: "assistant", parts: [{ type: "text", text: "Zachowana część", state: "done" }], ...(failure === "missing" ? {} : { metadata: { operationId: failure === "wrong-operation" ? id : operation.operationId, finishReason: failure === "length" ? "length" : "stop", completionState: failure === "length" ? "incomplete" : "complete" } }) };
     await act(async () => { sdk.update!([...sdk.messages, reply]); sdk.options!.onFinish!({ message: reply, messages: [...sdk.messages, reply], isAbort: failure === "abort", isDisconnect: failure === "disconnect", isError: failure === "error" }); });
+    if (failure === "wrong-operation") {
+      expect(current.pendingOperation).toMatchObject({ operationId: operation.operationId });
+      expect(current.replyStates[reply.id]).toBe("streaming");
+      return;
+    }
     expect(current.messages.at(-1)?.parts[0].text).toBe("Zachowana część");
     expect(current.replyStates[reply.id]).not.toBe("complete");
     expect(screen.getByText("Ta odpowiedź nie została ukończona.")).toBeVisible();
@@ -134,12 +161,14 @@ describe("one hydrated streaming chat owner", () => {
     await act(async () => sdk.update!([...sdk.messages, reply]));
     act(() => cancel!());
     expect(sdk.stop).toHaveBeenCalled(); expect(current.replyStates[reply.id]).toBe("interrupted"); expect(current.pendingOperation).toBeNull();
+    expect(current.stageStatus).toBe("interrupted");
     const retained = structuredClone(current);
     act(() => sdk.options!.onFinish!({ message: { ...reply, metadata: { operationId: operation.operationId, finishReason: "stop", completionState: "complete" } }, messages: sdk.messages, isAbort: false, isDisconnect: false, isError: false }));
     expect(current).toEqual(retained);
   });
   it("creates an empty incomplete assistant after an early failure and retries without duplicating its user", async () => {
     sdk.send.mockImplementation((message: UIMessage) => { sdk.update!([...sdk.messages, message]); return Promise.reject(new Error("failure")); });
+    sdk.regenerate.mockImplementation(() => new Promise<void>(() => {}));
     render(<CaseChat {...props} />); send();
     await waitFor(() => expect(screen.getByRole("button", { name: "Ponów odpowiedź" })).toBeVisible());
     const user = current.messages[1]; const reply = current.messages[2];
@@ -154,10 +183,26 @@ describe("one hydrated streaming chat owner", () => {
     expect(current.messages.filter(message => message.role === "user")).toEqual([user]);
     expect(current.messages[0]).toEqual(first);
   });
+  it("locks a case after a persisted non-retryable context error", async () => {
+    sdk.send.mockImplementation((message: UIMessage) => {
+      sdk.update!([...sdk.messages, message]);
+      const pending = current.pendingOperation;
+      if (pending?.kind !== "chat") throw new Error("Missing operation");
+      sdk.options!.onError!(new Error(JSON.stringify({ code: "CONTEXT_LIMIT", message: "private", retryable: false, operationId: pending.operationId })));
+      return Promise.resolve();
+    });
+    render(<CaseChat {...props} />); send();
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Rozpocznij nową sprawę"));
+    expect(screen.getByRole("textbox", { name: "Wiadomość" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Ponów odpowiedź" })).not.toBeInTheDocument();
+    expect(current.messages.at(-1)?.metadata).toMatchObject({ retryable: false });
+  });
   it("waits for the ORIGINAL attempt settlement after Stop before explicit regeneration", async () => {
     let settle!: () => void;
     sdk.send.mockImplementation((message: UIMessage) => { sdk.update!([...sdk.messages, message]); return new Promise<void>(resolve => { settle = resolve; }); });
+    sdk.regenerate.mockImplementation(() => new Promise<void>(() => {}));
     render(<CaseChat {...props} />); send();
+    await waitFor(() => expect(sdk.send).toHaveBeenCalledOnce());
     const original = current.pendingOperation!; if (original.kind !== "chat") throw new Error("Missing operation");
     const reply: UIMessage = { id: original.replyMessageId, role: "assistant", parts: [{ type: "text", text: "Zachowana część", state: "streaming" }] };
     await act(async () => sdk.update!([...sdk.messages, reply]));

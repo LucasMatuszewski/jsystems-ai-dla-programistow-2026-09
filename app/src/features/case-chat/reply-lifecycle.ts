@@ -12,6 +12,6 @@ export function retryTurn(messages: UIMessage[], states: Record<string, ReplySta
   const reply = messages.at(-1); const user = messages.at(-2);
   if (!reply || reply.role !== "assistant" || !user || user.role !== "user" || !["failed", "interrupted"].includes(states[reply.id])) return null;
   const metadata = terminalMetadataSchema.safeParse(reply.metadata);
-  if (!metadata.success || metadata.data.completionState !== "incomplete") return null;
+  if (!metadata.success || metadata.data.completionState !== "incomplete" || metadata.data.retryable === false) return null;
   return { userMessageId: user.id, replyMessageId: reply.id, operationId: metadata.data.operationId };
 }
