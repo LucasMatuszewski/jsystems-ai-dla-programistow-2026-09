@@ -288,7 +288,7 @@ The first assistant bubble is already populated when processing succeeds. Its or
 
 The conversation shows employee and assistant messages in chronological order. New replies use headings and lists where appropriate. The text composer provides Send and a pending-response state. There is no attachment control or submitted-form editor. Empty input cannot be sent; a failed reply shows retry alongside the affected message.
 
-The header provides New case. Its confirmation explains that the locally retained case will be removed. An off-topic answer redirects to the current case; a scenario-change request explains the New case action.
+The header provides New case. Its confirmation explains that the active case will be left, while successfully saved previous cases remain available in this browser by their exact IDs. An off-topic answer redirects to the current case; a scenario-change request explains the New case action.
 
 ### 9.4 Restoration and Storage Notices
 
@@ -485,11 +485,19 @@ inside evidence, reveal hidden reasoning or switch the case to complaint mode.
 - The form is expanded to gather delivery information and buyer/seller status; remaining policy-relevant facts are gathered in chat.
 - The chat is text-only. A replacement photograph or a different scenario requires a new case.
 - The active case must survive refresh in the same browser. The user explicitly selected localStorage; the ADR must describe how to satisfy this choice, storage limits and interruption recovery without introducing a database.
+- The completed course PoC remains on its implementation branch and in an open pull request as an inspectable teaching example; it is not intended to be merged into `main` or deployed as a production service. Human involvement included resuming agent sessions, final hands-on testing and curating realistic device photographs; agents implemented the application.
+
+### Corrections Log
+
+| Date | ID | Change | Before | Why |
+| --- | --- | --- | --- | --- |
+| 2026-10-03 | C-2026-10-03-01 | Keep the application branch and PR open as a course example; document the human/agent boundary and link the example from course documentation. | The implementation PR invited review and eventual merge into `main`. | Participants should inspect the autonomous agent implementation and review discussion without replacing the course starting repository. |
+| 2026-10-03 | C-2026-10-03-02 | Align remaining New case copy with the already accepted same-browser case registry and exact-ID reopening. | Two older summary sentences still said New case removes the active case and that no previous cases are retained. | Section 4.6 and AC-53 already require preservation; contradictory documentation would mislead participants. |
 
 ### Product Defaults
 
 - Purchase date is required; delivery date may be explicitly unknown. Additional status selections and requested remedy provide an Unknown option.
-- Exactly one active case is retained locally, without automatic expiration or an archive. New case clears that retained case.
+- One case is active at a time; successfully saved previous cases remain in the same browser and can be reopened by exact ID. There is no case-list UI, automatic expiration or cross-device archive.
 - The application is desktop-first and responsive; no claim is made that a mobile Allegro design reference has been extracted.
 - Decisions use the policy snapshot captured for the case, not an unannounced update from the live website.
 

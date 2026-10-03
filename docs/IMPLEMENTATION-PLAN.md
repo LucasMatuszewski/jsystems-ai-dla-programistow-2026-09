@@ -1,7 +1,7 @@
 # Hardware Service Decision Copilot — Implementation Coordination
 
-**Updated:** 2026-10-02
-**Status:** Implementation in progress under the user's explicit full-plan execution instruction. Accepted checkpoints are recorded in [the implementation ledger](implementation/LEDGER.md).
+**Updated:** 2026-10-03
+**Status:** Course PoC handoff. The user accepted the observed core app flow and ended implementation work. This branch and PR remain open for teaching and will not be merged. Accepted and incomplete checkpoints are recorded in [the implementation ledger](implementation/LEDGER.md); formal Q05-Q08 gates are not silently promoted to complete.
 
 ## Authority and confirmed delivery
 
@@ -15,6 +15,7 @@ The original planning-stage preferences below remain historical context. The use
 4. One shared repository; parallel edits only on disjoint leased files. Do not create additional worktrees for implementation; the user's later PR instruction authorizes the delivery branch.
 5. Use existing authorized OpenRouter configuration and ADR limits; no additional cost cap.
 6. Final PoC includes its README, training demo script and manual QA evidence.
+7. The 2026-10-03 handoff narrows remaining work to accurate README/PR documentation and publication of verified local changes. Do not start further feature work or claim the unfinished formal acceptance packets passed. Keep the app implementation branch separate from `main`.
 
 The original baseline was committed in `2020f82` (plan/native roles) and `1c84e11` (PRD/ADRs/policy sources). **S00 is complete**; verify referenced artifacts if subsequently changed, without repeating an empty commit. The application has progressed beyond that README-only baseline; use the implementation ledger and current verification evidence for accepted scope. Out-of-scope features remain those in PRD §7.
 

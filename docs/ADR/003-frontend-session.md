@@ -48,7 +48,7 @@ Define the browser journey, components, initial decision rendering, one useChat 
 | AI Elements view | Conversation, ConversationContent/ScrollButton, Message/MessageContent/MessageResponse and PromptInput text controls |
 | SessionAdapter | Validated snapshots and checkpoint writes; no independent authoritative message array |
 | Error/StorageNotice | Polish errors, retry state and explicit restoration limitations |
-| NewCaseDialog | Confirm reset, abort active operations and clear only the product's storage key |
+| NewCaseDialog | Confirm leaving the active case, abort its operations, save its last checkpoint where possible and open a fresh UUID without removing previously saved cases |
 
 CaseShell owns form/stage/context state. In chat, useChat owns conversation state; the session adapter saves that state without becoming a second live chat store. No assistant-ui runtime, Redux, external persistence adapter or cloud thread service is introduced.
 
@@ -124,7 +124,7 @@ Never store the API key, server prompts, full policy text, provider reasoning, t
 
 ### Browser State Transitions
 
-Editable form → prepared image → submitted/analysis pending → validated report → decision pending → validated first decision/chat. An initial failure retains the last successful checkpoint. A stopped or refreshed operation becomes interrupted. Editing invalidates analysis/decision. New case clears all case-derived state.
+Editable form → prepared image → submitted/analysis pending → validated report → decision pending → validated first decision/chat. An initial failure retains the last successful checkpoint. A stopped or refreshed operation becomes interrupted. Editing invalidates analysis/decision. New case starts with no case-derived state from its predecessor; previously saved cases remain separately keyed by UUID.
 
 Chat states use SDK status plus application completion metadata: submitted/streaming prevent a second send; error or interrupted exposes retry for the existing user turn; normal completion allows a new turn. A failed partial reply is visibly labeled incomplete until replaced by a retry.
 
@@ -163,7 +163,7 @@ The chat transport body has id (caseId), operationId, replyMessageId, trigger (s
 
 On mount, read and validate the snapshot once before creating useChat. Normalize any persisted pending operation to interrupted; retain available partial text with the incomplete label. Resume only when the employee explicitly retries. A failed preparation that never returned JPEG bytes requires reselecting the original image; the notice explains that those bytes were never successfully saved.
 
-New case asks for confirmation, aborts all active requests, clears controllers/messages and removes only the product storage key. Cancel changes nothing. If removal itself fails, show the failure instead of claiming the retained case was removed; keep the current case and offer retry after browser storage is available. No action clears unrelated browser storage.
+New case asks for confirmation, invalidates and aborts the old case's active work, and atomically retains its successfully saved checkpoint while selecting a blank UUID in the same product registry. Cancel changes nothing. If that registry write fails, the new case is usable only in memory with a persistent restoration warning; do not claim that the prior case was freshly archived or that the new case is durable. No action clears unrelated browser storage.
 
 When an unknown/corrupt snapshot cannot be restored, offer confirmed discard and a blank form. Do not partially recover a form from one case and messages from another. A missing server policy version preserves the visible old case but blocks further assessment until that version is restored or a new case is started.
 
@@ -300,13 +300,13 @@ sequenceDiagram
     Employee->>UI: Confirm New case
     UI->>UI: Invalidate old operation identity
     UI->>API: Abort active requests
-    UI->>Store: Remove product snapshot
-    alt Removal succeeds
-        UI->>UI: Reset and show empty form
+    UI->>Store: Save prior case and select fresh UUID atomically
+    alt Registry write succeeds
+        UI->>UI: Show empty form; retain saved earlier cases
         API-->>UI: Possible late old-case response
         UI->>UI: Ignore identity mismatch
-    else Storage removal fails
-        UI-->>Employee: Preserve current case and report clear failure
+    else Registry write fails
+        UI-->>Employee: Show warned in-memory new case; do not claim archival
     end
 ```
 
