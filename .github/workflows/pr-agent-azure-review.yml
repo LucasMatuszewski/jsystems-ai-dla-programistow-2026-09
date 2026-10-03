@@ -23,10 +23,12 @@ env:
   CONFIG__MODEL: ${{ vars.PR_AGENT_MODEL }}
   CONFIG__FALLBACK_MODELS: '[]'
   # Input token budget per model call. PR-Agent's own default is 32000, which made it skip most
-  # files of a large PR. Set it below the model's context window (gpt-6-luna: 272k) and within
-  # the deployment's tokens-per-minute quota; lower it with the PR_AGENT_MAX_TOKENS variable.
-  CONFIG__CUSTOM_MODEL_MAX_TOKENS: ${{ vars.PR_AGENT_MAX_TOKENS || '200000' }}
-  CONFIG__MAX_MODEL_TOKENS: ${{ vars.PR_AGENT_MAX_TOKENS || '200000' }}
+  # files of a large PR. gpt-6-luna accepts about 1.05M tokens, but a request above 272k input
+  # tokens is billed on the long-context meter (about 2x input, 1.5x output, whole request).
+  # 250000 stays under that line; chunking below covers bigger diffs at the normal rate.
+  # Override with the PR_AGENT_MAX_TOKENS variable (lower for a small model or tight quota).
+  CONFIG__CUSTOM_MODEL_MAX_TOKENS: ${{ vars.PR_AGENT_MAX_TOKENS || '250000' }}
+  CONFIG__MAX_MODEL_TOKENS: ${{ vars.PR_AGENT_MAX_TOKENS || '250000' }}
   CONFIG__REASONING_EFFORT: low
   CONFIG__ADDITIONAL_REASONING_EFFORT_MODELS: ${{ format('["{0}","azure/{0}"]', vars.PR_AGENT_MODEL) }}
   CONFIG__NO_TEMPERATURE_MODELS: ${{ format('["{0}","azure/{0}"]', vars.PR_AGENT_MODEL) }}
@@ -44,9 +46,10 @@ env:
   PR_REVIEWER__FINAL_UPDATE_MESSAGE: 'false'
   PR_REVIEWER__NUM_MAX_FINDINGS: '5'
   # A diff larger than one budget is reviewed in up to MAX_NUMBER_OF_CALLS chunks instead of
-  # being cut off; files beyond that are still listed under "Review coverage".
+  # being cut off (4 x 250k = about 1M tokens of diff); files beyond that are still listed
+  # under "Review coverage".
   PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING: 'true'
-  PR_REVIEWER__MAX_NUMBER_OF_CALLS: '3'
+  PR_REVIEWER__MAX_NUMBER_OF_CALLS: '4'
   PR_REVIEWER__REQUIRE_SECURITY_REVIEW: 'true'
   PR_REVIEWER__REQUIRE_ESTIMATE_EFFORT_TO_REVIEW: 'false'
   PR_REVIEWER__ENABLE_REVIEW_LABELS_EFFORT: 'false'
@@ -95,7 +98,7 @@ jobs:
           [[ "$OPENAI__API_BASE" =~ ^https://[a-zA-Z0-9-]+\.(openai\.azure\.com|services\.ai\.azure\.com)/?$ ]] || fail 'AZURE_OPENAI_ENDPOINT must be an Azure resource HTTPS root URL, without API paths.'
           [[ "$OPENAI__DEPLOYMENT_ID" =~ ^[a-zA-Z0-9_.-]+$ ]] || fail 'Invalid AZURE_OPENAI_DEPLOYMENT.'
           [[ "$CONFIG__MODEL" =~ ^[a-zA-Z0-9_.-]+$ ]] || fail 'PR_AGENT_MODEL must be the underlying model ID, not a deployment or provider prefix.'
-          [[ "$CONFIG__MAX_MODEL_TOKENS" =~ ^[1-9][0-9]{3,6}$ ]] || fail 'PR_AGENT_MAX_TOKENS must be a whole number of tokens, e.g. 200000.'
+          [[ "$CONFIG__MAX_MODEL_TOKENS" =~ ^[1-9][0-9]{3,6}$ ]] || fail 'PR_AGENT_MAX_TOKENS must be a whole number of tokens, e.g. 250000.'
           [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || fail 'Invalid PR number.'
           if [[ "$GITHUB_EVENT_NAME" == issue_comment ]]; then
             permission=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$COMMENT_LOGIN/permission" --jq '.permission')
