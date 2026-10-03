@@ -1,0 +1,20 @@
+{
+  "source_url": "https://allegro.pl/regulaminy/polityka-reklamacji-i-zwrotow-na-allegro-m0mreg1YkCG",
+  "retrieved_at_utc": "2026-09-30T09:15:03.305782+00:00",
+  "source_language": "pl",
+  "scope": "Complete scenario sections downloaded verbatim from the official policy. Navigation, consent and styling are excluded; links are absolute. Source artifacts retain the original language and are not authored repository documentation.",
+  "files": [
+    {
+      "file": "allegro-returns.html",
+      "section": "Return / withdrawal section",
+      "sha256": "ab8a4d4c9242ed12345ac38782cba7a793417acc386ed694d23f98ca699870d6",
+      "characters": 21373
+    },
+    {
+      "file": "allegro-complaints.html",
+      "section": "Complaint section",
+      "sha256": "d69c7b039d520f8e449fc290611bdc2e003bebac87a28b99489c0493737b141a",
+      "characters": 5627
+    }
+  ]
+}

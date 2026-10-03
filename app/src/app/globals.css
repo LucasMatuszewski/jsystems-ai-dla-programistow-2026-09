@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: 2px;
+    --radius-md: 2px;
+    --radius-lg: 2px;
+    --radius-xl: 16px;
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    --background: #ECEFF1;
+    --foreground: rgba(0, 0, 0, .87);
+    --card: #FFFFFF;
+    --card-foreground: rgba(0, 0, 0, .87);
+    --popover: #FFFFFF;
+    --popover-foreground: rgba(0, 0, 0, .87);
+    --primary: #FF5A00;
+    --primary-foreground: #212121;
+    --secondary: #ECEFF1;
+    --secondary-foreground: rgba(0, 0, 0, .87);
+    --muted: #ECEFF1;
+    --muted-foreground: rgba(0, 0, 0, .54);
+    --accent: #008673;
+    --accent-foreground: #FFFFFF;
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: rgba(0, 0, 0, .12);
+    --input: rgba(0, 0, 0, .12);
+    --ring: #008673;
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 2px;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+}
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/brand/fonts/inter-400_ff6a2a72.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Open Sans";
+  src: url("/brand/fonts/open-sans_6cc28a8e.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+:root {
+  --font-interface: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  --brand-slate: #3A4E58;
+}
+
+body {
+  margin: 0;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.app-header {
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-interface);
+}
+
+.app-header-content {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  padding: 16px 24px;
+}
+
+.app-logo { width: 128px; height: auto; flex: none; }
+.app-identity { font-size: 14px; line-height: 21px; }
+.app-main { padding: 32px 24px; }
+.app-intro {
+  max-width: 800px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+}
+.app-intro h1 { margin-bottom: 16px; font-size: 24px; line-height: 31.2px; font-weight: 400; }
+.app-intro p { overflow-wrap: anywhere; }
+.privacy-notice { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+.privacy-notice h2 { margin-bottom: 8px; font-weight: 400; color: var(--brand-slate); }
+
+[data-slot="button"], [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"] {
+  font-family: var(--font-interface);
+}
+[data-slot="button"][data-size="default"] { height: 40px; padding: 0 16px; }
+[data-slot="button"][data-variant="default"] {
+  font-size: 16px;
+  line-height: 22.08px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: 2px;
+  box-shadow: none;
+}
+[data-slot="input"], [data-slot="select-trigger"] { height: 40px; padding: 8px; border-radius: 2px; font-size: 14px; line-height: 21px; }
+[data-slot="textarea"] { padding: 8px; border-radius: 2px; font-size: 14px; line-height: 21px; }
+
+/* Functional keyboard focus uses the verified accent, not an inferred brand state. */
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.skip-link { position: absolute; left: 24px; top: 8px; z-index: 50; transform: translateY(-200%); }
+.skip-link:focus { transform: translateY(0); }
+
+@media (max-width: 480px) {
+  .app-header-content { padding: 16px; gap: 8px 16px; }
+  .app-main { padding: 24px 16px; }
+  .app-intro { padding: 16px; }
+  .skip-link { left: 16px; max-width: calc(100% - 32px); }
+}

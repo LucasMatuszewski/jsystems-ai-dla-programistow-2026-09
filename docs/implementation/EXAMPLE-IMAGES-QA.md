@@ -1,0 +1,9 @@
+# User-provided images in QA
+
+Five unchanged example images are available in `assets/example-images/` and `app/tests/fixtures/images/example-images/`: `laptop-1.png`, `laptop-2.webp`, `phone-1.jpg`, `phone-2.jpeg`, `phone-3.jpeg`. Their original filenames, hierarchy and bytes are preserved. Technical provenance is recorded in `app/tests/fixtures/example-images-provenance.json`, pinned to source commit `7629ca3813757336f932d5d61ce438d4b03653a4`. Rights: User-provided; use instructed in this task.
+
+QA agents must use this set in tests and manual QA. Preserve ambiguity: no condition labels, captions, annotations, renaming, cropping, visual editing or predeclared image findings. Form facts must describe only the employee's supplied report and chosen equipment category, separately from actual image evidence.
+
+Automated coverage checks all five through the real native chooser, preparation endpoint, normalized JPEG contract, preview and saved checkpoint. Two additional initial-assessment journeys use `phone-1.jpg` and `laptop-1.png`, retaining the four earlier guardrail journeys. No visual-condition oracle is assigned to the new cases. Successful completed operations require captured operation identities and official generation metadata; credentials or catalog lookup alone are insufficient proof.
+
+Independent manual QA must assess all five images through actual initial analysis and decision, then use at least one phone and one laptop case for a real follow-up when the chat route is available. Review grounding and uncertainty without assuming functionality or cause from the photograph. Inspect Polish UI, keyboard focus, console and Allegro brand fidelity at 360 and 1440 pixels. Retain approved demo screenshots and safe scalar identities/verdicts only; do not log full messages, prompts, policies, image payloads or credentials. Actual provider journeys require the coordinator's separate runtime authorization.

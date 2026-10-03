@@ -1,2 +1,4 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+assets/policy-sources/*.html -text whitespace=cr-at-eol
+app/resources/policies/*.html -text whitespace=cr-at-eol

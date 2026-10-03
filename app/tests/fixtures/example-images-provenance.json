@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "7629ca3813757336f932d5d61ce438d4b03653a4",
+  "rights": "User-provided; use instructed in this task",
+  "files": [
+    {
+      "originalName": "laptop-1.png",
+      "sourcePath": "assets/example-images/laptop-1.png",
+      "bytes": 1220926,
+      "sha256": "63aaa14ef02a2a2f2de404fca7e00dcd23ad1f41c861d2529a30df1ad7543147",
+      "format": "jpeg",
+      "width": 3024,
+      "height": 3135,
+      "pages": 1
+    },
+    {
+      "originalName": "laptop-2.webp",
+      "sourcePath": "assets/example-images/laptop-2.webp",
+      "bytes": 165974,
+      "sha256": "ca694b473018e37af2b5d9fd27deccc2402240c95c41cc3a521e1d28b55dee73",
+      "format": "webp",
+      "width": 863,
+      "height": 843,
+      "pages": 1
+    },
+    {
+      "originalName": "phone-1.jpg",
+      "sourcePath": "assets/example-images/phone-1.jpg",
+      "bytes": 106565,
+      "sha256": "88ec9f05c16a14713e4c90fcb021174926f0b26410d392e63cf9f2739d7e25f2",
+      "format": "jpeg",
+      "width": 900,
+      "height": 1200,
+      "pages": 1
+    },
+    {
+      "originalName": "phone-2.jpeg",
+      "sourcePath": "assets/example-images/phone-2.jpeg",
+      "bytes": 14979,
+      "sha256": "ed4df956aa26a579ac44df2dc8a3cb5e848b29ce5e3f8898a82b8202b39a4a27",
+      "format": "jpeg",
+      "width": 387,
+      "height": 516,
+      "pages": 1
+    },
+    {
+      "originalName": "phone-3.jpeg",
+      "sourcePath": "assets/example-images/phone-3.jpeg",
+      "bytes": 32216,
+      "sha256": "3d9a9718e659b1b758653eee37512d7370fdf474ec21034b3f2b8941d02ec33e",
+      "format": "jpeg",
+      "width": 449,
+      "height": 445,
+      "pages": 1
+    }
+  ]
+}
