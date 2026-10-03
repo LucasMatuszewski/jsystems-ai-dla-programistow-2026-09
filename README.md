@@ -7,13 +7,13 @@
 - [Biblioteka promptów](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/prompty.html) · [Ćwiczenia](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/cwiczenia.html) · [Checklisty](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/checklisty.html) · [Słownik AI](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/slownik-ai.html)
 - [Wyniki ankiety przed szkoleniem](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/raport-przed.html) · [Odpowiedzi na pytania z kursu](https://devpowers.com/szkolenia/jsystems/ai-dla-programistow-2026-09/pytania.html) (uzupełniamy po każdym dniu)
 
-## Completed application and code review examples
+## UPDATES! Completed application + PR Agent + code review examples
 
 The completed hardware complaint/return assistant is available on the [implementation branch](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/tree/ready/tested-initial-assessment-and-chat-backend), with setup and demo steps in its [app README](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/blob/ready/tested-initial-assessment-and-chat-backend/app/README.md). [Application PR #3](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/pull/3) contains the implementation, two screenshots, and Codex/Copilot code review comments. It is intentionally left open and **will not be merged into `main`**; `main` remains the participant starting repository.
 
 AI coding agents wrote the application. The trainer resumed interrupted sessions, completed the final hands-on test, and curated realistic device photographs. The app is a course proof of concept, not a production claims system.
 
-For another review workflow, see [documentation PR #4](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/pull/4) and the [closed test PR #5](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/pull/5). PR #5 demonstrates review comments from Community PR-Agent, the open-source fork maintained independently of commercial Qodo. Together these PRs show feedback from Codex, Copilot, and Community PR-Agent.
+For another review workflow, see [documentation PR #4](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/pull/4) and the [closed test PR #5](https://github.com/LucasMatuszewski/jsystems-ai-dla-programistow-2026-09/pull/5). PR #5 demonstrates review comments from [Community PR-Agent](https://github.com/The-PR-Agent/pr-agent) ([documentation](https://docs.pr-agent.ai/)), the open-source project that Qodo handed over to the community and that is now maintained independently of the commercial [Qodo](https://www.qodo.ai/) review platform. Together these PRs show feedback from Codex, Copilot, and Community PR-Agent.
 
 ## UPDATES !!! (02.10.2026, ostatni dzień kursu)
 
