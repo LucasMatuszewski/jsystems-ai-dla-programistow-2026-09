@@ -10,8 +10,9 @@ import { createFormFingerprint } from "@/server/cases/form-fingerprint";
 import { analyzeImage } from "@/server/ai/analyze-image";
 import { createOperationDeadline } from "@/server/ai/deadline";
 import type { AnalysisRequest } from "@/lib/contracts/requests";
+import { APP_ORIGIN } from "./app-origin";
 
-const endpoint = "http://127.0.0.1:3000/api/analysis";
+const endpoint = `${APP_ORIGIN}/api/analysis`;
 const caseId = "11111111-1111-4111-8111-111111111111";
 const operationId = "22222222-2222-4222-8222-222222222222";
 const output = { imageQuality: "limited", observations: [{ finding: "Widoczna rysa", visibleLocation: "Obudowa" }], signsOfUse: [], possibleCauses: [], limitations: ["Nie można ocenić działania"], missingInformation: [] };

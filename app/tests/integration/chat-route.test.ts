@@ -11,8 +11,9 @@ import { errorEnvelopeSchema } from "@/lib/contracts/errors";
 import { terminalMetadataSchema, type CaseMessage } from "@/lib/contracts/messages";
 import { buildChatPrompt } from "@/server/prompts/builder";
 import { convertToModelMessages } from "ai";
+import { APP_ORIGIN } from "./app-origin";
 
-const endpoint = "http://127.0.0.1:3000/api/chat";
+const endpoint = `${APP_ORIGIN}/api/chat`;
 const upstream = "https://openrouter.ai/api/v1/chat/completions";
 const caseId = "11111111-1111-4111-8111-111111111111";
 const operationId = "22222222-2222-4222-8222-222222222222";

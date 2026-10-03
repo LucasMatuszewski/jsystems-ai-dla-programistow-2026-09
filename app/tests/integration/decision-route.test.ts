@@ -10,8 +10,9 @@ import { createInitialDecisionOutputSchema, createInitialDecisionSchema, type In
 import { createFirstDecisionMessage } from "@/lib/contracts/first-message";
 import { errorEnvelopeSchema } from "@/lib/contracts/errors";
 import type { DecisionRequest } from "@/lib/contracts/requests";
+import { APP_ORIGIN } from "./app-origin";
 
-const endpoint = "http://127.0.0.1:3000/api/decisions";
+const endpoint = `${APP_ORIGIN}/api/decisions`;
 const upstream = "https://openrouter.ai/api/v1/chat/completions";
 const caseId = "11111111-1111-4111-8111-111111111111";
 const operationId = "22222222-2222-4222-8222-222222222222";

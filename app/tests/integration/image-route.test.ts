@@ -6,8 +6,9 @@ import { describe, expect, it } from "vitest";
 import { POST, runtime } from "@/app/api/images/prepare/route";
 import { preparedImageSchema } from "@/lib/contracts/image";
 import { errorEnvelopeSchema } from "@/lib/contracts/errors";
+import { APP_ORIGIN } from "./app-origin";
 
-const origin = "http://127.0.0.1:3000/api/images/prepare";
+const origin = `${APP_ORIGIN}/api/images/prepare`;
 const fixture = (name: string) => readFile(resolve("tests/fixtures/images", name));
 function multipart(form: FormData, signal?: AbortSignal) { return new Request(origin, { method: "POST", body: form, signal }); }
 async function imageForm(name = "transparent.png") {

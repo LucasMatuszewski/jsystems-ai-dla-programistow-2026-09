@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import sharp from "sharp";
 import "server-only";
 import { describe, expect, it } from "vitest";
+import { APP_ORIGIN } from "./app-origin";
 
 describe("real Node integration runner", () => {
   it("uses the real filesystem and native image processing", async () => {
@@ -16,7 +17,7 @@ describe("real Node integration runner", () => {
   });
 
   it("serves the actual generated shell on the leased local server", async () => {
-    const response = await fetch("http://127.0.0.1:3000/", {
+    const response = await fetch(`${APP_ORIGIN}/`, {
       signal: AbortSignal.timeout(15_000),
     });
     expect(response.status).toBe(200);
@@ -28,7 +29,7 @@ describe("real Node integration runner", () => {
 
   it("serves the real favicon without the console-breaking 404 regression", async () => {
     const expected = await readFile(new URL("../../public/favicon.ico", import.meta.url));
-    const response = await fetch("http://127.0.0.1:3000/favicon.ico", {
+    const response = await fetch(`${APP_ORIGIN}/favicon.ico`, {
       signal: AbortSignal.timeout(15_000),
     });
     expect(response.status).toBe(200);
