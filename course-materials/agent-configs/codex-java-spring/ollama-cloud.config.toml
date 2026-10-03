@@ -1,7 +1,7 @@
-# Ollama cloud model (great for programming)
+# Ollama cloud model (great for programming). glm-5:cloud was retired on 2026-07-15.
 # Copy to ~/.codex/ and run with:
 #   codex --profile ollama-cloud
 
 model_provider = "ollama" # built-in local provider; do not add --oss (it would force gpt-oss:20b)
-model = "glm-5:cloud" # or "deepseek-v3.2:cloud" or "minimax-m2.7:cloud"
+model = "glm-5.3:cloud" # or "glm-5.2:cloud", "minimax-m3:cloud", "deepseek-v4-pro:cloud" (check https://ollama.com/search?c=cloud, tags get retired)
 model_context_window = 64000 # Set a larger context window for cloud models

@@ -37,7 +37,7 @@ model_context_window = 128000 # Recommended: set a larger context window for OSS
 # Suggested Ollama models (CLI usage quick reference)
 # ============================================================
 # Pick a model per run:
-#   codex --oss -m glm-5.2:cloud
+#   codex --oss -m glm-5.3:cloud
 #   codex --oss -m minimax-m3:cloud
 #   codex --oss -m nemotron-3-ultra:cloud
 #

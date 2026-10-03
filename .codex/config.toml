@@ -262,7 +262,7 @@ wire_api = "responses"
 # Suggested Ollama models (CLI usage quick reference)
 # ============================================================
 # Pick a model per run:
-#   codex --oss -m glm-5.2:cloud
+#   codex --oss -m glm-5.3:cloud
 #   codex --oss -m minimax-m3:cloud
 #   codex --oss -m nemotron-3-ultra:cloud
 #
