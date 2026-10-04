@@ -76,7 +76,8 @@
     "ask": [
       "Bash(git worktree add *)",
       "Bash(git -C * worktree add *)",
-      "EnterWorktree"
+      "EnterWorktree",
+      "Agent(isolation:worktree)"
     ],
     "deny": [
       "Bash(env:*)",
