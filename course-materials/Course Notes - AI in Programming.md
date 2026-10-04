@@ -749,6 +749,10 @@ Main agent can delegate tasks to sub-agents (often specialized), to focus on orc
 ### Headless agents in CI/CD
 
 - Code review and security review of every PR with Copilot, Claude Code, Codex or OpenCode, posted as a PR comment and to Jira; pipelines for Azure, GitLab and Bitbucket: [`cicd-headless/agent-review/`](cicd-headless/agent-review/)
+- **Full research on AI-assisted PRs and code review across platforms (checked 02.10.2026):** [AI-assisted pull requests and code reviews handbook](Research/ai-assisted-pull-requests-course-handbook.md) - PR lifecycle, community PR-Agent, AI Review, Kodus, Danger JS/reviewdog, GitLab, Bitbucket Cloud/Server/DC, Azure DevOps, Jenkins, security, reruns and review-quality evaluation.
+- **GitHub review with Azure OpenAI:** [participant/fork setup instructions](cicd-headless/github-actions/README.md) and [Azure workflow](cicd-headless/github-actions/pr-agent-azure-review.yml) - resource endpoint as a variable, API key as a secret, deployment/model variables, and fail-fast checks before model calls.
+- **Community PR-Agent 0.47.0:** ready-made review/describe/improve workflows, with a [ready exercise and examples for GitHub, GitLab, Bitbucket, Azure DevOps, Jenkins, Bamboo, Gitea and a local run](cicd-headless/PR-Agent-Qodo/README.md); Git hosting and CI runner are separate choices. Pipeline execution publishes comments; slash commands need a comment-event listener/webhook.
+- **Codex directly in Bitbucket + Jira:** [headless pipeline and custom REST adapter](cicd-headless/codex-bitbucket/README.md) - fetch PR diff and ticket details, request a schema-validated review, then update bot comments in both systems. Separate context, model and publication stages; no Qodo/PR-Agent dependency. This example targets Cloud APIs; Server/DC needs a different adapter.
 - Headless commands: `copilot -p`, `claude -p`, `codex exec`, `opencode run` (also `agy -p`, `grok -p`)
   - deep dive (validated 01.10.2026): [Research/Headless agents - CLI automation, JSON streaming, subscriptions and CI-CD](Research/Headless%20agents%20-%20CLI%20automation,%20JSON%20streaming,%20subscriptions%20and%20CI-CD.md) - JSON event streams, JSON Schema output, subscription vs API billing per tool, CI/CD patterns, security rules
   - **JSON event streams** (newline-delimited): `claude -p --output-format stream-json` | `codex exec --json` | `agy -p --output-format stream-json` | `grok -p --output-format streaming-json` (different spelling!) | `copilot -p --output-format json` | `opencode run --format json`
@@ -770,7 +774,11 @@ Main agent can delegate tasks to sub-agents (often specialized), to focus on orc
    - GitHub Spark [GitHub Spark · Dream it. See it. Ship it. · GitHub](https://github.com/features/spark)
    - Tailwind & Shadcn popularity
  - **Code Reviews, GitHub integrations**
-   - qodo - [AI Code Review for Teams – IDE, GitHub, GitLab & CLI](https://www.qodo.ai/) (open source)
+   - **Qodo** - [commercial AI code review platform](https://www.qodo.ai/), separate from the community open-source project. Qodo [announced the PR-Agent handover on 23 April 2026](https://www.qodo.ai/blog/qodo-is-handing-pr-agent-over-to-the-community/).
+   - **Community PR-Agent** - [The-PR-Agent/pr-agent](https://github.com/The-PR-Agent/pr-agent), MIT, community-owned and maintained independently of Qodo; latest release checked 02.10.2026: [v0.47.0](https://github.com/The-PR-Agent/pr-agent/releases/tag/v0.47.0). Use [community docs](https://docs.pr-agent.ai/), rather than assuming commercial Qodo features exist in OSS.
+     - Supports GitHub, GitLab, Bitbucket Cloud/Server/DC, Azure DevOps and Gitea; tool and inline-comment support vary by provider: [platform matrix](https://docs.pr-agent.ai/overview/supported_platforms/).
+     - [`qodo-pr-agent-review.yml`](cicd-headless/github-actions/qodo-pr-agent-review.yml) retains its historical filename but now uses the community runtime; manual dispatch accepts a PR number and calls the CLI. [Multi-platform examples](cicd-headless/PR-Agent-Qodo/README.md).
+     - For full comparison and implementation details: [AI-assisted pull requests and code reviews handbook](Research/ai-assisted-pull-requests-course-handbook.md).
    - CodeRabbit [AI Code Reviews | CodeRabbit | Try for Free](https://www.coderabbit.ai/)
      - GitLab Sef-Managed: [CodeRabbit GitLab](https://docs.coderabbit.ai/platforms/self-hosted-gitlab)
    - Gemini Code Assist: [Review GitHub code using Gemini Code Assist](https://developers.google.com/gemini-code-assist/docs/review-github-code)
