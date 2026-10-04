@@ -5,11 +5,15 @@
 pipeline {
   agent any
   options { skipDefaultCheckout(true); timeout(time: 15, unit: 'MINUTES'); disableConcurrentBuilds() }
-  parameters {
-    string(name: 'REVIEW_API_BASE', defaultValue: 'https://openrouter.ai/api/v1', description: 'OpenAI-compatible model endpoint')
-    string(name: 'REVIEW_MODEL', defaultValue: 'openai/gpt-6-luna', description: 'Model ID exactly as that endpoint expects it')
-    string(name: 'REVIEW_MAX_TOKENS', defaultValue: '250000', description: 'Input token budget per model call')
-    string(name: 'BITBUCKET_URL', defaultValue: 'https://bitbucket.example.com', description: 'Trusted Server/DC URL')
+  // The endpoint, model and Git host are fixed here, in the trusted pipeline definition.
+  // They are deliberately NOT build parameters: anyone allowed to start a parameterized
+  // build could point REVIEW_API_BASE at their own server and receive the API key.
+  environment {
+    REVIEW_API_BASE = 'https://openrouter.ai/api/v1' // any OpenAI-compatible endpoint
+    REVIEW_MODEL = 'openai/gpt-6-luna'               // model ID exactly as that endpoint expects it
+    REVIEW_MAX_TOKENS = '250000'                     // input token budget per model call
+    REVIEW_PUBLISH = 'true'                          // post the review; the launcher alone only prints it
+    BITBUCKET_URL = 'https://bitbucket.example.com'  // your Bitbucket Server/DC base URL
   }
   stages {
     stage('Review PR') {

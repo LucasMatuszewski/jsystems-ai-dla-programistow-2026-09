@@ -13,7 +13,9 @@ esac
 REVIEW_API_BASE="${REVIEW_API_BASE:-https://openrouter.ai/api/v1}"
 REVIEW_MODEL="${REVIEW_MODEL:-openai/gpt-6-luna}"
 REVIEW_MAX_TOKENS="${REVIEW_MAX_TOKENS:-250000}"
-REVIEW_PUBLISH="${REVIEW_PUBLISH:-true}"
+# Dry run by default: the review is printed in the log and nothing is posted.
+# Set REVIEW_PUBLISH=true to publish the comment on the pull request.
+REVIEW_PUBLISH="${REVIEW_PUBLISH:-false}"
 REVIEW_REASONING_EFFORT="${REVIEW_REASONING_EFFORT:-low}"
 
 : "${PR_AGENT_IMAGE:?Set an approved digest-pinned PR-Agent CLI image}"

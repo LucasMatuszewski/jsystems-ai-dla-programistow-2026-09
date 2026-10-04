@@ -91,12 +91,11 @@ With Docker and a token for your Git host, [review-pr.sh](review-pr.sh) runs the
 export PR_AGENT_IMAGE='pragent/pr-agent:0.47.0@sha256:7d98954c29289846a08faf00aaea0f1f1375b1676cd8a2ed303e0af07010af7a'
 export GIT_PLATFORM=github
 export PR_URL='https://github.com/YOUR-ACCOUNT/YOUR-REPO/pull/1'
-export REVIEW_PUBLISH=false   # print the result in the log, post nothing to the PR
 # REVIEW_API_KEY and GITHUB__USER_TOKEN: set them in your shell from your secret store.
 bash review-pr.sh review
 ```
 
-`REVIEW_PUBLISH=false` is a dry run; remove it to post the comment. `GIT_PLATFORM` accepts `github`, `gitlab`, `bitbucket`, `bitbucket_server`, `azure` and `gitea`, each with its own credential variables (the script names the missing one). The script validates the image digest, the endpoint URL and that the PR URL belongs to the configured Git host before it forwards any credential, and it forwards secret variable **names**, never values, on the command line.
+The launcher is a dry run by default: it prints the review in the log and posts nothing. Add `export REVIEW_PUBLISH=true` to post the comment on the pull request. `GIT_PLATFORM` accepts `github`, `gitlab`, `bitbucket`, `bitbucket_server`, `azure` and `gitea`, each with its own credential variables (the script names the missing one). The script validates the image digest, the endpoint URL and that the PR URL belongs to the configured Git host before it forwards any credential, and it forwards secret variable **names**, never values, on the command line.
 
 Example non-secret configuration for Bitbucket Server/DC:
 
@@ -170,6 +169,8 @@ These are multi-platform manifest digests inspected in the public registry on 2 
 
 Use a dedicated bot. Grant API read and comment/label permissions for the enabled outputs. Writing a description, approving a PR, pushing a branch and merging are separate operations; do not grant them merely because the reviewer can comment.
 
+Keep the model endpoint out of anything a pipeline user can set at run time. Whoever can change `REVIEW_API_BASE` for a run receives the API key, because the reviewer sends the key to that address. That is why the Jenkins and Bamboo examples fix the endpoint in the pipeline definition and do not expose it as a build parameter or plan variable. On GitLab, restrict who may override pipeline variables; on GitHub, repository variables can be changed only by people who can already read the secret's use.
+
 Protect the pipeline definition, `.pr_agent.toml` on the default branch, model routing and prompts. A contributor who can edit a secret-bearing pipeline can exfiltrate its secrets even if the job has no checkout. The direct YAML examples are for an approved internal training repository; use a trusted external pipeline/template or webhook controller before accepting untrusted branches or forks. In Jenkins and Bamboo, the installed launcher and pipeline definition must come from trusted configuration, not from the pull request. Do not disable TLS verification for self-managed hosts.
 
 ## Verification
@@ -183,7 +184,7 @@ bash -n course-materials/cicd-headless/PR-Agent-Qodo/review-pr.sh
 
 The tests execute the real shell wrapper with a synthetic Docker executable and cover provider routing for all six providers, the endpoint and model variables, CLI arguments, secret-name forwarding and rejection before execution. They also parse every pipeline file and check that each one uses the shared variables and the pinned image.
 
-Live evidence, 3 October 2026: `review-pr.sh` reviewed a GitHub pull request through OpenRouter with `openai/gpt-6-luna` and `REVIEW_PUBLISH=false` (one model call, completed). The first attempt failed with "doesn't support temperature=0.2 while reasoning is active", which is why the no-temperature setting is in every file. **No other platform file in this folder has been run on its platform.**
+Live evidence, 3 October 2026: `review-pr.sh` reviewed a GitHub pull request through OpenRouter with `openai/gpt-6-luna` as a dry run (one model call, completed). The first attempt failed with "doesn't support temperature=0.2 while reasoning is active", which is why the no-temperature setting is in every file. **No other platform file in this folder has been run on its platform.**
 
 Before adoption on any host, run one synthetic PR: confirm a comment appears; introduce and fix a real defect; rerun; inspect comment persistence, bot identity, diff coverage and error behaviour. Do not treat passing launcher tests as platform integration evidence.
 

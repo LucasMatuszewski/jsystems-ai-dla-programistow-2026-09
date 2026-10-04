@@ -6,13 +6,14 @@
 # - Install the reviewed review-pr.sh on the agent at /opt/course-ci/pr-agent/review-pr.sh.
 #   Do not run a copy taken from the pull request branch.
 # - The agent needs bash, python3 and Docker.
-# - Plan variables (mark the two secrets as password variables):
+# - Two plan variables, both created as password variables:
 #     REVIEW_API_KEY_PASSWORD      model endpoint API key
 #     BITBUCKET_TOKEN_PASSWORD     Bitbucket HTTP access token that may read and comment
-#     BITBUCKET_URL                https://bitbucket.example.com
-#     BITBUCKET_PROJECT            project key, e.g. COURSE
-#     BITBUCKET_REPO               repository slug, e.g. demo
-#     REVIEW_API_BASE, REVIEW_MODEL, REVIEW_MAX_TOKENS   optional; defaults are in review-pr.sh
+#   Bamboo does not export password variables to the script as bamboo_* environment
+#   variables, so the task binds them explicitly in `environment:` below.
+# - The endpoint, model and Bitbucket location are fixed in the script below, in these trusted
+#   specs. They are deliberately NOT plan variables: a user who can run a customised build can
+#   override plan variables, and could point REVIEW_API_BASE at their own server to receive the key.
 # - Enable plan branches for pull requests ("When pull request is created"), so that
 #   bamboo.repository.pr.key is set.
 ---
@@ -31,19 +32,26 @@ Review pull request:
   tasks:
     - script:
         interpreter: SHELL
+        environment: REVIEW_API_KEY=${bamboo.REVIEW_API_KEY_PASSWORD} BITBUCKET_SERVER__BEARER_TOKEN=${bamboo.BITBUCKET_TOKEN_PASSWORD}
         scripts:
           - |-
             #!/usr/bin/env bash
             set -euo pipefail
             pr_id="${bamboo_repository_pr_key:-}"
             [[ "$pr_id" =~ ^[1-9][0-9]*$ ]] || { echo 'Not a pull request build; nothing to review.'; exit 0; }
+            : "${REVIEW_API_KEY:?Bind plan variable REVIEW_API_KEY_PASSWORD in the task environment}"
+            : "${BITBUCKET_SERVER__BEARER_TOKEN:?Bind plan variable BITBUCKET_TOKEN_PASSWORD in the task environment}"
+            export REVIEW_API_KEY BITBUCKET_SERVER__BEARER_TOKEN
+            # Edit these five values for your installation.
+            export REVIEW_API_BASE='https://openrouter.ai/api/v1'
+            export REVIEW_MODEL='openai/gpt-6-luna'
+            export REVIEW_MAX_TOKENS='250000'
+            bitbucket_url='https://bitbucket.example.com'
+            bitbucket_project='COURSE'
+            bitbucket_repo='demo'
+            export REVIEW_PUBLISH=true
             export GIT_PLATFORM=bitbucket_server
-            export BITBUCKET_SERVER__URL="${bamboo_BITBUCKET_URL}"
-            export BITBUCKET_SERVER__BEARER_TOKEN="${bamboo_BITBUCKET_TOKEN_PASSWORD}"
-            export REVIEW_API_KEY="${bamboo_REVIEW_API_KEY_PASSWORD}"
-            export REVIEW_API_BASE="${bamboo_REVIEW_API_BASE:-https://openrouter.ai/api/v1}"
-            export REVIEW_MODEL="${bamboo_REVIEW_MODEL:-openai/gpt-6-luna}"
-            export REVIEW_MAX_TOKENS="${bamboo_REVIEW_MAX_TOKENS:-250000}"
-            export PR_URL="${bamboo_BITBUCKET_URL%/}/projects/${bamboo_BITBUCKET_PROJECT}/repos/${bamboo_BITBUCKET_REPO}/pull-requests/${pr_id}"
+            export BITBUCKET_SERVER__URL="$bitbucket_url"
+            export PR_URL="${bitbucket_url%/}/projects/${bitbucket_project}/repos/${bitbucket_repo}/pull-requests/${pr_id}"
             export PR_AGENT_IMAGE='pragent/pr-agent:0.47.0@sha256:7d98954c29289846a08faf00aaea0f1f1375b1676cd8a2ed303e0af07010af7a'
             bash /opt/course-ci/pr-agent/review-pr.sh review

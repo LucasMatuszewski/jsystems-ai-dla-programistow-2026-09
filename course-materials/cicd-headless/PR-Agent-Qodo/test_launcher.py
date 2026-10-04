@@ -63,7 +63,7 @@ class LauncherContracts(unittest.TestCase):
                          "CONFIG__REASONING_EFFORT=low",
                          "CONFIG__CUSTOM_MODEL_MAX_TOKENS=250000", "CONFIG__MAX_MODEL_TOKENS=250000",
                          "PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING=true", "PR_REVIEWER__MAX_NUMBER_OF_CALLS=4",
-                         "CONFIG__FALLBACK_MODELS=[]", "CONFIG__PUBLISH_OUTPUT=true"):
+                         "CONFIG__FALLBACK_MODELS=[]", "CONFIG__PUBLISH_OUTPUT=false"):
             self.assertIn(expected, args)
         # The key travels by variable name only.
         self.assertIn("OPENAI__KEY", args)
@@ -74,13 +74,13 @@ class LauncherContracts(unittest.TestCase):
         result = self.run_launcher(provider, url, {
             **extra, "REVIEW_API_BASE": "https://training.openai.azure.com/openai/v1",
             "REVIEW_MODEL": "course-review-luna", "REVIEW_MAX_TOKENS": "1000000",
-            "REVIEW_PUBLISH": "false", "REVIEW_REASONING_EFFORT": "none"})
+            "REVIEW_PUBLISH": "true", "REVIEW_REASONING_EFFORT": "none"})
         self.assertEqual(result.returncode, 0, result.stderr)
         args = json.loads(result.stdout)
         self.assertIn("OPENAI__API_BASE=https://training.openai.azure.com/openai/v1", args)
         self.assertIn("CONFIG__MODEL=openai/course-review-luna", args)
         self.assertIn("CONFIG__MAX_MODEL_TOKENS=1000000", args)
-        self.assertIn("CONFIG__PUBLISH_OUTPUT=false", args)
+        self.assertIn("CONFIG__PUBLISH_OUTPUT=true", args)
         self.assertFalse([a for a in args if a.startswith("CONFIG__REASONING_EFFORT=")])
 
     def test_invalid_input_never_starts_docker(self):
@@ -130,6 +130,18 @@ class PlatformFileContracts(unittest.TestCase):
                                 "PR_REVIEWER__ENABLE_LARGE_PR_CHUNKING", "PR_REVIEWER__MAX_NUMBER_OF_CALLS"):
                     self.assertIn(setting, text)
                 self.assertIn(CLI_IMAGE, text)
+
+    def test_launcher_based_pipelines_fix_the_endpoint_and_publish_explicitly(self):
+        # A build parameter or plan variable for the endpoint would let a build user redirect the API key.
+        jenkins = (HERE / "Jenkinsfile").read_text(encoding="utf-8")
+        self.assertNotIn("parameters {", jenkins)
+        self.assertIn("environment {", jenkins)
+        bamboo = (HERE / "bamboo-specs.yaml").read_text(encoding="utf-8")
+        self.assertNotIn("bamboo_REVIEW_API_BASE", bamboo)
+        self.assertNotIn("bamboo_REVIEW_API_KEY_PASSWORD", bamboo)
+        self.assertIn("environment: REVIEW_API_KEY=${bamboo.REVIEW_API_KEY_PASSWORD}", bamboo)
+        for text in (jenkins, bamboo):
+            self.assertRegex(text, r"REVIEW_PUBLISH\s*=\s*'?true")
 
     def test_yaml_examples_parse(self):
         try:
