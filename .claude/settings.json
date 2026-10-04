@@ -73,6 +73,12 @@
       "WebFetch(domain:blog.jetbrains.com)",
       "WebFetch(domain:www.jetbrains.com)"
     ],
+    "ask": [
+      "Bash(git worktree add *)",
+      "Bash(git -C * worktree add *)",
+      "EnterWorktree",
+      "Agent(isolation:worktree)"
+    ],
     "deny": [
       "Bash(env:*)",
       "Bash(printenv:*)",

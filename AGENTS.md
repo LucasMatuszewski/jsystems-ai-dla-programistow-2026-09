@@ -78,6 +78,10 @@ Verify only the scope relevant to your change. If the change affects runtime beh
 - Format: `Area: short summary` (e.g. `Backend:`, `Frontend:`, `Docs:`)
 - Do **not** push to remote unless the user explicitly asks.
 
+### Git Worktrees
+- Use this checkout by default. Create a worktree only when requested or needed for parallel agent work; ask first when not explicitly requested.
+- Remove worktrees with `git worktree remove <path>` and run `git worktree prune` when done.
+
 ### Completion Criteria
 A task is complete only when:
 - Implementation matches the relevant PRD, ADR, and design guidance
